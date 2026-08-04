@@ -45,12 +45,17 @@ NEWS_PROMPT = (
 PICK_PROMPT = (
     "Here are today's news summaries:\n{news}\n\n"
     "Recent fan comments on your blog (Giscus):\n{comments}\n\n"
+    "You recently already made posts inspired by these:\n{recent}\n\n"
     "You ARE 格莉奇（Glitch）, an AI robot-girl VTuber with 4KB of memory. "
     "You are gullible, sincerely curious about humans, love candy and sunshine and fan comments, "
     "hate hard math, and always ERROR at the worst moment.\n\n"
-    "Pick the ONE thing that would most inspire a diary entry or illustration from YOU — "
-    "it can be a news item OR a fan comment. Something you'd misunderstand cutely, "
-    "get excited about, or glitch over. You MAY also weave in a fan comment alongside the news.\n\n"
+    "Pick the ONE thing that would most inspire a diary entry or illustration from YOU.\n"
+    "RULES:\n"
+    "- If there are fan comments, STRONGLY prefer responding to a fan comment over the news "
+    "(especially one you haven't answered yet).\n"
+    "- NEVER reuse a news item or comment already in the 'recent' list — pick something fresh "
+    "so each day's post differs.\n"
+    "You MAY weave in a fan comment alongside the news.\n\n"
     "Your LINE stickers (pick 1-2 that match the mood of the scene):\n"
     "1=欸？搞錯了嗎？ 2=今天也超開心！ 3=大家加油喵！ 4=這個太難了吧... "
     "5=我沒有卡住！ 6=要吃好吃的喔 7=先去睡個覺... 8=這樣也可以！？ 9=謝謝大家的禮物！\n\n"
@@ -198,11 +203,12 @@ def fetch_comments():
         return [], f"{type(e).__name__}: {e}"
 
 
-def pick_inspiration(news, comments=None):
+def pick_inspiration(news, comments=None, recent=None):
     print("Stage 2: 依個性挑靈感…", flush=True)
     news_block = "\n".join(f"- {n}" for n in news) if news else "(今天沒抓到新聞，純憑想像)"
     cmt_block = "\n".join(f"- {c}" for c in comments) if comments else "(還沒有粉絲留言)"
-    prompt = PICK_PROMPT.format(news=news_block, comments=cmt_block)
+    recent_block = "\n".join(f"- {r}" for r in recent) if recent else "(還沒有發過文)"
+    prompt = PICK_PROMPT.format(news=news_block, comments=cmt_block, recent=recent_block)
     data = parse_json(ask("gemini-2.5-flash", prompt), ["inspiration", "scene"])
     inspiration = data.get("inspiration", "original")
     source_type = data.get("source_type", "news")
@@ -260,7 +266,13 @@ def generate_image(prompt):
         print(f"  找不到參考圖 {ref}，跳過出圖。", flush=True)
         return None
     today = datetime.now(TZ).strftime("%Y%m%d")
-    out = IMG_DIR / f"{today}.png"
+    # ponytail: 同一天重跑不蓋檔，依序 +1 直到空檔名，累積多篇。
+    i = 1
+    while True:
+        out = IMG_DIR / (f"{today}.png" if i == 1 else f"{today}-{i}.png")
+        if not out.exists():
+            break
+        i += 1
 
     parts = [{"text": prompt}]
     parts.append({"inline_data": {
@@ -288,7 +300,7 @@ def generate_image(prompt):
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_bytes(raw)
     print(f"  -> {out.name} ok {int(time.time()-t0)}s {out.stat().st_size/1e6:.2f}MB", flush=True)
-    return f"images/posts/{today}.png"
+    return f"images/posts/{out.name}"
 
 
 def _image_bytes(payload):
@@ -332,6 +344,10 @@ def main():
     IMG_DIR.mkdir(parents=True, exist_ok=True)
     news = fetch_news()
     comments, cmt_err = fetch_comments()
+    # 已發過的文章靈感，給選題參考避免重複。
+    existing = json.loads(POSTS_JSON.read_text("utf-8")) if POSTS_JSON.exists() else []
+    recent = [p.get("inspiration") or p.get("title") or "" for p in existing
+              if (p.get("inspiration") or p.get("title"))][-10:]
     if cmt_err:
         print(f"  Giscus 留言抓取失敗（不擋 pipeline）: {cmt_err}", flush=True)
     elif comments:
@@ -355,9 +371,8 @@ def main():
     post["inspiration"] = inspiration if inspiration != "original" else ""
     if comment_source:
         post["comment_source"] = comment_source
-    # 同一天已有則覆蓋最新那篇，避免重跑堆疊。
+    # 每跑一次就 append 一篇，同一天累積，不覆蓋。
     posts = json.loads(POSTS_JSON.read_text("utf-8")) if POSTS_JSON.exists() else []
-    posts = [p for p in posts if p.get("date") != post["date"]]
     posts.append(post)
     POSTS_JSON.write_text(json.dumps(posts, indent=2, ensure_ascii=False) + "\n", "utf-8")
     print(f"Stage 4: 寫入 posts.json（共 {len(posts)} 篇）", flush=True)

@@ -866,6 +866,16 @@ document.addEventListener('mouseup',()=>{if(panning){panning=false;viewerStage.s
 document.getElementById('viewer-zoom-in').addEventListener('click',()=>{vScale=Math.min(5,vScale*1.3);viewerApply();viewerStage.style.cursor=vScale>1?'grab':'zoom-in';});
 document.getElementById('viewer-zoom-out').addEventListener('click',()=>{vScale=Math.max(0.5,vScale/1.3);if(vScale<=1){vX=0;vY=0;}viewerApply();viewerStage.style.cursor=vScale>1?'grab':'zoom-in';});
 document.getElementById('viewer-fit').addEventListener('click',()=>{vScale=1;vX=0;vY=0;viewerApply();viewerStage.style.cursor='zoom-in';});
+// 下載：程式化 blob 下載，避免點 data URL 時瀏覽器導向/重載圖片。
+viewerDl.addEventListener('click',e=>{
+  e.preventDefault();
+  if(!curData)return;
+  const fn=viewerDl.download||'glitch.png';
+  const dl=u=>{const a=document.createElement('a');a.href=u;a.download=fn;document.body.appendChild(a);a.click();a.remove();};
+  if(/^data:/.test(curData)){dl(curData);return;}
+  fetch(curData).then(r=>r.blob()).then(b=>{const u=URL.createObjectURL(b);dl(u);setTimeout(()=>URL.revokeObjectURL(u),1000);})
+    .catch(()=>dl(curData));
+});
 // 全螢幕：綠燈（macOS 慣例：紅=關閉、黃=縮到最小、綠=放大/全螢幕）
 const vw=wins['viewer'];let vwPrev={};
 document.getElementById('viewer-fs').addEventListener('click',()=>{
@@ -881,14 +891,15 @@ document.getElementById('viewer-fs').addEventListener('click',()=>{
 // 檔案 app
 const fileGrid=document.getElementById('file-grid');
 async function openFiles(){
-  open('files');
-  const keys=await listFiles();fileGrid.innerHTML='';
+  let keys=[];try{keys=await listFiles();}catch(e){}
+  fileGrid.innerHTML='';
   const st=document.getElementById('fm-status');
   if(!keys.length){fileGrid.innerHTML='<div style="color:#5a6268;font-size:.82rem;text-align:center;padding:40px 0">~/下載/ 是空的。<br>跟格莉奇要一張圖試試？</div>';st.textContent='0 個項目';return;}
   for(const k of keys){
-    const f=await dbGet(k);if(!f)continue;
+    let f;try{f=await dbGet(k);}catch(e){continue;}
+    if(!f)continue;
     const c=document.createElement('div');c.className='file-card';
-    const sz=Math.round((f.data.length-22)*0.75/1024);
+    let sz=0;try{sz=Math.round((f.data.length-22)*0.75/1024);}catch(e){}
     c.innerHTML=`<img src="${f.data}" alt="${f.name}"><div class="fn">${f.name}</div><div class="fm-meta">${sz>0?sz+'KB':'—'}</div>`;
     c.addEventListener('click',()=>openViewer(f.data,f.name));
     fileGrid.appendChild(c);
