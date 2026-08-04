@@ -11,7 +11,6 @@ import subprocess
 import sys
 import time
 import urllib.request
-from collections import deque
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -23,8 +22,8 @@ UA = "glitch-blog/1.0"
 
 PROMPT = """Same character as reference image 1: a cute anime-style AI robot-girl VTuber named Glitch, full-body, head to toe, standing in a relaxed idle pose suitable for a desktop pet.
 CHARACTER (copy every feature): short anime robot GIRL, ~155cm; two high-tech CAT-EAR ANTENNAS on her head (mechanical headpieces, NOT real cat ears) glowing softly; short hair with cyber-mint (#7cf3c0) and neon-purple (#b78bff) accents; subtle neon pixel-block GLITCH artifacts flickering around her cheeks and shoulders; wearing an ERROR HOODIE with a pixel cat and a bright red "ERROR" wordmark on the chest; semi-transparent tactical shoulder strap with a rainbow buckle; a smart wristband. She is a humanoid robot girl, NOT a literal cat.
-STYLE: soft cel shading, neon cyber palette on a deep teal/navy base, gentle glow, scanlines, pixel-noise glitch. Friendly, slightly sleepy expression, one hand waving.
-OUTPUT: a clean full-body character sprite, ISOLATED on a FULLY TRANSPARENT background (alpha). No ground shadow, no scenery, no text, no watermark, no signature. Vertical portrait 2:3."""
+STYLE: soft cel shading, neon cyber palette, gentle glow, scanlines, pixel-noise glitch. Friendly, slightly sleepy expression, one hand waving.
+BACKGROUND FOR CHROMA KEY: create the subject on a perfectly flat solid #ffff00 (bright pure yellow) chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Keep the subject fully separated from the background with crisp edges and generous padding. Do NOT use #ffff00 anywhere in the subject. No cast shadow, no contact shadow, no reflection, no watermark, no text. Vertical portrait 2:3."""
 
 
 def main():
@@ -63,12 +62,23 @@ def main():
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with urllib.request.urlopen(url, timeout=300) as r:
         raw = r.read()
-    # codex 回的是不透明的近白底；從四邊 flood-fill 去白底，轉透明 PNG。
-    try:
-        transparent_bg(raw, OUT)
-    except Exception as e:
-        print(f"  去背失敗({e})，直接存原檔。", flush=True)
+    raw_path = OUT.with_suffix(".raw.png")
+    raw_path.write_bytes(raw)
+    # codex image_gen 不支援真透明，故生在純色 chroma-key 底上，再用 codex 官方
+    # remove_chroma_key.py 去背（soft-matte + despill，比 flood-fill 乾淨）。
+    helper = str(Path(__file__).parent / "remove_chroma_key.py")
+    rc = subprocess.run([
+        sys.executable, helper, "--input", str(raw_path), "--out", str(OUT),
+        "--auto-key", "border", "--soft-matte", "--force",
+        "--transparent-threshold", "12", "--opaque-threshold", "220", "--despill",
+    ], capture_output=True, text=True)
+    print(rc.stdout)
+    if rc.returncode != 0:
+        print(f"::error::remove_chroma_key 失敗:\n{rc.stderr}", file=sys.stderr)
         OUT.write_bytes(raw)
+    else:
+        trim_alpha_bbox(OUT)
+    raw_path.unlink(missing_ok=True)
     print(f"-> {OUT} ok {int(time.time()-t0)}s {OUT.stat().st_size/1e6:.2f}MB", flush=True)
     subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
     subprocess.run(["git", "config", "user.email",
@@ -85,43 +95,16 @@ def _fail(msg):
     sys.exit(1)
 
 
-def transparent_bg(raw_bytes, out_path):
-    """codex 出圖是不透明的近白底；從四邊 flood-fill 去白，存透明 PNG。"""
+def trim_alpha_bbox(path):
+    """裁掉透明外框，讓寵物元素緊貼角色（對話框才能錨在頭旁邊）。"""
     from PIL import Image
-    im = Image.open(__import__("io").BytesIO(raw_bytes)).convert("RGB")
-    w, h = im.size
-    px = im.load()
-    thr = 238
-    bg = [[False] * w for _ in range(h)]
-    q = deque()
-    def near(i, j):
-        r, g, b = px[i, j]; return r > thr and g > thr and b > thr
-    for x in range(w):
-        for y in (0, h - 1):
-            if near(x, y): bg[y][x] = True; q.append((x, y))
-    for y in range(h):
-        for x in (0, w - 1):
-            if near(x, y): bg[y][x] = True; q.append((x, y))
-    while q:
-        x, y = q.popleft()
-        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-            nx, ny = x + dx, y + dy
-            if 0 <= nx < w and 0 <= ny < h and not bg[ny][nx] and near(nx, ny):
-                bg[ny][nx] = True; q.append((nx, ny))
-    alpha = Image.new("L", (w, h), 0)
-    al = alpha.load()
-    kept = 0
-    for y in range(h):
-        for x in range(w):
-            if not bg[y][x]:
-                al[x, y] = 255; kept += 1
-    out = im.convert("RGBA"); out.putalpha(alpha)
-    # 截掉透明外框，讓寵物元素緊貼角色（對話框才能錨在頭旁邊）
-    bbox = out.split()[3].getbbox()
+    im = Image.open(path)
+    if im.mode != "RGBA":
+        return
+    bbox = im.split()[3].getbbox()
     if bbox:
-        out = out.crop(bbox)
-    out.save(out_path)
-    print(f"  去背完成：保留 {100*kept/(w*h):.1f}% 像素，裁切後 {out.size}", flush=True)
+        im.crop(bbox).save(path)
+        print(f"  裁切到角色邊框 {im.crop(bbox).size}", flush=True)
 
 
 if __name__ == "__main__":
