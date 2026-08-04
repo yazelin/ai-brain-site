@@ -251,13 +251,28 @@
   .vbtn:hover{background:rgba(255,255,255,.09);color:#e6f6fb}
   .vbtn .ic{width:17px;height:17px}
   .vbtn.dl{width:auto;padding:0 10px;gap:5px;display:inline-flex;align-items:center;font-size:.72rem}
-  /* 檔案 app */
-  .file-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:12px;margin-top:12px}
-  .file-card{cursor:pointer;text-align:center;padding:8px;border-radius:10px;transition:background .15s}
-  .file-card:hover{background:rgba(255,255,255,.06)}
+  /* 檔案 app — Finder/Explorer 風格 */
+  .fm-toolbar{display:flex;align-items:center;gap:4px;padding:7px 14px;border-bottom:1px solid var(--hair);font-size:.78rem;color:#9aa6ad}
+  .fm-toolbar .ic{color:#6b7278}
+  .fm-path{color:#9aa6ad}
+  .fm-path.cur{color:#e6f6fb;font-weight:600}
+  .fm-sep{color:#4a4f55}
+  .fm-main{display:flex;flex:1;min-height:0;overflow:hidden}
+  .fm-side{flex:0 0 130px;border-right:1px solid var(--hair);padding:10px 8px;overflow-y:auto}
+  .fm-side-h{font-size:.62rem;text-transform:uppercase;letter-spacing:.06em;color:#5a6268;padding:2px 8px 6px}
+  .fm-side-item{display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:6px;font-size:.76rem;color:#9aa6ad;cursor:default}
+  .fm-side-item .ic{width:15px;height:15px;color:#7e868d}
+  .fm-side-item.active{background:rgba(37,194,232,.12);color:#e6f6fb}
+  .fm-side-item.active .ic{color:var(--cy)}
+  .fm-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;margin-left:3px}
+  .fm-content{flex:1;overflow-y:auto;padding:14px}
+  .file-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:14px}
+  .file-card{cursor:pointer;text-align:center;padding:8px 6px;border-radius:10px;transition:background .15s;border:1px solid transparent}
+  .file-card:hover{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.06)}
   .file-card img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;background:#1a1d22}
-  .file-card .fn{font-size:.66rem;color:#9aa6ad;margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .file-empty{color:#5a6268;font-size:.82rem;text-align:center;padding:30px 0}
+  .file-card .fn{font-size:.65rem;color:#9aa6ad;margin-top:7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .file-card .fm-meta{font-size:.58rem;color:#5a6268;margin-top:1px}
+  .fm-status{padding:5px 14px;border-top:1px solid var(--hair);font-size:.68rem;color:#6b7278}
   #chat-log .day{align-self:center;background:rgba(0,0,0,.18);color:#fff;font-size:.62rem;padding:3px 10px;border-radius:8px;margin:4px 0}
   .in{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:7px 8px;background:#f7f7f7;border-top:1px solid rgba(0,0,0,.08)}
   .in input{flex:1;border:1px solid #cfd6da;border-radius:18px;padding:8px 12px;font-size:.84rem;outline:none;background:#fff;color:#222}
@@ -490,12 +505,28 @@
   </div>
 
   <!-- window: 檔案 -->
-  <div class="win" id="w-files" style="left:18%;top:66px;width:560px">
+  <div class="win" id="w-files" style="left:18%;top:66px;width:640px">
     <div class="tb"><span class="dot r" data-close title="關閉"></span><span class="dot y"></span><span class="dot g"></span>
       <span class="ttl"><svg class="ic" style="width:13px;height:13px;display:inline-block;vertical-align:-2px"><use href="#i-folder"/></svg> 檔案</span></div>
-    <div class="body">
-      <p class="muted" style="margin-top:0">路徑：<code>~/下載/</code> · 格莉奇傳給你的圖片會存在這裡。</p>
-      <div class="file-grid" id="file-grid"></div>
+    <div class="body" style="padding:0;display:flex;flex-direction:column">
+      <!-- toolbar: breadcrumb -->
+      <div class="fm-toolbar"><svg class="ic" style="width:14px;height:14px;color:#6b7278"><use href="#i-folder"/></svg><span class="fm-path">~</span><span class="fm-sep">›</span><span class="fm-path cur">下載</span></div>
+      <div class="fm-main">
+        <!-- sidebar -->
+        <div class="fm-side">
+          <div class="fm-side-h">位置</div>
+          <div class="fm-side-item active"><svg class="ic"><use href="#i-folder"/></svg> 下載</div>
+          <div class="fm-side-item"><svg class="ic"><use href="#i-folder"/></svg> 桌面</div>
+          <div class="fm-side-item"><svg class="ic"><use href="#i-folder"/></svg> 文件</div>
+          <div class="fm-side-h" style="margin-top:14px">標籤</div>
+          <div class="fm-side-item"><span class="fm-dot" style="background:#e06c75"></span> 格莉奇</div>
+          <div class="fm-side-item"><span class="fm-dot" style="background:#61afef"></span> 圖片</div>
+        </div>
+        <!-- file area -->
+        <div class="fm-content" id="file-grid"></div>
+      </div>
+      <!-- statusbar -->
+      <div class="fm-status" id="fm-status">0 個項目</div>
     </div>
   </div>
 
@@ -777,14 +808,17 @@ const fileGrid=document.getElementById('file-grid');
 async function openFiles(){
   open('files');
   const keys=await listFiles();fileGrid.innerHTML='';
-  if(!keys.length){fileGrid.innerHTML='<div class="file-empty">~/下載/ 是空的。跟格莉奇要一張圖試試？</div>';return;}
+  const st=document.getElementById('fm-status');
+  if(!keys.length){fileGrid.innerHTML='<div style="color:#5a6268;font-size:.82rem;text-align:center;padding:40px 0">~/下載/ 是空的。<br>跟格莉奇要一張圖試試？</div>';st.textContent='0 個項目';return;}
   for(const k of keys){
     const f=await dbGet(k);if(!f)continue;
     const c=document.createElement('div');c.className='file-card';
-    c.innerHTML=`<img src="${f.data}" alt="${f.name}"><div class="fn">${f.name}</div>`;
+    const sz=Math.round((f.data.length-22)*0.75/1024);
+    c.innerHTML=`<img src="${f.data}" alt="${f.name}"><div class="fn">${f.name}</div><div class="fm-meta">${sz>0?sz+'KB':'—'}</div>`;
     c.addEventListener('click',()=>openViewer(f.data,f.name));
     fileGrid.appendChild(c);
   }
+  st.textContent=keys.length+' 個項目';
 }
 
 /* ===== 設定 app ===== */
