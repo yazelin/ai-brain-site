@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>格莉奇OS · Glitch</title>
 <link rel="icon" href="images/a8qmb3a8qmb3a8qm.png" type="image/png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="images/icon-192.png">
+<meta name="theme-color" content="#04080c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
   :root{
     --cy:#25c2e8; --cy-d:#17a0c4; --mint:#7cf3c0; --purple:#b78bff;
@@ -143,6 +148,65 @@
   #w-chat .chat-in input:focus{border-color:var(--cy)}
   #w-chat .chat-in button{background:var(--cy);color:#06151c;border:none;border-radius:10px;padding:0 16px;font-weight:700;cursor:pointer}
   #w-chat .chat-in button:disabled{opacity:.5}
+
+  /* 設定 app */
+  #w-settings .sec{margin:18px 0}
+  #w-settings .sec>h3{margin-top:0}
+  .wall-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+  .wall-opt{cursor:pointer;border:2px solid var(--hair);border-radius:10px;overflow:hidden;background:#0a0f13;position:relative}
+  .wall-opt img,.wall-opt .ph{width:100%;aspect-ratio:16/9;object-fit:cover;display:block}
+  .wall-opt .ph{background:radial-gradient(1200px 700px at 70% 20%,#143a4d 0%,#07131a 60%) #0d2b3a}
+  .wall-opt .cap{font-size:.74rem;color:#aeb8be;text-align:center;padding:5px}
+  .wall-opt.sel{border-color:var(--cy);box-shadow:0 0 0 2px rgba(37,194,232,.3)}
+  .wall-opt.up::after{content:"上傳";position:absolute;top:4px;right:4px;background:var(--purple);color:#1a1030;font-size:.66rem;padding:1px 6px;border-radius:6px}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
+  .btn{background:#0d2b3a;border:1px solid var(--hair2);color:#e6f6fb;border-radius:9px;padding:8px 12px;font-size:.86rem;cursor:pointer}
+  .btn:hover{border-color:var(--cy)}
+  .btn.danger{border-color:rgba(255,95,87,.5);color:#ffb3ae}
+  .btn.danger:hover{background:rgba(255,95,87,.12)}
+  .mem{width:100%;min-height:90px;background:#0d2b3a;border:1px solid var(--hair);border-radius:9px;color:#e6f6fb;padding:10px;font-size:.84rem;font-family:inherit;resize:vertical}
+  .muted{color:#6b7a82;font-size:.78rem}
+  input[type=file]{color:#aeb8be;font-size:.8rem}
+
+  /* 手機框 + LINE 聊天 */
+  #w-chat{background:transparent!important;border:none!important;box-shadow:none!important;backdrop-filter:none!important;overflow:visible!important}
+  #w-chat .tb{background:rgba(4,8,12,.9)}
+  .phone{position:relative;width:360px;height:640px;margin:10px auto;background:#0b0b0b;border-radius:34px;border:9px solid #1c1f24;
+    box-shadow:0 0 0 2px #000,0 18px 50px rgba(0,0,0,.6);overflow:hidden;display:flex;flex-direction:column}
+  .phone .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:22px;background:#1c1f24;border-radius:0 0 14px 14px;z-index:5}
+  .phone .statusbar{height:26px;display:flex;align-items:center;justify-content:space-between;padding:0 18px 0 14px;
+    font-size:.62rem;color:#222;background:#b9c0c5;flex:0 0 auto}
+  .phone .statusbar .r{display:flex;gap:4px;align-items:center}
+  /* LINE 聊天室 */
+  .line{flex:1;display:flex;flex-direction:column;background:#7da3b8;min-height:0}
+  .line .lh{flex:0 0 auto;height:42px;display:flex;align-items:center;gap:8px;padding:0 10px;background:#b9c0c5;color:#222;border-bottom:1px solid rgba(0,0,0,.08)}
+  .line .lh .back{font-size:1.1rem;color:#222;cursor:pointer}
+  .line .lh .av{width:28px;height:28px;border-radius:50%;background:#25c2e8;display:grid;place-items:center;overflow:hidden;flex:0 0 auto}
+  .line .lh .av img{width:100%;height:100%;object-fit:cover}
+  .line .lh .nm{font-size:.86rem;font-weight:700;color:#222}
+  .line .lh .nm small{display:block;font-weight:400;font-size:.62rem;color:#555}
+  .line .lh .sp{flex:1}
+  .line .lh .mi{font-size:1rem;color:#222;cursor:pointer}
+  .line .body{flex:1;overflow:auto;padding:10px 8px 14px;display:flex;flex-direction:column;gap:6px;min-height:0}
+  .line .body::-webkit-scrollbar{width:5px}
+  .line .body::-webkit-scrollbar-thumb{background:rgba(0,0,0,.2);border-radius:3px}
+  .mb{display:flex;gap:6px;align-items:flex-end;max-width:100%}
+  .mb .av{width:30px;height:30px;border-radius:50%;flex:0 0 auto;align-self:flex-end;background:#25c2e8;overflow:hidden}
+  .mb .av img{width:100%;height:100%;object-fit:cover}
+  .mb.me{justify-content:flex-end}
+  .mb .bub{max-width:72%;padding:8px 11px;font-size:.84rem;line-height:1.5;border-radius:18px;white-space:pre-wrap;word-break:break-word;position:relative}
+  .mb.me .bub{background:#06c755;color:#fff;border-bottom-right-radius:6px}
+  .mb.her .bub{background:#fff;color:#222;border-bottom-left-radius:6px;box-shadow:0 1px 1px rgba(0,0,0,.12)}
+  .mb .t{font-size:.58rem;color:rgba(255,255,255,.85);align-self:flex-end;margin:0 2px}
+  .mb.her .t{color:rgba(0,0,0,.5)}
+  .mb.thinking .bub{opacity:.7;font-style:italic}
+  .line .day{align-self:center;background:rgba(0,0,0,.18);color:#fff;font-size:.62rem;padding:3px 10px;border-radius:8px;margin:4px 0}
+  .line .in{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:7px 8px;background:#f7f7f7;border-top:1px solid rgba(0,0,0,.08)}
+  .line .in input{flex:1;border:1px solid #cfd6da;border-radius:18px;padding:8px 12px;font-size:.84rem;outline:none;background:#fff;color:#222}
+  .line .in button{width:34px;height:34px;border-radius:50%;border:none;background:#06c755;color:#fff;font-size:1rem;cursor:pointer;flex:0 0 auto;display:grid;place-items:center}
+  .line .in button:disabled{opacity:.5}
+  .line .in button svg{width:18px;height:18px;fill:#fff}
+  @media(max-width:560px){.phone{width:300px;height:560px}}
 </style>
 </head>
 <body>
@@ -155,6 +219,8 @@
   <symbol id="i-github" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></symbol>
   <symbol id="i-facebook" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073"/></symbol>
   <symbol id="i-coffee" viewBox="0 0 24 24"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" x2="6" y1="2" y2="4"/><line x1="10" x2="10" y1="2" y2="4"/><line x1="14" x2="14" y1="2" y2="4"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M2 21 23 12 2 3v7l15 2-15 2z"/></symbol>
 </svg>
 <div id="desktop">
 
@@ -178,6 +244,7 @@
     <div class="icon" data-app="stickers"><div class="emo"><svg class="ic"><use href="#i-image"/></svg></div><div class="lbl">我的貼圖</div></div>
     <div class="icon" data-app="status"><div class="emo"><svg class="ic"><use href="#i-activity"/></svg></div><div class="lbl">我的狀態</div></div>
     <div class="icon" data-app="talk"><div class="emo"><svg class="ic"><use href="#i-chat"/></svg></div><div class="lbl">留言</div></div>
+    <div class="icon" data-app="settings"><div class="emo"><svg class="ic"><use href="#i-gear"/></svg></div><div class="lbl">設定</div></div>
   </div>
 
   <div id="dock">
@@ -186,6 +253,7 @@
     <div class="dapp" data-app="stickers" title="我的貼圖"><svg class="ic"><use href="#i-image"/></svg></div>
     <div class="dapp" data-app="status" title="我的狀態"><svg class="ic"><use href="#i-activity"/></svg></div>
     <div class="dapp" data-app="talk" title="留言"><svg class="ic"><use href="#i-chat"/></svg></div>
+    <div class="dapp" data-app="settings" title="設定"><svg class="ic"><use href="#i-gear"/></svg></div>
   </div>
 
   <!-- window: 關於我 -->
@@ -286,15 +354,57 @@
     <div class="bubble" id="pet-bubble">逼——嗶！點我聊天～</div>
   </div>
 
-  <!-- window: 跟格莉奇聊天 -->
-  <div class="win" id="w-chat" style="left:50%;top:74px;width:460px;margin-left:-230px">
+  <!-- window: 跟格莉奇聊天（手機框 + LINE） -->
+  <div class="win" id="w-chat" style="left:50%;top:60px;width:420px;margin-left:-210px">
     <div class="tb"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
-      <span class="ttl"><svg class="ic" style="width:13px;height:13px;display:inline-block;vertical-align:-2px"><use href="#i-chat"/></svg> 跟格莉奇聊天</span><span class="x" data-close>✕</span></div>
+      <span class="ttl"><svg class="ic" style="width:13px;height:13px;display:inline-block;vertical-align:-2px"><use href="#i-chat"/></svg> LINE · 格莉奇</span><span class="x" data-close>✕</span></div>
+    <div class="body" style="padding:0;display:flex;align-items:center;justify-content:center">
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="statusbar"><span id="ph-time">--:--</span><span class="r"><span>📶</span><span>🔋</span></span></div>
+        <div class="line">
+          <div class="lh">
+            <span class="back">‹</span>
+            <span class="av"><img src="images/sticker-01.png" alt="格莉奇"></span>
+            <span class="nm">格莉奇<small>線上 · 4KB 記憶體</small></span>
+            <span class="sp"></span><span class="mi">⋯</span>
+          </div>
+          <div class="body" id="chat-log"></div>
+          <div class="in">
+            <input id="chat-input" type="text" placeholder="輸入訊息" autocomplete="off">
+            <button id="chat-send" title="送出"><svg><use href="#i-send"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- window: 設定 -->
+  <div class="win" id="w-settings" style="left:12%;top:70px;width:520px">
+    <div class="tb"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="ttl"><svg class="ic" style="width:13px;height:13px;display:inline-block;vertical-align:-2px"><use href="#i-gear"/></svg> 設定</span><span class="x" data-close>✕</span></div>
     <div class="body">
-      <div class="chat-log" id="chat-log"></div>
-      <div class="chat-in">
-        <input id="chat-input" type="text" placeholder="跟格莉奇說點什麼…" autocomplete="off">
-        <button id="chat-send">送出</button>
+      <div class="sec">
+        <h3>桌布</h3>
+        <p class="muted">選一張桌布；上傳的圖只存在你的瀏覽器（IndexedDB），不會上傳伺服器。</p>
+        <div class="wall-grid" id="wall-grid"></div>
+        <div class="row" style="margin-top:10px">
+          <input type="file" id="wall-upload" accept="image/*">
+        </div>
+      </div>
+      <div class="sec">
+        <h3>聊天記憶</h3>
+        <p class="muted" id="mem-count">訊息數：載入中…</p>
+        <textarea class="mem" id="mem-edit" placeholder="格莉奇對你的記憶摘要（可手動編輯；留空＝她還不記得你）"></textarea>
+        <div class="row">
+          <button class="btn" id="mem-save">儲存記憶</button>
+          <button class="btn" id="mem-regen">重新摘要</button>
+          <button class="btn danger" id="chat-clear">清空聊天紀錄</button>
+        </div>
+      </div>
+      <div class="sec">
+        <h3>關於</h3>
+        <p class="muted">格莉奇OS 是 PWA：可安裝到桌面/手機，離線時仍能開機與查看聊天歷史（聊天需連網才能回覆）。</p>
       </div>
     </div>
   </div>
@@ -303,15 +413,33 @@
 </div>
 
 <script>
-// 桌布存在就套用
-const wall=new Image(); wall.onload=()=>document.getElementById('desktop').classList.add('has-wall');
-wall.src='images/wallpaper.png';
+/* ===== IndexedDB：聊天歷史、記憶摘要、桌布選擇。ponytail: 裸 IndexedDB + tiny wrapper，不裝 lib。 ===== */
+const DB='glos-db',STORE='kv';
+let dbp;
+function db(){if(!dbp)dbp=new Promise((res,rej)=>{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>r.result.createObjectStore(STORE);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});return dbp;}
+async function dbGet(k){const d=await db();return new Promise((res,rej)=>{const q=d.transaction(STORE).objectStore(STORE).get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error);});}
+async function dbSet(k,v){const d=await db();return new Promise((res,rej)=>{const q=d.transaction(STORE,'readwrite').objectStore(STORE).put(v,k);q.onsuccess=()=>res();q.onerror=()=>rej(q.error);});}
+async function dbDel(k){const d=await db();return new Promise((res,rej)=>{const q=d.transaction(STORE,'readwrite').objectStore(STORE).delete(k);q.onsuccess=()=>res();q.onerror=()=>rej(q.error);});}
 
-// 時鐘
-const clk=document.getElementById('clock');
-const tick=()=>{const d=new Date();
-  clk.textContent=d.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
-  setTimeout(tick,(60-d.getSeconds())*1000);};
+/* ===== Service Worker（PWA 兩階段載入）===== */
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
+
+/* ===== 桌布：套用使用者選的（IndexedDB blob 或預設 images/wallpaper.png）===== */
+const desktop=document.getElementById('desktop');
+async function applyWall(){
+  const choice=await dbGet('wallpaper');
+  let url='images/wallpaper.png',isUser=false;
+  if(choice==='default'){url=null;}
+  else if(choice==='upload'){const blob=await dbGet('wallpaper-blob');if(blob){url=URL.createObjectURL(blob);isUser=true;}}
+  if(url){const im=new Image();im.onload=()=>{desktop.classList.add('has-wall');desktop.style.backgroundImage=`url("${url}")`;if(!isUser)URL.revokeObjectURL&&0;};im.onerror=()=>{desktop.classList.remove('has-wall');};im.src=url;}
+  else{desktop.classList.remove('has-wall');desktop.style.backgroundImage='';}
+}
+applyWall();
+
+/* ===== 時鐘（menubar + 手機狀態列）===== */
+const clk=document.getElementById('clock'),phTime=document.getElementById('ph-time');
+const tick=()=>{const d=new Date();const s=d.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
+  clk.textContent=s;if(phTime)phTime.textContent=s;setTimeout(tick,(60-d.getSeconds())*1000);};
 tick();
 
 // 視窗管理
@@ -330,7 +458,7 @@ document.querySelectorAll('.win').forEach(w=>{
   w.addEventListener('mousedown',()=>focus(w));
 });
 function focus(w){w.style.zIndex=++z;}
-function open(app){const w=wins[app];if(!w)return;w.classList.add('open');focus(w);if(app==='talk')loadGiscus();}
+function open(app){const w=wins[app];if(!w)return;w.classList.add('open');focus(w);if(app==='talk')loadGiscus();if(app==='settings')openSettings();if(app==='chat')chatFocus();}
 let _giscusLoaded=false;
 function loadGiscus(){
   if(_giscusLoaded)return;_giscusLoaded=true;
@@ -370,33 +498,119 @@ function bubbleSay(t){bubble.textContent=t;bubble.classList.add('show');setTimeo
 setTimeout(()=>bubbleSay('逼——嗶！點我聊天～'),1800);
 setInterval(()=>bubbleSay(petLines[Math.floor(Math.random()*petLines.length)]),12000);
 
-// 聊天：經 glitch-chat worker 打 gemini-web（key 在 Worker，前端不用帶）
+/* ===== 聊天（LINE 風格、IndexedDB 持久化、記憶摘要）=====
+   history: [{role,content,ts}] 存 IndexedDB('chat')；memory 摘要存 'memory'。
+   送出時帶 memory + 最近 16 則給 worker；每 10 則呼叫 /summarize 壓成記憶。 */
 const CHAT_URL='https://glitch-chat.yazelinj303.workers.dev/chat';
+const SUM_URL='https://glitch-chat.yazelinj303.workers.dev/summarize';
+const AV='images/sticker-01.png';
 const chatLog=document.getElementById('chat-log'),chatIn=document.getElementById('chat-input'),chatBtn=document.getElementById('chat-send');
-const history=[];
-async function sendChat(text){
-  history.push({role:'user',content:text});
-  const um=document.createElement('div');um.className='msg u';um.textContent=text;chatLog.appendChild(um);
-  const tm=document.createElement('div');tm.className='msg g thinking';tm.textContent='系統讀取中…（過久）';chatLog.appendChild(tm);
-  chatLog.scrollTop=chatLog.scrollHeight;
-  chatBtn.disabled=true;
-  try{
-    const r=await fetch(CHAT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:history})});
-    const d=await r.json();
-    tm.classList.remove('thinking');
-    const reply=d.reply||('（ERROR…'+(d.error||'逼——嗶？')+'）');
-    tm.textContent=reply;
-    history.push({role:'assistant',content:reply});
-  }catch(e){tm.classList.remove('thinking');tm.textContent='逼——嗶…網路斷線了（'+e.message+'）';}
-  chatLog.scrollTop=chatLog.scrollHeight;
-  chatBtn.disabled=false;
+let history=[],memory='',chatReady=false,chatOpened=false;
+
+function lastDay(ts){return new Date(ts).toLocaleDateString('zh-TW',{month:'long',day:'numeric',weekday:'short'});}
+function hm(ts){return new Date(ts).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});}
+function renderMsg(m,showAvatar,showTime){
+  const wrap=document.createElement('div');
+  wrap.className='mb '+(m.role==='user'?'me':'her');
+  if(m.role!=='user'&&showAvatar){const a=document.createElement('div');a.className='av';a.innerHTML=`<img src="${AV}">`;wrap.appendChild(a);}
+  const b=document.createElement('div');b.className='bub';b.textContent=m.content;wrap.appendChild(b);
+  if(showTime){const t=document.createElement('span');t.className='t';t.textContent=hm(m.ts);wrap.appendChild(t);}
+  return wrap;
 }
-function doSend(){const t=chatIn.value.trim();if(!t)return;chatIn.value='';sendChat(t);}
+async function loadChat(){
+  if(chatReady)return;chatReady=true;
+  const h=await dbGet('chat');history=Array.isArray(h)?h:[];
+  memory=(await dbGet('memory'))||'';
+  if(!history.length){
+    history.push({role:'assistant',content:'逼——嗶！你好呀，我是格莉奇。想聊什麼呢？（我的記憶體只有 4KB，講太快我會當機喔～）',ts:Date.now()});
+    await dbSet('chat',history);
+  }
+  let lastDayKey='';
+  history.forEach((m,i)=>{
+    const dk=lastDay(m.ts);
+    if(dk!==lastDayKey){lastDayKey=dk;const d=document.createElement('div');d.className='day';d.textContent=dk;chatLog.appendChild(d);}
+    const prev=history[i-1],next=history[i+1];
+    const showTime=!next||lastDay(next.ts)!==lastDayKey||next.role!==m.role||m.ts-next.ts>120000;
+    chatLog.appendChild(renderMsg(m,true,showTime));
+  });
+  chatLog.scrollTop=chatLog.scrollHeight;
+}
+function chatFocus(){loadChat();setTimeout(()=>chatIn.focus(),50);}
+
+async function sendChat(text){
+  const msg={role:'user',content:text,ts:Date.now()};
+  history.push(msg);await dbSet('chat',history);
+  chatLog.appendChild(renderMsg(msg,true,true));
+  const tm=document.createElement('div');tm.className='mb her thinking';
+  tm.innerHTML=`<div class="av"><img src="${AV}"></div><div class="bub">系統讀取中…</div>`;
+  chatLog.appendChild(tm);chatLog.scrollTop=chatLog.scrollHeight;chatBtn.disabled=true;
+  const recent=history.filter(m=>m.content).slice(-16).map(({role,content})=>({role,content}));
+  try{
+    const r=await fetch(CHAT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:recent,memory})});
+    const d=await r.json();
+    tm.classList.remove('thinking');tm.querySelector('.bub').textContent=d.reply||('（ERROR…'+(d.error||'逼——嗶？')+'）');
+    history.push({role:'assistant',content:tm.querySelector('.bub').textContent,ts:Date.now()});
+    await dbSet('chat',history);
+  }catch(e){tm.classList.remove('thinking');tm.querySelector('.bub').textContent='逼——嗶…網路斷線了（'+e.message+'）';}
+  chatLog.scrollTop=chatLog.scrollHeight;chatBtn.disabled=false;
+  maybeSummarize();
+}
+// 每 10 則新訊息（user+assistant>=10 自上次摘要後）壓一次記憶
+let sinceSum=0;
+async function maybeSummarize(){
+  sinceSum+=1;
+  if(sinceSum<10)return;sinceSum=0;
+  try{
+    const prev=history.filter(m=>m.content).slice(0,-2).map(({role,content})=>({role,content}));
+    if(prev.length<4)return;
+    const r=await fetch(SUM_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:prev,prevMemory:memory})});
+    const d=await r.json();if(d.summary){memory=d.summary;await dbSet('memory',memory);}
+  }catch(e){}
+}
+function doSend(){const t=chatIn.value.trim();if(!t||chatBtn.disabled)return;chatIn.value='';sendChat(t);}
 chatBtn.addEventListener('click',doSend);
 chatIn.addEventListener('keydown',e=>{if(e.key==='Enter')doSend();});
-// 開聊天窗時若空，先打個招呼
-document.querySelector('#w-chat').addEventListener('mousedown',()=>{
-  if(!chatLog.children.length){const g=document.createElement('div');g.className='msg g';g.textContent='逼——嗶！你好呀，我是格莉奇。想聊什麼呢？（我的記憶體只有 4KB，講太快我會當機喔～）';chatLog.appendChild(g);}
+
+/* ===== 設定 app ===== */
+const wallGrid=document.getElementById('wall-grid'),wallUpload=document.getElementById('wall-upload');
+const memEdit=document.getElementById('mem-edit'),memCount=document.getElementById('mem-count');
+async function openSettings(){
+  await loadChat();
+  renderWallGrid();
+  memEdit.value=memory||'';
+  memCount.textContent='訊息數：'+history.length+' 則';
+}
+async function renderWallGrid(){
+  const choice=(await dbGet('wallpaper'))||'wallpaper';
+  const opts=[['wallpaper','格莉奇OS 桌布','images/wallpaper.png'],['default','預設漸層',null],['upload','自訂上傳',null]];
+  wallGrid.innerHTML='';
+  for(const [id,label,src] of opts){
+    const has=id==='upload'&&await dbGet('wallpaper-blob');
+    if(id==='upload'&&!has)continue;
+    const d=document.createElement('div');d.className='wall-opt'+(id==='upload'?' up':'')+(choice===id?' sel':'');
+    if(src){const im=document.createElement('img');im.src=src;im.onerror=()=>{d.querySelector('img')?.replaceWith(Object.assign(document.createElement('div'),{className:'ph'}));};d.appendChild(im);}
+    else{const ph=document.createElement('div');ph.className='ph';d.appendChild(ph);}
+    if(id==='upload'){const blob=await dbGet('wallpaper-blob');if(blob){const im=d.querySelector('img')||d.querySelector('.ph');const u=URL.createObjectURL(blob);const img=document.createElement('img');img.src=u;d.replaceChild(img,d.querySelector('img')||d.querySelector('.ph'));}}
+    const c=document.createElement('div');c.className='cap';c.textContent=label;d.appendChild(c);
+    d.onclick=async()=>{await dbSet('wallpaper',id);await applyWall();renderWallGrid();};
+    wallGrid.appendChild(d);
+  }
+}
+wallUpload.addEventListener('change',async e=>{
+  const f=e.target.files[0];if(!f)return;
+  await dbSet('wallpaper-blob',f);await dbSet('wallpaper','upload');await applyWall();renderWallGrid();
+});
+document.getElementById('mem-save').addEventListener('click',async()=>{memory=memEdit.value.trim();await dbSet('memory',memory);memCount.textContent='已儲存記憶。訊息數：'+history.length+' 則';});
+document.getElementById('mem-regen').addEventListener('click',async()=>{
+  memCount.textContent='重新摘要中…';try{
+    const r=await fetch(SUM_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:history.map(({role,content})=>({role,content})),prevMemory:memory})});
+    const d=await r.json();if(d.summary){memory=d.summary;memEdit.value=memory;await dbSet('memory',memory);memCount.textContent='已重新摘要。訊息數：'+history.length+' 則';return;}
+  }catch(e){}memCount.textContent='摘要失敗，請稍後再試。';
+});
+document.getElementById('chat-clear').addEventListener('click',async()=>{
+  if(!confirm('確定清空聊天紀錄與記憶？此動作無法復原。'))return;
+  await dbDel('chat');await dbDel('memory');history=[];memory='';chatLog.innerHTML='';memEdit.value='';memCount.textContent='已清空。訊息數：0 則';
+  chatReady=false;loadChat();
 });
 
 // 心情日記
