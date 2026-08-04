@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+"""用 codex-image-service 生格莉奇全身桌面寵物 sprite。透明背景、站姿。
+
+放在桌面右側當 desktop pet。輸出 images/pet.png（直式 1024x1536）。
+參考圖用 sticker-01 鎖角色外觀。金鑰：CODEX_IMAGE_KEY / CODEX_IMAGE_BASE_URL。
+"""
+import base64
+import json
+import os
+import subprocess
+import sys
+import time
+import urllib.request
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+REF = ROOT / "images" / "sticker-01.png"
+OUT = ROOT / "images" / "pet.png"
+BASE_URL = os.environ.get("CODEX_IMAGE_BASE_URL", "").rstrip("/")
+KEY = os.environ.get("CODEX_IMAGE_KEY", "")
+UA = "glitch-blog/1.0"
+
+PROMPT = """Same character as reference image 1: a cute anime-style AI robot-girl VTuber named Glitch, full-body, head to toe, standing in a relaxed idle pose suitable for a desktop pet.
+CHARACTER (copy every feature): short anime robot GIRL, ~155cm; two high-tech CAT-EAR ANTENNAS on her head (mechanical headpieces, NOT real cat ears) glowing softly; short hair with cyber-mint (#7cf3c0) and neon-purple (#b78bff) accents; subtle neon pixel-block GLITCH artifacts flickering around her cheeks and shoulders; wearing an ERROR HOODIE with a pixel cat and a bright red "ERROR" wordmark on the chest; semi-transparent tactical shoulder strap with a rainbow buckle; a smart wristband. She is a humanoid robot girl, NOT a literal cat.
+STYLE: soft cel shading, neon cyber palette on a deep teal/navy base, gentle glow, scanlines, pixel-noise glitch. Friendly, slightly sleepy expression, one hand waving.
+OUTPUT: a clean full-body character sprite, ISOLATED on a FULLY TRANSPARENT background (alpha). No ground shadow, no scenery, no text, no watermark, no signature. Vertical portrait 2:3."""
+
+
+def main():
+    if not BASE_URL or not KEY:
+        print("::error::缺 CODEX_IMAGE_BASE_URL 或 CODEX_IMAGE_KEY", file=sys.stderr)
+        sys.exit(1)
+    refs = [base64.b64encode(REF.read_bytes()).decode()] if REF.exists() else []
+    body = json.dumps({"prompt": PROMPT, "size": "1024x1536", "quality": "high",
+                       "count": 1, "reference_images_base64": refs}).encode()
+    req = urllib.request.Request(f"{BASE_URL}/v1/images/jobs", body,
+        {"Authorization": f"Bearer {KEY}", "Content-Type": "application/json",
+         "User-Agent": UA}, method="POST")
+    with urllib.request.urlopen(req, timeout=180) as f:
+        job = json.load(f)
+    jid = job.get("id") or _fail(f"建 job 失敗: {json.dumps(job)[:300]}")
+    print(f"job {jid} 排隊中…", flush=True)
+    auth = {"Authorization": f"Bearer {KEY}", "User-Agent": UA}
+    t0 = time.time()
+    while True:
+        time.sleep(15)
+        with urllib.request.urlopen(urllib.request.Request(
+                f"{BASE_URL}/v1/images/jobs/{jid}", headers=auth), timeout=60) as f:
+            st = json.load(f)
+        if st.get("status") in ("succeeded", "failed", "error"):
+            break
+        if time.time() - t0 > 2400:
+            _fail("出圖逾時")
+    if st.get("status") != "succeeded":
+        _fail(f"出圖失敗: {str(st.get('error'))[:200]}")
+    imgs = st.get("images") or []
+    if not imgs or not imgs[0].get("url"):
+        _fail(f"沒有 images: {json.dumps(st)[:300]}")
+    url = imgs[0]["url"]
+    if url.startswith("/"):
+        url = BASE_URL + url
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    with urllib.request.urlopen(url, timeout=300) as r:
+        OUT.write_bytes(r.read())
+    print(f"-> {OUT} ok {int(time.time()-t0)}s {OUT.stat().st_size/1e6:.2f}MB", flush=True)
+    subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
+    subprocess.run(["git", "config", "user.email",
+                    "41898282+github-actions[bot]@users.noreply.github.com"], check=True)
+    subprocess.run(["git", "add", str(OUT)], check=True)
+    if subprocess.run(["git", "diff", "--cached", "--quiet"]).returncode != 0:
+        subprocess.run(["git", "commit", "-m", "pet: 格莉奇全身桌面寵物 sprite"], check=True)
+        subprocess.run(["git", "push"], check=True)
+        print("已 commit & push。", flush=True)
+
+
+def _fail(msg):
+    print(f"::error::{msg}", file=sys.stderr)
+    sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
