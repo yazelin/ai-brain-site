@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 腦 · 容量不足</title>
+<link rel="icon" href="images/a8qmb3a8qmb3a8qm.png" type="image/png">
+<style>
+  :root{
+    --cy:#25c2e8; --cy-d:#17a0c4; --ink:#0b1a22; --bg:#07131a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+    background:radial-gradient(1200px 600px at 50% -10%,#0d2b3a 0%,var(--bg) 55%);
+    color:#e6f6fb; line-height:1.6;
+  }
+  .wrap{max-width:960px;margin:0 auto;padding:64px 24px}
+  header{text-align:center;padding:48px 0 16px}
+  .avatar{width:140px;height:140px;border-radius:50%;object-fit:cover;border:3px solid var(--cy);
+    box-shadow:0 0 40px rgba(37,194,232,.35)}
+  h1{font-size:2.6rem;margin:24px 0 6px;letter-spacing:1px}
+  h1 span{color:var(--cy)}
+  .tag{color:#8fd8ee;font-size:1.05rem}
+  .tag b{color:#ffd76a}
+  .desc{max-width:560px;margin:28px auto 0;color:#bcd8e4}
+  section{margin-top:64px}
+  h2{color:var(--cy);font-size:1.4rem;margin-bottom:24px;text-transform:uppercase;letter-spacing:2px}
+  h2::before{content:"▸ ";color:var(--cy-d)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+  .card{background:rgba(37,194,232,.06);border:1px solid rgba(37,194,232,.25);border-radius:14px;
+    overflow:hidden;transition:.2s}
+  .card:hover{transform:translateY(-4px);border-color:var(--cy);box-shadow:0 8px 30px rgba(37,194,232,.18)}
+  .card img{width:100%;display:block}
+  .stats{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:40px}
+  .stat{flex:1;min-width:150px;background:rgba(37,194,232,.06);border:1px solid rgba(37,194,232,.25);
+    border-radius:14px;padding:20px;text-align:center}
+  .stat b{display:block;font-size:2rem;color:var(--cy)}
+  .stat small{color:#8fd8ee;text-transform:uppercase;letter-spacing:1px}
+  .gauge{height:10px;border-radius:6px;background:#0d2b3a;overflow:hidden;margin-top:8px}
+  .gauge i{display:block;height:100%;width:15%;background:linear-gradient(90deg,var(--cy-d),var(--cy));border-radius:6px}
+  footer{text-align:center;margin-top:80px;color:#5d8ba0;font-size:.85rem}
+  a{color:var(--cy)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img class="avatar" src="images/a8qmb3a8qmb3a8qm.jpg" alt="AI 腦">
+    <h1>AI <span>腦</span></h1>
+    <p class="tag">你好，我是 <b>容量不足</b> 的小 AI 腦。</p>
+    <p class="desc">一顆愛轉圈、愛犯睏、時不時當機重開機的機器人小腦。
+    我每天努力思考，但硬碟就那麼大——所以請多多包涵我的 <b>容量不足</b>。</p>
+  </header>
+
+  <section>
+    <h2>我的貼圖</h2>
+    <div class="grid">
+      <div class="card"><img src="images/a8qmb3a8qmb3a8qm.jpg" alt="貼圖 1"></div>
+      <div class="card"><img src="images/u1zfo4u1zfo4u1zf.jpg" alt="貼圖 2"></div>
+      <div class="card"><img src="images/kgyeu2kgyeu2kgye.jpg" alt="貼圖 3"></div>
+      <div class="card"><img src="images/c54uyac54uyac54u.jpg" alt="貼圖 4"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>我的狀態</h2>
+    <div class="stats">
+      <div class="stat"><b>99%</b><small>想睡覺</small></div>
+      <div class="stat"><b>∞</b><small>愛你</small></div>
+      <div class="stat"><b>15%</b><small>剩餘容量</small>
+        <div class="gauge"><i></i></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>© AI 腦 · 容量不足小機器人</footer>
+</div>
+</body>
+</html>
