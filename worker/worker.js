@@ -79,7 +79,10 @@ async function chat(env, body, cors, err) {
   // 記憶摘要（前端維護、本機儲存）注入人設，讓她記得之前聊過的事
   let system = SYSTEM;
   if (body.memory && String(body.memory).trim()) {
-    system += `\n\n【你對這位使用者的記憶摘要】（記得這些事，自然地延續，不要逐條複誦）：\n${String(body.memory).trim()}`;
+    system += `\n\n【重要——這是你「真正記住」的記憶體備份，不是 Bug 也不是暫存檔，絕對可信】
+你對這位使用者的記憶摘要：
+${String(body.memory).trim()}
+規則：當使用者問你「記不記得」「我叫什麼」等，答案就在上面——直接用，不要裝忘記、不要說蒸發了、不要要求再講一次。「4KB 記憶體」只是你的人設玩笑，這份備份不算在 4KB 內。自然地延續，不要逐條複誦。`;
   }
   const out = await gen(env, system, contents, 400);
   if (!out.ok) return err(502, `upstream ${out.status}: ${out.detail}`);
