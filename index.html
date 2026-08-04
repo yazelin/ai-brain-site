@@ -109,8 +109,8 @@
   .card{background:rgba(255,255,255,.025);border:1px solid var(--hair);border-radius:11px;overflow:hidden;transition:.2s}
   .card:hover{transform:translateY(-3px);border-color:var(--hair2)}
   .card img{width:100%;display:block;min-height:120px;object-fit:contain;
-    background-color:#0d2b3a;
-    background-image:linear-gradient(45deg,#1a2a33 25%,transparent 25%),linear-gradient(-45deg,#1a2a33 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#1a2a33 75%),linear-gradient(-45deg,transparent 75%,#1a2a33 75%);
+    background-color:#fff;
+    background-image:linear-gradient(45deg,#c9c9c9 25%,transparent 25%),linear-gradient(-45deg,#c9c9c9 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#c9c9c9 75%),linear-gradient(-45deg,transparent 75%,#c9c9c9 75%);
     background-size:20px 20px;background-position:0 0,0 10px,10px -10px,-10px 0}
   .card .cap{padding:8px;font-size:.82rem;color:#aeb8be;text-align:center}
   .post{background:rgba(255,255,255,.02);border:1px solid var(--hair);border-radius:11px;padding:16px 18px;margin-bottom:14px}
@@ -175,7 +175,8 @@
 
   /* 手機框 + LINE 聊天 */
   #w-chat{background:transparent!important;border:none!important;box-shadow:none!important;backdrop-filter:none!important;overflow:visible!important}
-  #w-chat .body{overflow:visible!important;padding:40px 30px}
+  /* 只針對視窗外層 body 放掉 overflow 讓手機陰影不被切；不可套到內層 #chat-log（會讓訊息溢出蓋住輸入列）*/
+  #w-chat > .body{overflow:visible!important;padding:40px 30px}
   /* 無外框：hover 才出現右上叉；整支手機可按住拖曳 */
   .ph-x{position:absolute;top:6px;right:6px;z-index:9;width:26px;height:26px;border-radius:50%;
     border:none;background:rgba(0,0,0,.55);color:#fff;font-size:.8rem;line-height:1;cursor:pointer;
