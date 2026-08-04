@@ -52,9 +52,13 @@ PICK_PROMPT = (
     "something you'd misunderstand cutely, get excited about, or glitch over. "
     "You MAY weave in a fan comment if one feels relevant. "
     "Then write the inspiration note and a concrete scene idea.\n\n"
-    'Output JSON: {"inspiration": "你選中的那則新聞摘要（原樣複製）", '
+    "Your LINE stickers (pick 1-2 that match the mood of the scene):\n"
+    "1=欸？搞錯了嗎？ 2=今天也超開心！ 3=大家加油喵！ 4=這個太難了吧... "
+    "5=我沒有卡住！ 6=要吃好吃的喔 7=先去睡個覺... 8=這樣也可以！？ 9=謝謝大家的禮物！\n\n"
+    'Output JSON: {{"inspiration": "你選中的那則新聞摘要（原樣複製）", '
     '"angle": "格莉奇會怎麼看待這則新聞（繁體中文，1-2句）", '
-    '"scene": "若要畫一張插畫，格莉奇在什麼場景做什麼動作（繁體中文，1-2句，具體）"}'
+    '"scene": "若要畫一張插畫，格莉奇在什麼場景做什麼動作（繁體中文，1-2句，具體）", '
+    '"stickers": [1, 2]}}'
 )
 
 TEXT_PROMPT = (
@@ -65,7 +69,7 @@ TEXT_PROMPT = (
     "寫一篇今天的日記（繁體中文，第一人稱，3-6 句，分段用 \\n\\n）。"
     "可以順便回應粉絲留言，但不要硬塞。"
     "結尾可以加一句你的口頭禪。\n\n"
-    'Output JSON: {"title": "標題，繁體中文，6-15字", "body": "日記正文，可含\\n\\n分段"}'
+    'Output JSON: {{"title": "標題，繁體中文，6-15字", "body": "日記正文，可含\\n\\n分段"}}'
 )
 
 IMAGE_PROMPT_TPL = (
@@ -82,7 +86,7 @@ CAPTION_PROMPT = (
     "你剛畫了一張插畫，場景是：{scene}\n"
     "靈感來自這則新聞：{inspiration}\n\n"
     "給這張插畫寫一段圖說／短日記（繁體中文，第一人稱，2-4 句）。\n\n"
-    'Output JSON: {"title": "標題，繁體中文，6-15字", "body": "圖說正文，可含\\n\\n分段"}'
+    'Output JSON: {{"title": "標題，繁體中文，6-15字", "body": "圖說正文，可含\\n\\n分段"}}'
 )
 
 
@@ -204,8 +208,14 @@ def pick_inspiration(news, comments=None):
         inspiration = news[0]
     angle = data.get("angle", "")
     scene = data.get("scene", "格莉奇坐在螢幕前，天線亂動，畫面出現像素 glitch 方塊。")
+    stickers = data.get("stickers", [])
+    if isinstance(stickers, list):
+        stickers = [s for s in stickers if isinstance(s, int) and 1 <= s <= 9][:2]
+    else:
+        stickers = []
     print(f"  靈感: {inspiration[:80]}", flush=True)
-    return inspiration, angle, scene
+    print(f"  貼圖: {stickers}", flush=True)
+    return inspiration, angle, scene, stickers
 
 
 def gen_text_post(inspiration, angle, comments=None):
@@ -218,13 +228,15 @@ def gen_text_post(inspiration, angle, comments=None):
     return {"type": "text", "title": data["title"], "body": data["body"]}
 
 
-def gen_image_post(inspiration, scene):
+def gen_image_post(inspiration, scene, stickers=None):
     print("Stage 3b: 畫插畫…", flush=True)
     prompt = IMAGE_PROMPT_TPL.format(scene=scene)
     img_path = generate_image(prompt)
     if not img_path:
         print("  出圖失敗，退回文字日記。", flush=True)
         return None
+    if stickers:
+        stamp_image(img_path, stickers)
     cap = parse_json(
         ask("gemini-2.5-flash", CAPTION_PROMPT.format(scene=scene, inspiration=inspiration)),
         ["title", "body"])
@@ -282,6 +294,33 @@ def _image_bytes(payload):
     return None
 
 
+def stamp_image(img_path, stickers):
+    """把選中的貼圖當簽名章貼到生成圖右下角。PIL 合成，保證一定出現。"""
+    try:
+        from PIL import Image
+    except ImportError:
+        print("  沒裝 Pillow，跳過貼圖印章。", flush=True)
+        return
+    abs_path = ROOT / img_path
+    base = Image.open(abs_path).convert("RGBA")
+    bw, bh = base.size
+    margin = max(12, bw // 30)
+    x_cursor = bw - margin
+    for num in stickers:
+        sp = ROOT / "images" / f"sticker-0{num}.png"
+        if not sp.exists():
+            continue
+        st = Image.open(sp).convert("RGBA")
+        sw = int(bw * 0.18)
+        sh = int(st.size[1] * sw / st.size[0])
+        st = st.resize((sw, sh), Image.LANCZOS)
+        y = bh - sh - margin
+        base.alpha_composite(st, (x_cursor - sw, y))
+        x_cursor -= sw + 6
+    base.convert("RGB").save(abs_path, "PNG")
+    print(f"  貼上 {len(stickers)} 張貼圖簽名", flush=True)
+
+
 # ── main ─────────────────────────────────────────────────────────────────────
 def main():
     IMG_DIR.mkdir(parents=True, exist_ok=True)
@@ -293,7 +332,7 @@ def main():
         print(f"  抓到 {len(comments)} 則 Giscus 留言", flush=True)
     else:
         print("  Giscus 還沒有留言（正常，giscus 要等第一則才建 discussion）", flush=True)
-    inspiration, angle, scene = pick_inspiration(news, comments)
+    inspiration, angle, scene, stickers = pick_inspiration(news, comments)
 
     # 交替：日期奇數畫圖、偶數寫字（避免每天都同一種）。
     day = int(datetime.now(TZ).strftime("%Y%m%d"))
@@ -301,7 +340,7 @@ def main():
 
     post = None
     if want_image:
-        post = gen_image_post(inspiration, scene)
+        post = gen_image_post(inspiration, scene, stickers)
     if post is None:
         post = gen_text_post(inspiration, angle, comments)
 

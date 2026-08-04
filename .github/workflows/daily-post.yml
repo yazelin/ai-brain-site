@@ -23,7 +23,7 @@ jobs:
           python-version: '3.12'
 
       - name: 裝相依
-        run: pip install --quiet google-genai
+        run: pip install --quiet google-genai Pillow
 
       - name: 確認金鑰
         env:
@@ -39,4 +39,5 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_WEB_BASE_URL: ${{ secrets.GEMINI_WEB_BASE_URL }}
           GEMINI_IMAGE_MODEL: ${{ vars.GEMINI_IMAGE_MODEL }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python scripts/generate_post.py
