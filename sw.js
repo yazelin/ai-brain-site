@@ -4,9 +4,9 @@
    聊天歷史與桌布選擇存在 IndexedDB（前端管理），不在這裡處理。 */
 
 const SHELL = ['./', './index.html', './manifest.webmanifest', './posts.json',
-  'images/icon-192.png', 'images/icon-512.png'];
+  'images/icon-192.png', 'images/icon-512.png', 'images/glitch-logo.svg'];
 const ASSET_RE = /^images\/|posts\.json$/;
-const V = 'glos-v1';
+const V = 'glos-v2';
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(V).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
