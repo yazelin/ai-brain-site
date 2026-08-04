@@ -794,12 +794,12 @@ function openViewer(dataUrl,name){
   viewerTtl.textContent='看圖'+(name?' · '+name:'');viewerDl.href=dataUrl;viewerDl.download=name||'glitch.png';
   open('viewer');viewerStage.style.cursor='zoom-in';
 }
-viewerStage.addEventListener('click',e=>{if(e.target===viewerImg){vScale=vScale>=3?1:vScale*1.6;viewerApply();viewerStage.style.cursor=vScale>1?'grab':'zoom-in';}});
+viewerStage.addEventListener('click',e=>{if(dragMoved)return;if(e.target===viewerImg){vScale=vScale>=3?1:vScale*1.6;viewerApply();viewerStage.style.cursor=vScale>1?'grab':'zoom-in';}});
 viewerStage.addEventListener('wheel',e=>{e.preventDefault();const d=e.deltaY>0?0.85:1.18;vScale=Math.max(0.5,Math.min(5,vScale*d));if(vScale<=1){vX=0;vY=0;}viewerApply();},{passive:false});
 // 拖曳平移（縮放時）
-let panSX=0,panSY=0,panOX=0,panOY=0,panning=false;
-viewerStage.addEventListener('mousedown',e=>{if(vScale<=1||e.target!==viewerImg)return;panning=true;panSX=e.clientX;panSY=e.clientY;panOX=vX;panOY=vY;viewerStage.style.cursor='grabbing';e.preventDefault();});
-document.addEventListener('mousemove',e=>{if(!panning)return;vX=panOX+e.clientX-panSX;vY=panOY+e.clientY-panSY;viewerApply();});
+let panSX=0,panSY=0,panOX=0,panOY=0,panning=false,dragMoved=false;
+viewerStage.addEventListener('mousedown',e=>{if(vScale<=1||e.target!==viewerImg)return;panning=true;dragMoved=false;panSX=e.clientX;panSY=e.clientY;panOX=vX;panOY=vY;viewerStage.style.cursor='grabbing';e.preventDefault();});
+document.addEventListener('mousemove',e=>{if(!panning)return;dragMoved=true;vX=panOX+e.clientX-panSX;vY=panOY+e.clientY-panSY;viewerApply();});
 document.addEventListener('mouseup',()=>{if(panning){panning=false;viewerStage.style.cursor=vScale>1?'grab':'zoom-in';}});
 document.getElementById('viewer-zoom-in').addEventListener('click',()=>{vScale=Math.min(5,vScale*1.3);viewerApply();viewerStage.style.cursor=vScale>1?'grab':'zoom-in';});
 document.getElementById('viewer-zoom-out').addEventListener('click',()=>{vScale=Math.max(0.5,vScale/1.3);if(vScale<=1){vX=0;vY=0;}viewerApply();viewerStage.style.cursor=vScale>1?'grab':'zoom-in';});
