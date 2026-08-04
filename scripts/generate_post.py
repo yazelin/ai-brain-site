@@ -339,9 +339,10 @@ def main():
         print("  Giscus 還沒有留言（正常，giscus 要等第一則才建 discussion）", flush=True)
     inspiration, angle, scene, stickers, comment_source = pick_inspiration(news, comments)
 
-    # 交替：日期奇數畫圖、偶數寫字（避免每天都同一種）。
+    # 交替：日期奇數畫圖、偶數寫字（避免每天都同一種）。FORCE_IMAGE 可覆寫。
+    import os
     day = int(datetime.now(TZ).strftime("%Y%m%d"))
-    want_image = (day % 2 == 1)
+    want_image = os.getenv("FORCE_IMAGE") == "1" or (day % 2 == 1)
 
     post = None
     if want_image:
