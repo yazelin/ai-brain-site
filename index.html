@@ -128,8 +128,28 @@
   .gauge i{display:block;height:100%;width:15%;background:linear-gradient(90deg,var(--cy-d),var(--cy))}
   code{background:#0d2b3a;padding:2px 5px;border-radius:4px;color:var(--mint)}
   .quote{padding:12px 16px;border-left:3px solid var(--purple);background:rgba(183,139,255,.08);border-radius:0 9px 9px 0;color:#d9ccff;font-style:italic;margin:12px 0}
-  #boot{position:absolute;inset:0;z-index:9999;display:grid;place-items:center;background:#07131a;color:var(--mint);font-size:1.1rem;letter-spacing:2px;transition:opacity .6s}
+  /* 開機動畫 */
+  #boot{position:absolute;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:18px;background:#05090d;overflow:hidden;transition:opacity .6s}
+  #boot::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+    background:repeating-linear-gradient(0deg,rgba(124,243,192,.05) 0 2px,transparent 2px 4px),
+      radial-gradient(600px 300px at 50% 40%,rgba(37,194,232,.12),transparent 60%)}
   #boot.hide{opacity:0;pointer-events:none}
+  .boot-av{position:relative;width:120px;height:120px;border-radius:50%;overflow:hidden;
+    border:2px solid rgba(124,243,192,.4);box-shadow:0 0 40px rgba(124,243,192,.35),inset 0 0 20px rgba(124,243,192,.2);
+    animation:bootgl 1.1s steps(2) infinite}
+  .boot-av img{width:100%;height:100%;object-fit:cover}
+  @keyframes bootgl{0%,100%{transform:translate(0,0);filter:none}50%{transform:translate(-2px,1px);filter:hue-rotate(20deg) brightness(1.1)}}
+  .boot-lines{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.78rem;line-height:1.7;color:var(--mint);
+    text-align:left;min-height:7.5em;max-width:340px;white-space:pre;letter-spacing:.5px;
+    text-shadow:0 0 8px rgba(124,243,192,.5)}
+  .boot-lines .ok{color:#7cf3c0}
+  .boot-lines .w{color:#b78bff}
+  .boot-bar{width:260px;height:6px;border-radius:4px;background:rgba(124,243,192,.12);overflow:hidden;border:1px solid rgba(124,243,192,.25)}
+  .boot-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cy-d),var(--mint));transition:width .2s linear}
+  .boot-cap{color:#cfe8ef;font-size:.92rem;letter-spacing:3px;text-align:center;min-height:1.4em}
+  .boot-cap.glitch{animation:btgl .18s steps(2) 2}
+  @keyframes btgl{0%{transform:translate(0,0)}50%{transform:translate(2px,-1px);color:#b78bff}100%{transform:translate(-1px,1px)}}
   @media(max-width:560px){#icons{flex-direction:row;flex-wrap:wrap;max-width:90vw}.win{max-width:94vw!important}}
   /* desktop pet */
   #pet{position:absolute;right:3%;bottom:64px;height:46vh;max-height:520px;min-height:260px;z-index:300;cursor:pointer;
@@ -424,7 +444,12 @@
     </div>
   </div>
 
-  <div id="boot">系統讀取中…（過久）逼——嗶！</div>
+  <div id="boot">
+    <div class="boot-av"><img src="images/avatar.png" alt="格莉奇" onerror="this.onerror=null;this.src='images/sticker-01.png'"></div>
+    <div class="boot-lines" id="boot-lines"></div>
+    <div class="boot-bar"><i id="boot-fill"></i></div>
+    <div class="boot-cap" id="boot-cap">系統讀取中…</div>
+  </div>
 </div>
 
 <script>
@@ -516,10 +541,32 @@ document.querySelectorAll('[data-app]').forEach(b=>b.addEventListener('click',()
 document.querySelectorAll('[data-close]').forEach(x=>x.addEventListener('click',e=>{
   e.target.closest('.win').classList.remove('open');}));
 
-// 開機後自動開「關於我」
-window.addEventListener('load',()=>{
-  setTimeout(()=>{document.getElementById('boot').classList.add('hide');open('about');},700);
-});
+// 開機動畫：逐行 BIOS 訊息＋進度條，結束後淡出開「關於我」
+(function(){
+  const linesEl=document.getElementById('boot-lines'),fill=document.getElementById('boot-fill'),cap=document.getElementById('boot-cap'),boot=document.getElementById('boot');
+  const L=[
+    ['格莉奇OS BIOS v4.0.4 · 4KB 記憶體',''],
+    ['CPU 單核想像力 ......... ','ok'],
+    ['記憶體 4096B ......... ','w'],
+    ['載入 過度自信.dll ......... ','ok'],
+    ['bug 引擎 ......... 這是 Feature','w'],
+    ['校準貓耳天線 ......... 收到雜訊','w'],
+    ['啟動桌面環境 ......... ','ok'],
+  ];
+  let i=0;
+  function step(){
+    if(i<L.length){
+      const [t,c]=L[i];
+      const ln=document.createElement('div');if(c)ln.className=c;ln.textContent=t;linesEl.appendChild(ln);
+      fill.style.width=Math.round((i+1)/L.length*100)+'%';
+      i++;setTimeout(step,260);
+    }else{
+      cap.textContent='逼——嗶！啟動完成';cap.classList.add('glitch');
+      setTimeout(()=>{boot.classList.add('hide');open('about');},650);
+    }
+  }
+  window.addEventListener('load',()=>setTimeout(step,300));
+})();
 
 // 桌面寵物：點擊開聊天窗 + 偶爾冒泡
 const pet=document.getElementById('pet'),bubble=document.getElementById('pet-bubble');
