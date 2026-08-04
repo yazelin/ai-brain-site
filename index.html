@@ -156,7 +156,7 @@
   @keyframes btgl{0%{transform:translate(0,0)}50%{transform:translate(2px,-1px);color:#b78bff}100%{transform:translate(-1px,1px)}}
   @media(max-width:560px){#icons{flex-direction:row;flex-wrap:wrap;max-width:90vw}.win{max-width:94vw!important}}
   /* desktop pet */
-  #pet{position:absolute;right:3%;bottom:64px;height:46vh;max-height:520px;min-height:260px;z-index:300;cursor:pointer;
+  #pet{position:absolute;right:3%;bottom:64px;height:46vh;max-height:520px;min-height:260px;z-index:9998;cursor:pointer;
     filter:drop-shadow(0 12px 24px rgba(0,0,0,.55)); transition:transform .15s}
   #pet:hover{transform:scale(1.04)}
   #pet.bob{animation:petbob 3.2s ease-in-out infinite}
@@ -474,6 +474,12 @@
         <div class="row" style="margin-top:10px">
           <input type="file" id="wall-upload" accept="image/*">
         </div>
+      </div>
+      <div class="sec">
+        <h3>桌寵</h3>
+        <label class="row" style="gap:8px;align-items:center;cursor:pointer">
+          <input type="checkbox" id="pet-top" checked> <span class="muted" style="margin:0">格莉奇永遠顯示在最上層</span>
+        </label>
       </div>
       <div class="sec">
         <h3>聊天記憶</h3>
@@ -842,7 +848,12 @@ async function openSettings(){
   renderWallGrid();
   memEdit.value=memory||'';
   memCount.textContent='訊息數：'+history.length+' 則';
+  const top=await dbGet('pet-top');petTop.checked=top!==false;applyPetTop();
 }
+function applyPetTop(){pet.style.zIndex=petTop.checked?9998:150;}
+const petTop=document.getElementById('pet-top');
+petTop.addEventListener('change',async()=>{await dbSet('pet-top',petTop.checked);applyPetTop();});
+(async()=>{const t=await dbGet('pet-top');if(t===false){petTop.checked=false;applyPetTop();}})();
 async function renderWallGrid(){
   const choice=(await dbGet('wallpaper'))||'wallpaper';
   const opts=[['wallpaper','格莉奇OS 桌布','images/wallpaper.png'],['default','預設漸層',null],['upload','自訂上傳',null]];
