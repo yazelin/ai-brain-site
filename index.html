@@ -196,6 +196,9 @@
   .btn.danger{border-color:rgba(255,95,87,.5);color:#ffb3ae}
   .btn.danger:hover{background:rgba(255,95,87,.12)}
   .mem{width:100%;min-height:90px;background:#0d2b3a;border:1px solid var(--hair);border-radius:9px;color:#e6f6fb;padding:10px;font-size:.84rem;font-family:inherit;resize:vertical}
+  .storage-bar{height:6px;border-radius:3px;background:#1a1d22;overflow:hidden;margin-top:8px}
+  .storage-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cy),var(--mint));border-radius:3px;transition:width .4s ease}
+  .filepick{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
   .muted{color:#6b7a82;font-size:.78rem}
   input[type=file]{color:#aeb8be;font-size:.8rem}
 
@@ -472,7 +475,8 @@
         <p class="muted">選一張桌布；上傳的圖只存在你的瀏覽器（IndexedDB），不會上傳伺服器。</p>
         <div class="wall-grid" id="wall-grid"></div>
         <div class="row" style="margin-top:10px">
-          <input type="file" id="wall-upload" accept="image/*">
+          <label class="btn filepick" for="wall-upload"><svg class="ic" style="width:14px;height:14px;display:inline-block;vertical-align:-2px"><use href="#i-image"/></svg> 選擇圖片</label>
+          <input type="file" id="wall-upload" accept="image/*" hidden>
         </div>
       </div>
       <div class="sec">
@@ -490,6 +494,11 @@
           <button class="btn" id="mem-regen">重新摘要</button>
           <button class="btn danger" id="chat-clear">清空聊天紀錄</button>
         </div>
+      </div>
+      <div class="sec">
+        <h3>儲存空間</h3>
+        <p class="muted" id="storage-info">計算中…</p>
+        <div class="storage-bar"><i id="storage-fill"></i></div>
       </div>
       <div class="sec">
         <h3>關於</h3>
@@ -849,6 +858,18 @@ async function openSettings(){
   memEdit.value=memory||'';
   memCount.textContent='訊息數：'+history.length+' 則';
   const top=await dbGet('pet-top');petTop.checked=top!==false;applyPetTop();
+  updateStorage();
+}
+async function updateStorage(){
+  const el=document.getElementById('storage-info'),bar=document.getElementById('storage-fill');
+  if(!navigator.storage?.estimate){el.textContent='此瀏覽器不支援儲存估算。';return;}
+  try{
+    const {usage=0,quota=0}=await navigator.storage.estimate();
+    const uKB=usage/1024,qKB=quota/1024;
+    const fmt=v=>v>=1048576?(v/1048576).toFixed(1)+' MB':v>=1024?(v/1024).toFixed(0)+' KB':v.toFixed(0)+' B';
+    el.textContent=`已使用 ${fmt(usage)} / ${fmt(quota)}（${quota?((usage/quota*100).toFixed(2)):0}%）`;
+    bar.style.width=Math.min(100,usage/quota*100||0)+'%';
+  }catch(e){el.textContent='無法讀取儲存資訊。';}
 }
 function applyPetTop(){pet.style.zIndex=petTop.checked?9998:150;}
 const petTop=document.getElementById('pet-top');
