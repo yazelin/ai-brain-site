@@ -1,0 +1,12 @@
+name = "glitch-chat"
+main = "worker.js"
+compatibility_date = "2026-08-01"
+
+# 非機密設定走 vars
+[vars]
+GEMINI_WEB_BASE_URL = "https://ching-tech.ddns.net/gemini-web"
+MODEL = "gemini-2.5-flash"
+# 允許呼叫的網站 origin（逗號分隔）；部署後把 GitHub Pages 網址加進來
+ALLOWED_ORIGINS = "https://yazelin.github.io,http://localhost:*,https://localhost:*"
+
+# GEMINI_API_KEY 用 wrangler secret put 注入，不寫在這裡
