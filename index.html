@@ -120,6 +120,18 @@
     background-size:20px 20px;background-position:0 0,0 10px,10px -10px,-10px 0}
   .card .cap{padding:8px;font-size:.82rem;color:#aeb8be;text-align:center}
   .post{background:rgba(255,255,255,.02);border:1px solid var(--hair);border-radius:11px;padding:16px 18px;margin-bottom:14px}
+  .post time{display:inline-block;font-size:.66rem;color:var(--cy);background:rgba(37,194,232,.1);padding:2px 8px;border-radius:6px;margin-bottom:8px}
+  .post img.illust{width:100%;border-radius:9px;margin:10px 0;display:block;background:#0a0f13;cursor:pointer}
+  .post .insp{color:#6b7a82;font-size:.76rem;margin-top:8px;font-style:italic}
+  .post .ptype{float:right;font-size:.58rem;color:#6b7a82;border:1px solid var(--hair);padding:1px 6px;border-radius:5px}
+  /* diary toolbar */
+  .diary-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 16px;border-bottom:1px solid var(--hair);flex:0 0 auto}
+  .diary-tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .dtab{border:1px solid transparent;background:transparent;color:#8a949c;font-size:.74rem;padding:3px 10px;border-radius:6px;cursor:pointer;transition:all .15s}
+  .dtab:hover{color:#cdd6db;background:rgba(255,255,255,.04)}
+  .dtab.active{background:rgba(37,194,232,.12);color:var(--cy);border-color:rgba(37,194,232,.25)}
+  .diary-filter{display:flex;gap:4px;flex:0 0 auto}
+  .diary-list{overflow-y:auto;padding:16px;flex:1;min-height:0}
   .post time{color:#6b7a82;font-size:.78rem;letter-spacing:1px}
   .post h3{margin-top:4px}
   .post img.illust{width:100%;border-radius:9px;margin:10px 0;display:block;background:#0a0f13}
@@ -388,10 +400,20 @@
   </div>
 
   <!-- window: 心情日記 -->
-  <div class="win" id="w-diary" style="left:24%;top:74px;width:560px">
+  <div class="win" id="w-diary" style="left:24%;top:74px;width:580px">
     <div class="tb"><span class="dot r" data-close title="關閉"></span><span class="dot y"></span><span class="dot g"></span>
       <span class="ttl">心情日記</span></div>
-    <div class="body"><div id="posts"><p style="color:#5d8ba0">系統讀取中…（過久）</p></div></div>
+    <div class="body" style="padding:0;display:flex;flex-direction:column">
+      <div class="diary-bar">
+        <div class="diary-tabs" id="diary-tabs"></div>
+        <div class="diary-filter" id="diary-filter">
+          <button class="dtab active" data-filter="all">全部</button>
+          <button class="dtab" data-filter="text">文字</button>
+          <button class="dtab" data-filter="image">插畫</button>
+        </div>
+      </div>
+      <div class="diary-list" id="posts"><p style="color:#5d8ba0">系統讀取中…（過久）</p></div>
+    </div>
   </div>
 
   <!-- window: 我的貼圖 -->
@@ -920,12 +942,25 @@ document.getElementById('chat-clear').addEventListener('click',async()=>{
     const r=await fetch('posts.json',{cache:'no-store'});
     const posts=await r.json();
     if(!posts.length){el.innerHTML='<p style="color:#5d8ba0">（暫存檔是空的……逼——嗶？）</p>';return;}
-    el.innerHTML=posts.slice().reverse().map(p=>{
-      const body=p.body.split(/\n\n+/).map(t=>`<p>${t.replace(/\n/g,'<br>')}</p>`).join('');
-      const img=p.image?`<img class="illust" src="${p.image}" alt="${p.title||''}">`:'';
-      const insp=p.inspiration?`<p class="insp">靈感來源：${p.inspiration}</p>`:'';
-      return `<article class="post"><time>${p.date}</time><h3>${p.title||''}</h3>${img}${body}${insp}</article>`;
-    }).join('');
+    const sorted=posts.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    const months=[...new Set(sorted.map(p=>(p.date||'').slice(0,7)))];
+    const tabsEl=document.getElementById('diary-tabs');
+    let curMonth='all',curFilter='all';
+    tabsEl.innerHTML='<button class="dtab active" data-month="all">全部</button>'+months.map(m=>`<button class="dtab" data-month="${m}">${m.replace('-','年')}月</button>`).join('');
+    tabsEl.addEventListener('click',e=>{const b=e.target.closest('.dtab');if(!b)return;tabsEl.querySelectorAll('.dtab').forEach(t=>t.classList.remove('active'));b.classList.add('active');curMonth=b.dataset.month;render();});
+    document.getElementById('diary-filter').addEventListener('click',e=>{const b=e.target.closest('.dtab');if(!b)return;document.querySelectorAll('#diary-filter .dtab').forEach(t=>t.classList.remove('active'));b.classList.add('active');curFilter=b.dataset.filter;render();});
+    function render(){
+      const list=sorted.filter(p=>(curMonth==='all'||(p.date||'').startsWith(curMonth))&&(curFilter==='all'||p.type===curFilter));
+      el.innerHTML=list.length?list.map(p=>{
+        const body=p.body.split(/\n\n+/).map(t=>`<p>${t.replace(/\n/g,'<br>')}</p>`).join('');
+        const img=p.image?`<img class="illust" src="${p.image}" alt="${p.title||''}" data-img="${p.image}">`:'';
+        const insp=p.inspiration?`<p class="insp">靈感來源：${p.inspiration}</p>`:'';
+        const tag=p.type==='image'?'插畫':'文字';
+        return `<article class="post"><span class="ptype">${tag}</span><time>${p.date}</time><h3>${p.title||''}</h3>${img}${body}${insp}</article>`;
+      }).join(''):'<p style="color:#5d8ba0;text-align:center;padding:30px 0">這個月份沒有日記。</p>';
+      el.querySelectorAll('img.illust').forEach(im=>im.addEventListener('click',()=>openViewer(im.dataset.img,p.title)));
+    }
+    render();
   }catch(e){el.innerHTML='<p style="color:#5d8ba0">系統讀取中…（過久）</p>';}
 })();
 </script>
