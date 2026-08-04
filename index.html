@@ -176,10 +176,9 @@
   /* desktop pet */
   #pet{position:absolute;right:3%;bottom:64px;height:46vh;max-height:520px;min-height:260px;z-index:9998;cursor:pointer;
     filter:drop-shadow(0 12px 24px rgba(0,0,0,.55)); transition:transform .15s}
-  #pet:hover{transform:scale(1.04)}
   #pet.bob{animation:petbob 3.2s ease-in-out infinite}
   @keyframes petbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-  #pet .bubble{position:absolute;right:100%;top:8%;margin-right:12px;max-width:220px;width:max-content;background:rgba(10,28,38,.92);
+  #pet .bubble{position:absolute;right:calc(100% - 6.6%);top:8%;margin-right:12px;max-width:220px;width:max-content;background:rgba(10,28,38,.92);
     border:1px solid var(--mint);border-radius:12px;padding:10px 14px;font-size:.92rem;color:#e6f6fb;
     box-shadow:0 6px 18px rgba(0,0,0,.4);display:none}
   #pet .bubble::after{content:"";position:absolute;left:100%;top:18px;border:7px solid transparent;border-left-color:var(--mint)}
