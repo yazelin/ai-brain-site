@@ -30,7 +30,7 @@ IMG_DIR = ROOT / "images" / "posts"
 
 TZ = timezone(timedelta(hours=8))
 _GEMINI_WEB_BASE_URL = os.getenv("GEMINI_WEB_BASE_URL")
-IMG_MODEL = os.getenv("GEMINI_IMAGE_MODEL") or "gemini-3-pro-image-preview"
+IMG_MODEL = os.getenv("GEMINI_IMAGE_MODEL") or "gemini-2.5-flash-image"
 
 NEWS_PROMPT = (
     "Search for today's interesting world news and current events.\n\n"
