@@ -179,26 +179,26 @@
     display:none;align-items:center;justify-content:center}
   #w-chat:hover .ph-x{display:flex}
   .ph-x:hover{background:rgba(0,0,0,.8)}
-  .phone{cursor:grab}
-  .phone{position:relative;width:360px;height:640px;margin:0 auto;background:#0b0b0b;border-radius:34px;border:9px solid #1c1f24;
-    box-shadow:0 0 0 2px #000,0 18px 50px rgba(0,0,0,.6);overflow:hidden;display:flex;flex-direction:column}
+  .phone{cursor:grab;position:relative;width:360px;height:640px;margin:0 auto;background:#0b0b0b;border-radius:34px;border:9px solid #1c1f24;
+    box-shadow:0 0 0 2px #000,0 18px 50px rgba(0,0,0,.6)}
   .phone .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:22px;background:#1c1f24;border-radius:0 0 14px 14px;z-index:5}
-  .phone .statusbar{height:26px;display:flex;align-items:center;justify-content:space-between;padding:0 18px 0 14px;
-    font-size:.62rem;color:#222;background:#b9c0c5;flex:0 0 auto}
+  /* 架構參考 line-chat-maker：.screen 是 flex column 容器，訊息區 flex:1+min-height:0 才能捲動且輸入列不被壓 */
+  .phone .screen{height:100%;display:flex;flex-direction:column;overflow:hidden;border-radius:25px;background:#7da3b8}
+  .phone .statusbar{flex:0 0 auto;height:26px;display:flex;align-items:center;justify-content:space-between;padding:0 18px 0 14px;
+    font-size:.62rem;color:#222;background:#b9c0c5}
   .phone .statusbar .r{display:flex;gap:4px;align-items:center}
   /* LINE 聊天室 */
-  .line{flex:1;display:flex;flex-direction:column;background:#7da3b8;min-height:0}
-  .line .lh{flex:0 0 auto;height:42px;display:flex;align-items:center;gap:8px;padding:0 10px;background:#b9c0c5;color:#222;border-bottom:1px solid rgba(0,0,0,.08)}
-  .line .lh .back{font-size:1.1rem;color:#222;cursor:pointer}
-  .line .lh .av{width:28px;height:28px;border-radius:50%;background:#25c2e8;display:grid;place-items:center;overflow:hidden;flex:0 0 auto}
-  .line .lh .av img{width:100%;height:100%;object-fit:cover}
-  .line .lh .nm{font-size:.86rem;font-weight:700;color:#222}
-  .line .lh .nm small{display:block;font-weight:400;font-size:.62rem;color:#555}
-  .line .lh .sp{flex:1}
-  .line .lh .mi{font-size:1rem;color:#222;cursor:pointer}
-  .line .body{flex:1;overflow:auto;padding:10px 8px 14px;display:flex;flex-direction:column;gap:6px;min-height:0}
-  .line .body::-webkit-scrollbar{width:5px}
-  .line .body::-webkit-scrollbar-thumb{background:rgba(0,0,0,.2);border-radius:3px}
+  .lh{flex:0 0 auto;height:42px;display:flex;align-items:center;gap:8px;padding:0 10px;background:#b9c0c5;color:#222;border-bottom:1px solid rgba(0,0,0,.08)}
+  .lh .back{font-size:1.1rem;color:#222;cursor:pointer}
+  .lh .av{width:28px;height:28px;border-radius:50%;background:#25c2e8;display:grid;place-items:center;overflow:hidden;flex:0 0 auto}
+  .lh .av img{width:100%;height:100%;object-fit:cover}
+  .lh .nm{font-size:.86rem;font-weight:700;color:#222}
+  .lh .nm small{display:block;font-weight:400;font-size:.62rem;color:#555}
+  .lh .sp{flex:1}
+  .lh .mi{font-size:1rem;color:#222;cursor:pointer}
+  #chat-log{flex:1;min-height:0;overflow-y:auto;padding:10px 8px 14px;display:flex;flex-direction:column;gap:6px;background:#7da3b8}
+  #chat-log::-webkit-scrollbar{width:5px}
+  #chat-log::-webkit-scrollbar-thumb{background:rgba(0,0,0,.2);border-radius:3px}
   .mb{display:flex;gap:6px;align-items:flex-end;max-width:100%}
   .mb .av{width:30px;height:30px;border-radius:50%;flex:0 0 auto;align-self:flex-end;background:#25c2e8;overflow:hidden}
   .mb .av img{width:100%;height:100%;object-fit:cover}
@@ -208,12 +208,12 @@
   .mb.her .bub{background:#fff;color:#222;border-bottom-left-radius:6px;box-shadow:0 1px 1px rgba(0,0,0,.12)}
   .mb .t{font-size:.58rem;color:rgba(0,0,0,.55);align-self:flex-end;margin:0 2px;flex:0 0 auto}
   .mb.thinking .bub{opacity:.7;font-style:italic}
-  .line .day{align-self:center;background:rgba(0,0,0,.18);color:#fff;font-size:.62rem;padding:3px 10px;border-radius:8px;margin:4px 0}
-  .line .in{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:7px 8px;background:#f7f7f7;border-top:1px solid rgba(0,0,0,.08)}
-  .line .in input{flex:1;border:1px solid #cfd6da;border-radius:18px;padding:8px 12px;font-size:.84rem;outline:none;background:#fff;color:#222}
-  .line .in button{width:34px;height:34px;border-radius:50%;border:none;background:#06c755;color:#fff;font-size:1rem;cursor:pointer;flex:0 0 auto;display:grid;place-items:center}
-  .line .in button:disabled{opacity:.5}
-  .line .in button svg{width:18px;height:18px;fill:#fff}
+  #chat-log .day{align-self:center;background:rgba(0,0,0,.18);color:#fff;font-size:.62rem;padding:3px 10px;border-radius:8px;margin:4px 0}
+  .in{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:7px 8px;background:#f7f7f7;border-top:1px solid rgba(0,0,0,.08)}
+  .in input{flex:1;border:1px solid #cfd6da;border-radius:18px;padding:8px 12px;font-size:.84rem;outline:none;background:#fff;color:#222}
+  .in button{width:34px;height:34px;border-radius:50%;border:none;background:#06c755;color:#fff;font-size:1rem;cursor:pointer;flex:0 0 auto;display:grid;place-items:center}
+  .in button:disabled{opacity:.5}
+  .in button svg{width:18px;height:18px;fill:#fff}
   @media(max-width:560px){.phone{width:300px;height:560px}}
 </style>
 </head>
@@ -370,19 +370,19 @@
       <div class="phone">
         <button class="ph-x" data-close title="關閉">✕</button>
         <div class="notch"></div>
+        <div class="screen">
         <div class="statusbar"><span id="ph-time">--:--</span><span class="r"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:#222"><use href="#i-signal"/></svg><svg viewBox="0 0 24 24" style="width:18px;height:14px;color:#222"><use href="#i-battery"/></svg></span></div>
-        <div class="line">
-          <div class="lh">
-            <span class="back" data-close title="關閉聊天">‹</span>
-            <span class="av"><img src="images/avatar.png" alt="格莉奇" onerror="this.onerror=null;this.src='images/sticker-01.png'"></span>
-            <span class="nm">格莉奇<small>線上 · 4KB 記憶體</small></span>
-            <span class="sp"></span><span class="mi">⋯</span>
-          </div>
-          <div class="body" id="chat-log"></div>
-          <div class="in">
-            <input id="chat-input" type="text" placeholder="輸入訊息" autocomplete="off">
-            <button id="chat-send" title="送出"><svg><use href="#i-send"/></svg></button>
-          </div>
+        <div class="lh">
+          <span class="back" data-close title="關閉聊天">‹</span>
+          <span class="av"><img src="images/avatar.png" alt="格莉奇" onerror="this.onerror=null;this.src='images/sticker-01.png'"></span>
+          <span class="nm">格莉奇<small>線上 · 4KB 記憶體</small></span>
+          <span class="sp"></span><span class="mi">⋯</span>
+        </div>
+        <div class="body" id="chat-log"></div>
+        <div class="in">
+          <input id="chat-input" type="text" placeholder="輸入訊息" autocomplete="off">
+          <button id="chat-send" title="送出"><svg><use href="#i-send"/></svg></button>
+        </div>
         </div>
       </div>
     </div>
@@ -474,7 +474,10 @@ function focus(w){w.style.zIndex=++z;}
   const w=wins['chat'];if(!w)return;const phone=w.querySelector('.phone');
   phone.addEventListener('mousedown',e=>{
     if(e.target.closest('input,button,[data-close],.mi'))return;
-    let sx=e.clientX,sy=e.clientY,ox=w.offsetLeft,oy=w.offsetTop;phone.style.cursor='grabbing';
+    // ponytail: 原本 left:50% + margin-left:-240px 置中；拖曳改用純 px，先把 margin 清零、
+    // left/top 鎖到當前實際位置，避免一按下就因 margin 還在而瞬移 240px。
+    let ox=w.offsetLeft,oy=w.offsetTop;w.style.marginLeft='0';w.style.left=ox+'px';w.style.top=oy+'px';
+    let sx=e.clientX,sy=e.clientY;phone.style.cursor='grabbing';
     const mv=ev=>{w.style.left=ox+ev.clientX-sx+'px';w.style.top=oy+ev.clientY-sy+'px'};
     const up=()=>{document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);phone.style.cursor='grab'};
     document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
