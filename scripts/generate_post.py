@@ -267,12 +267,13 @@ def generate_image(prompt):
         "mime_type": mimetypes.guess_type(ref.name)[0] or "image/png",
         "data": base64.b64encode(ref.read_bytes()).decode()}})
     body = {"contents": [{"parts": parts}],
-            "generationConfig": {"imageConfig": {"aspectRatio": "1:1", "imageSize": "1K"}}}
+            "generationConfig": {"responseModalities": ["IMAGE", "TEXT"]}}
     base_url = (_GEMINI_WEB_BASE_URL or "https://generativelanguage.googleapis.com").rstrip("/")
-    url = f"{base_url}/v1beta/models/{IMG_MODEL}:generateContent?key={key}"
+    url = f"{base_url}/v1beta/models/{IMG_MODEL}:generateContent"
     req = urllib.request.Request(
         url, json.dumps(body).encode(),
-        {"Content-Type": "application/json", "User-Agent": "glitch-blog/1.0"})
+        {"Content-Type": "application/json", "x-goog-api-key": key,
+         "User-Agent": "glitch-blog/1.0"})
     try:
         t0 = time.time()
         with urllib.request.urlopen(req, timeout=600) as f:
