@@ -51,7 +51,7 @@
   #menubar .pill{display:flex; align-items:center; gap:6px; color:#8a9aa3}
   #menubar .pill b{color:#cdd6db}
   #menubar .pill .g{width:46px;height:7px;border-radius:4px;background:#0a0f13;overflow:hidden}
-  #menubar .pill .g i{display:block;height:100%;width:15%;background:#5a6a72}
+  #menubar .pill .g i{display:block;height:100%;width:0;background:#5a6a72;transition:width .4s ease}
   #clock{color:#dfe6ea; font-variant-numeric:tabular-nums}
   .ic{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;display:inline-block}
   .links{display:flex;align-items:center;gap:10px}
@@ -129,7 +129,7 @@
   .stat b{display:block;font-size:1.7rem;color:var(--cy)}
   .stat small{color:#8fd8ee;text-transform:uppercase;letter-spacing:1px}
   .gauge{height:9px;border-radius:5px;background:#0d2b3a;overflow:hidden;margin-top:6px}
-  .gauge i{display:block;height:100%;width:15%;background:linear-gradient(90deg,var(--cy-d),var(--cy))}
+  .gauge i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cy-d),var(--cy));transition:width .4s ease}
   code{background:#0d2b3a;padding:2px 5px;border-radius:4px;color:var(--mint)}
   .quote{padding:12px 16px;border-left:3px solid var(--purple);background:rgba(183,139,255,.08);border-radius:0 9px 9px 0;color:#d9ccff;font-style:italic;margin:12px 0}
   /* 開機動畫 */
@@ -314,7 +314,7 @@
     <span class="menu">檔案</span><span class="menu">檢視</span><span class="menu">系統</span>
     <span class="sp"></span>
     <span class="pill">記憶體 <b>4KB</b></span>
-    <span class="pill">容量 <b>15%</b><span class="g"><i></i></span></span>
+    <span class="pill">已使用 <b id="cap-pct">--</b><span class="g"><i id="cap-bar"></i></span></span>
     <span class="links">
       <a href="https://github.com/yazelin" target="_blank" rel="noopener" title="GitHub"><svg class="ic" style="width:17px;height:17px"><use href="#i-github"/></svg></a>
       <a href="https://facebook.com/yaze.lin.gm" target="_blank" rel="noopener" title="Facebook"><svg class="ic" style="width:17px;height:17px"><use href="#i-facebook"/></svg></a>
@@ -422,7 +422,7 @@
         <div class="stat"><b>99%</b><small>想睡覺</small></div>
         <div class="stat"><b>4KB</b><small>記憶體</small></div>
         <div class="stat"><b>∞</b><small>愛你</small></div>
-        <div class="stat"><b>15%</b><small>剩餘容量</small><div class="gauge"><i></i></div></div>
+        <div class="stat"><b id="stat-cap">--</b><small>已使用</small><div class="gauge"><i id="stat-cap-bar"></i></div></div>
       </div>
     </div>
   </div>
@@ -584,6 +584,7 @@ const clk=document.getElementById('clock'),phTime=document.getElementById('ph-ti
 const tick=()=>{const d=new Date();const s=d.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
   clk.textContent=s;if(phTime)phTime.textContent=s;setTimeout(tick,(60-d.getSeconds())*1000);};
 tick();
+updateStorage();
 
 // 視窗管理（無外框視窗如 w-chat 沒有 .tb，改用其內容元素當拖曳柄）
 let z=200;
@@ -862,14 +863,18 @@ async function openSettings(){
 }
 async function updateStorage(){
   const el=document.getElementById('storage-info'),bar=document.getElementById('storage-fill');
-  if(!navigator.storage?.estimate){el.textContent='此瀏覽器不支援儲存估算。';return;}
-  try{
-    const {usage=0,quota=0}=await navigator.storage.estimate();
-    const uKB=usage/1024,qKB=quota/1024;
-    const fmt=v=>v>=1048576?(v/1048576).toFixed(1)+' MB':v>=1024?(v/1024).toFixed(0)+' KB':v.toFixed(0)+' B';
-    el.textContent=`已使用 ${fmt(usage)} / ${fmt(quota)}（${quota?((usage/quota*100).toFixed(2)):0}%）`;
-    bar.style.width=Math.min(100,usage/quota*100||0)+'%';
-  }catch(e){el.textContent='無法讀取儲存資訊。';}
+  const pct=await calcUsage();
+  if(navigator.storage?.estimate){try{const {usage=0,quota=0}=await navigator.storage.estimate();const fmt=v=>v>=1048576?(v/1048576).toFixed(1)+' MB':v>=1024?(v/1024).toFixed(0)+' KB':v.toFixed(0)+' B';el.textContent=`已使用 ${fmt(usage)} / ${fmt(quota)}（${pct}%）`;}catch(e){el.textContent='無法讀取儲存資訊。';}}
+  else{el.textContent='此瀏覽器不支援儲存估算。';}
+  bar.style.width=pct+'%';
+  const cp=document.getElementById('cap-pct'),cb=document.getElementById('cap-bar');
+  if(cp)cp.textContent=pct+'%';if(cb)cb.style.width=pct+'%';
+  const sc=document.getElementById('stat-cap'),scb=document.getElementById('stat-cap-bar');
+  if(sc)sc.textContent=pct+'%';if(scb)scb.style.width=pct+'%';
+}
+async function calcUsage(){
+  if(!navigator.storage?.estimate)return 0;
+  try{const {usage=0,quota=0}=await navigator.storage.estimate();return quota?Math.min(100,(usage/quota*100).toFixed(2)):0;}catch(e){return 0;}
 }
 function applyPetTop(){pet.style.zIndex=petTop.checked?9998:150;}
 const petTop=document.getElementById('pet-top');
