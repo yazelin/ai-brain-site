@@ -172,8 +172,15 @@
 
   /* 手機框 + LINE 聊天 */
   #w-chat{background:transparent!important;border:none!important;box-shadow:none!important;backdrop-filter:none!important;overflow:visible!important}
-  #w-chat .tb{background:rgba(4,8,12,.9)}
-  .phone{position:relative;width:360px;height:640px;margin:10px auto;background:#0b0b0b;border-radius:34px;border:9px solid #1c1f24;
+  #w-chat .body{overflow:visible!important;padding:40px 30px}
+  /* 無外框：hover 才出現右上叉；整支手機可按住拖曳 */
+  .ph-x{position:absolute;top:6px;right:6px;z-index:9;width:26px;height:26px;border-radius:50%;
+    border:none;background:rgba(0,0,0,.55);color:#fff;font-size:.8rem;line-height:1;cursor:pointer;
+    display:none;align-items:center;justify-content:center}
+  #w-chat:hover .ph-x{display:flex}
+  .ph-x:hover{background:rgba(0,0,0,.8)}
+  .phone{cursor:grab}
+  .phone{position:relative;width:360px;height:640px;margin:0 auto;background:#0b0b0b;border-radius:34px;border:9px solid #1c1f24;
     box-shadow:0 0 0 2px #000,0 18px 50px rgba(0,0,0,.6);overflow:hidden;display:flex;flex-direction:column}
   .phone .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:22px;background:#1c1f24;border-radius:0 0 14px 14px;z-index:5}
   .phone .statusbar{height:26px;display:flex;align-items:center;justify-content:space-between;padding:0 18px 0 14px;
@@ -199,8 +206,7 @@
   .mb .bub{max-width:72%;padding:8px 11px;font-size:.84rem;line-height:1.5;border-radius:18px;white-space:pre-wrap;word-break:break-word;position:relative}
   .mb.me .bub{background:#06c755;color:#fff;border-bottom-right-radius:6px}
   .mb.her .bub{background:#fff;color:#222;border-bottom-left-radius:6px;box-shadow:0 1px 1px rgba(0,0,0,.12)}
-  .mb .t{font-size:.58rem;color:rgba(255,255,255,.85);align-self:flex-end;margin:0 2px}
-  .mb.her .t{color:rgba(0,0,0,.5)}
+  .mb .t{font-size:.58rem;color:rgba(0,0,0,.55);align-self:flex-end;margin:0 2px;flex:0 0 auto}
   .mb.thinking .bub{opacity:.7;font-style:italic}
   .line .day{align-self:center;background:rgba(0,0,0,.18);color:#fff;font-size:.62rem;padding:3px 10px;border-radius:8px;margin:4px 0}
   .line .in{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:7px 8px;background:#f7f7f7;border-top:1px solid rgba(0,0,0,.08)}
@@ -223,6 +229,8 @@
   <symbol id="i-coffee" viewBox="0 0 24 24"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" x2="6" y1="2" y2="4"/><line x1="10" x2="10" y1="2" y2="4"/><line x1="14" x2="14" y1="2" y2="4"/></symbol>
   <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
   <symbol id="i-send" viewBox="0 0 24 24"><path d="M2 21 23 12 2 3v7l15 2-15 2z"/></symbol>
+  <symbol id="i-signal" viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="14" width="4" height="7" rx="1"/><rect x="7" y="9" width="4" height="12" rx="1"/><rect x="13" y="5" width="4" height="16" rx="1"/><rect x="19" y="2" width="4" height="19" rx="1"/></symbol>
+  <symbol id="i-battery" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="7" width="19" height="10" rx="2"/><rect x="3" y="9" width="12" height="6" rx="1" fill="currentColor" stroke="none"/><rect x="21" y="10" width="2" height="4" rx="1" fill="currentColor" stroke="none"/></symbol>
 </svg>
 <div id="desktop">
 
@@ -357,17 +365,16 @@
   </div>
 
   <!-- window: 跟格莉奇聊天（手機框 + LINE） -->
-  <div class="win" id="w-chat" style="left:50%;top:60px;width:420px;margin-left:-210px">
-    <div class="tb"><span class="dot r" data-close title="關閉"></span><span class="dot y"></span><span class="dot g"></span>
-      <span class="ttl"><svg class="ic" style="width:13px;height:13px;display:inline-block;vertical-align:-2px"><use href="#i-chat"/></svg> LINE · 格莉奇</span></div>
-    <div class="body" style="padding:0;display:flex;align-items:center;justify-content:center">
+  <div class="win" id="w-chat" style="left:50%;top:40px;width:480px;margin-left:-240px">
+    <div class="body" style="padding:40px 30px;display:flex;align-items:center;justify-content:center">
       <div class="phone">
+        <button class="ph-x" data-close title="關閉">✕</button>
         <div class="notch"></div>
-        <div class="statusbar"><span id="ph-time">--:--</span><span class="r"><span>📶</span><span>🔋</span></span></div>
+        <div class="statusbar"><span id="ph-time">--:--</span><span class="r"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:#222"><use href="#i-signal"/></svg><svg viewBox="0 0 24 24" style="width:18px;height:14px;color:#222"><use href="#i-battery"/></svg></span></div>
         <div class="line">
           <div class="lh">
-            <span class="back">‹</span>
-            <span class="av"><img src="images/sticker-01.png" alt="格莉奇"></span>
+            <span class="back" data-close title="關閉聊天">‹</span>
+            <span class="av"><img src="images/avatar.png" alt="格莉奇" onerror="this.onerror=null;this.src='images/sticker-01.png'"></span>
             <span class="nm">格莉奇<small>線上 · 4KB 記憶體</small></span>
             <span class="sp"></span><span class="mi">⋯</span>
           </div>
@@ -444,22 +451,35 @@ const tick=()=>{const d=new Date();const s=d.toLocaleTimeString('zh-TW',{hour:'2
   clk.textContent=s;if(phTime)phTime.textContent=s;setTimeout(tick,(60-d.getSeconds())*1000);};
 tick();
 
-// 視窗管理
+// 視窗管理（無外框視窗如 w-chat 沒有 .tb，改用其內容元素當拖曳柄）
 let z=200;
 const wins={};
 document.querySelectorAll('.win').forEach(w=>{
   wins[w.id.replace('w-','')]=w;
   const tb=w.querySelector('.tb');
-  tb.addEventListener('mousedown',e=>{
-    if(e.target.dataset.close!==undefined) return;
-    let sx=e.clientX,sy=e.clientY,ox=w.offsetLeft,oy=w.offsetTop;
-    const mv=ev=>{w.style.left=ox+ev.clientX-sx+'px';w.style.top=oy+ev.clientY-sy+'px'};
-    const up=()=>{document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up)};
-    document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
-  });
+  if(tb){
+    tb.addEventListener('mousedown',e=>{
+      if(e.target.dataset.close!==undefined) return;
+      let sx=e.clientX,sy=e.clientY,ox=w.offsetLeft,oy=w.offsetTop;
+      const mv=ev=>{w.style.left=ox+ev.clientX-sx+'px';w.style.top=oy+ev.clientY-sy+'px'};
+      const up=()=>{document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up)};
+      document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
+    });
+  }
   w.addEventListener('mousedown',()=>focus(w));
 });
 function focus(w){w.style.zIndex=++z;}
+// 無外框的 w-chat：按住手機即可拖曳（排除輸入/按鈕/關閉/選單）
+(function(){
+  const w=wins['chat'];if(!w)return;const phone=w.querySelector('.phone');
+  phone.addEventListener('mousedown',e=>{
+    if(e.target.closest('input,button,[data-close],.mi'))return;
+    let sx=e.clientX,sy=e.clientY,ox=w.offsetLeft,oy=w.offsetTop;phone.style.cursor='grabbing';
+    const mv=ev=>{w.style.left=ox+ev.clientX-sx+'px';w.style.top=oy+ev.clientY-sy+'px'};
+    const up=()=>{document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);phone.style.cursor='grab'};
+    document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
+  });
+})();
 function open(app){const w=wins[app];if(!w)return;w.classList.add('open');focus(w);if(app==='talk')loadGiscus();if(app==='settings')openSettings();if(app==='chat')chatFocus();}
 let _giscusLoaded=false;
 function loadGiscus(){
@@ -505,7 +525,9 @@ setInterval(()=>bubbleSay(petLines[Math.floor(Math.random()*petLines.length)]),1
    送出時帶 memory + 最近 16 則給 worker；每 10 則呼叫 /summarize 壓成記憶。 */
 const CHAT_URL='https://glitch-chat.yazelinj303.workers.dev/chat';
 const SUM_URL='https://glitch-chat.yazelinj303.workers.dev/summarize';
-const AV='images/sticker-01.png';
+const AV='images/avatar.png';
+const AV_FALL='images/sticker-01.png';
+function avImg(){return `<img src="${AV}" onerror="this.onerror=null;this.src='${AV_FALL}'">`;}
 const chatLog=document.getElementById('chat-log'),chatIn=document.getElementById('chat-input'),chatBtn=document.getElementById('chat-send');
 let history=[],memory='',chatReady=false,chatOpened=false;
 
@@ -514,9 +536,15 @@ function hm(ts){return new Date(ts).toLocaleTimeString('zh-TW',{hour:'2-digit',m
 function renderMsg(m,showAvatar,showTime){
   const wrap=document.createElement('div');
   wrap.className='mb '+(m.role==='user'?'me':'her');
-  if(m.role!=='user'&&showAvatar){const a=document.createElement('div');a.className='av';a.innerHTML=`<img src="${AV}">`;wrap.appendChild(a);}
-  const b=document.createElement('div');b.className='bub';b.textContent=m.content;wrap.appendChild(b);
-  if(showTime){const t=document.createElement('span');t.className='t';t.textContent=hm(m.ts);wrap.appendChild(t);}
+  const t=showTime?(()=>{const x=document.createElement('span');x.className='t';x.textContent=hm(m.ts);return x;})():null;
+  if(m.role==='user'){
+    if(t)wrap.appendChild(t);          // 我的訊息：時間在氣泡左邊
+    const b=document.createElement('div');b.className='bub';b.textContent=m.content;wrap.appendChild(b);
+  }else{
+    if(showAvatar){const a=document.createElement('div');a.className='av';a.innerHTML=avImg();wrap.appendChild(a);}
+    const b=document.createElement('div');b.className='bub';b.textContent=m.content;wrap.appendChild(b);
+    if(t)wrap.appendChild(t);          // 對方訊息：時間在氣泡右邊
+  }
   return wrap;
 }
 async function loadChat(){
@@ -544,7 +572,7 @@ async function sendChat(text){
   history.push(msg);await dbSet('chat',history);
   chatLog.appendChild(renderMsg(msg,true,true));
   const tm=document.createElement('div');tm.className='mb her thinking';
-  tm.innerHTML=`<div class="av"><img src="${AV}"></div><div class="bub">系統讀取中…</div>`;
+  tm.innerHTML=`<div class="av">${avImg()}</div><div class="bub">系統讀取中…</div>`;
   chatLog.appendChild(tm);chatLog.scrollTop=chatLog.scrollHeight;chatBtn.disabled=true;
   const recent=history.filter(m=>m.content).slice(-16).map(({role,content})=>({role,content}));
   try{
