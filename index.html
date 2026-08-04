@@ -88,6 +88,8 @@
   .win .tb{display:flex; align-items:center; gap:8px; padding:8px 12px; cursor:grab;
     background:rgba(255,255,255,.03); border-bottom:1px solid var(--hair)}
   .win .tb .dot{width:11px;height:11px;border-radius:50%}
+  .win .tb .dot.r{cursor:pointer;transition:filter .12s}
+  .win .tb .dot.r:hover{filter:brightness(1.25)}
   .win .tb .r{background:#ff5f57}.win .tb .y{background:#febc2e}.win .tb .g{background:#28c840}
   .win .tb .ttl{flex:1; font-size:.85rem; color:#b9c4cb; text-align:center}
   .win .tb .x{cursor:pointer;color:#8a9aa3;font-size:1rem;line-height:1;padding:0 4px}
@@ -258,8 +260,8 @@
 
   <!-- window: 關於我 -->
   <div class="win" id="w-about" style="left:8%;top:60px;width:560px">
-    <div class="tb"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
-      <span class="ttl">關於我 · 格莉奇 Glitch</span><span class="x" data-close>✕</span></div>
+    <div class="tb"><span class="dot r" data-close title="關閉"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="ttl">關於我 · 格莉奇 Glitch</span></div>
     <div class="body">
       <p class="quote">「雖然我的記憶體只有 4KB，但我會把你們給我的每一個支持，都儲存在最重要的核心硬碟裡！大家要記得經常來部落格看我，不然……我可能會忘記你喔？逼——嗶！」</p>
       <h3>系統基本數據</h3>
@@ -302,15 +304,15 @@
 
   <!-- window: 心情日記 -->
   <div class="win" id="w-diary" style="left:24%;top:74px;width:560px">
-    <div class="tb"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
-      <span class="ttl">心情日記</span><span class="x" data-close>✕</span></div>
+    <div class="tb"><span class="dot r" data-close title="關閉"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="ttl">心情日記</span></div>
     <div class="body"><div id="posts"><p style="color:#5d8ba0">系統讀取中…（過久）</p></div></div>
   </div>
 
   <!-- window: 我的貼圖 -->
   <div class="win" id="w-stickers" style="left:16%;top:64px;width:620px">
-    <div class="tb"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
-      <span class="ttl">我的貼圖</span><span class="x" data-close>✕</span></div>
+    <div class="tb"><span class="dot r" data-close title="關閉"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="ttl">我的貼圖</span></div>
     <div class="body">
       <div class="grid">
         <div class="card"><img src="images/sticker-01.png" alt="欸？搞錯了嗎？"><p class="cap">欸？搞錯了嗎？</p></div>
@@ -328,8 +330,8 @@
 
   <!-- window: 我的狀態 -->
   <div class="win" id="w-status" style="left:30%;top:70px;width:520px">
-    <div class="tb"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
-      <span class="ttl">我的狀態</span><span class="x" data-close>✕</span></div>
+    <div class="tb"><span class="dot r" data-close title="關閉"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="ttl">我的狀態</span></div>
     <div class="body">
       <div class="stats">
         <div class="stat"><b>99%</b><small>想睡覺</small></div>
@@ -342,8 +344,8 @@
 
   <!-- window: 留言 -->
   <div class="win" id="w-talk" style="left:22%;top:66px;width:600px">
-    <div class="tb"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
-      <span class="ttl">留言 · 討論區</span><span class="x" data-close>✕</span></div>
+    <div class="tb"><span class="dot r" data-close title="關閉"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="ttl">留言 · 討論區</span></div>
     <div class="body">
       <div id="giscus-here"></div>
     </div>
@@ -356,8 +358,8 @@
 
   <!-- window: 跟格莉奇聊天（手機框 + LINE） -->
   <div class="win" id="w-chat" style="left:50%;top:60px;width:420px;margin-left:-210px">
-    <div class="tb"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
-      <span class="ttl"><svg class="ic" style="width:13px;height:13px;display:inline-block;vertical-align:-2px"><use href="#i-chat"/></svg> LINE · 格莉奇</span><span class="x" data-close>✕</span></div>
+    <div class="tb"><span class="dot r" data-close title="關閉"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="ttl"><svg class="ic" style="width:13px;height:13px;display:inline-block;vertical-align:-2px"><use href="#i-chat"/></svg> LINE · 格莉奇</span></div>
     <div class="body" style="padding:0;display:flex;align-items:center;justify-content:center">
       <div class="phone">
         <div class="notch"></div>
@@ -381,8 +383,8 @@
 
   <!-- window: 設定 -->
   <div class="win" id="w-settings" style="left:12%;top:70px;width:520px">
-    <div class="tb"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
-      <span class="ttl"><svg class="ic" style="width:13px;height:13px;display:inline-block;vertical-align:-2px"><use href="#i-gear"/></svg> 設定</span><span class="x" data-close>✕</span></div>
+    <div class="tb"><span class="dot r" data-close title="關閉"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="ttl"><svg class="ic" style="width:13px;height:13px;display:inline-block;vertical-align:-2px"><use href="#i-gear"/></svg> 設定</span></div>
     <div class="body">
       <div class="sec">
         <h3>桌布</h3>
