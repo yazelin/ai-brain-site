@@ -116,8 +116,12 @@ def transparent_bg(raw_bytes, out_path):
             if not bg[y][x]:
                 al[x, y] = 255; kept += 1
     out = im.convert("RGBA"); out.putalpha(alpha)
+    # 截掉透明外框，讓寵物元素緊貼角色（對話框才能錨在頭旁邊）
+    bbox = out.split()[3].getbbox()
+    if bbox:
+        out = out.crop(bbox)
     out.save(out_path)
-    print(f"  去背完成：保留 {100*kept/(w*h):.1f}% 像素", flush=True)
+    print(f"  去背完成：保留 {100*kept/(w*h):.1f}% 像素，裁切後 {out.size}", flush=True)
 
 
 if __name__ == "__main__":
