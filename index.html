@@ -275,13 +275,7 @@
     <div class="tb"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
       <span class="ttl">留言 · 討論區</span><span class="x" data-close>✕</span></div>
     <div class="body">
-      <script src="https://giscus.app/client.js"
-        data-repo="yazelin/ai-brain-site" data-repo-id="R_kgDOTtoRHg"
-        data-category="General" data-category-id="DIC_kwDOTtoRHs4DCpmu"
-        data-mapping="og:title" data-strict="0" data-reactions-enabled="1"
-        data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed"
-        data-lang="zh-TW" data-loading="lazy" crossorigin="anonymous" async>
-      </script>
+      <div id="giscus-here"></div>
     </div>
   </div>
 
@@ -334,7 +328,29 @@ document.querySelectorAll('.win').forEach(w=>{
   w.addEventListener('mousedown',()=>focus(w));
 });
 function focus(w){w.style.zIndex=++z;}
-function open(app){const w=wins[app];if(!w)return;w.classList.add('open');focus(w);}
+function open(app){const w=wins[app];if(!w)return;w.classList.add('open');focus(w);if(app==='talk')loadGiscus();}
+let _giscusLoaded=false;
+function loadGiscus(){
+  if(_giscusLoaded)return;_giscusLoaded=true;
+  const s=document.createElement('script');
+  s.src='https://giscus.app/client.js';
+  s.setAttribute('data-repo','yazelin/ai-brain-site');
+  s.setAttribute('data-repo-id','R_kgDOTtoRHg');
+  s.setAttribute('data-category','General');
+  s.setAttribute('data-category-id','DIC_kwDOTtoRHs4DCpmu');
+  s.setAttribute('data-mapping','title');
+  s.setAttribute('data-term','格莉奇OS · Glitch');
+  s.setAttribute('data-strict','0');
+  s.setAttribute('data-reactions-enabled','1');
+  s.setAttribute('data-emit-metadata','0');
+  s.setAttribute('data-input-position','top');
+  s.setAttribute('data-theme','dark_dimmed');
+  s.setAttribute('data-lang','zh-TW');
+  s.setAttribute('data-loading','eager');
+  s.setAttribute('crossorigin','anonymous');
+  s.async=true;
+  document.getElementById('giscus-here').appendChild(s);
+}
 document.querySelectorAll('[data-app]').forEach(b=>b.addEventListener('click',()=>open(b.dataset.app)));
 document.querySelectorAll('[data-close]').forEach(x=>x.addEventListener('click',e=>{
   e.target.closest('.win').classList.remove('open');}));
