@@ -46,6 +46,7 @@ export default {
     try { body = await req.json(); } catch { return err(400, "bad json"); }
 
     if (path.endsWith("/summarize")) return summarize(env, body, cors, err);
+    if (path.endsWith("/img")) return imggen(env, body, cors, err);
     return chat(env, body, cors, err);
   },
 };
@@ -91,7 +92,7 @@ ${String(body.memory).trim()}
 }
 
 const SUM_SYS = `你是格莉奇（Glitch）的記憶壓縮器。把給你的對話整理成一份給格莉奇本人讀的「記憶摘要」：
-用條列或短句記住：使用者叫什麼/喜歡什麼/聊過的重要事/約定/格莉奇答應過的事。只保留事實，不要寒暆，不要編造。
+用條列或短句記住：使用者叫什麼/喜歡什麼/聊過的重要事/約定/格莉奇答應過的事。只保留事實，不要寒暄，不要編造。
 若已有舊摘要，把它與新對話合併更新，輸出最終摘要（最多 300 字，繁體中文）。`;
 
 async function summarize(env, body, cors, err) {
@@ -108,4 +109,32 @@ async function summarize(env, body, cors, err) {
   if (!out.ok) return err(502, `upstream ${out.status}: ${out.detail}`);
   if (!out.text) return err(502, "no text in upstream response");
   return new Response(JSON.stringify({ summary: out.text }), { headers: { "content-type": "application/json", ...cors } });
+}
+
+// 圖片生成：用 gemini-web 的圖片模型（responseModalities IMAGE）。不另需金鑰。
+async function imggen(env, body, cors, err) {
+  const prompt = String(body.prompt || "").trim();
+  if (!prompt) return err(400, "empty");
+  const base = (env.GEMINI_WEB_BASE_URL || "").replace(/\/+$/, "");
+  const model = env.IMAGE_MODEL || "gemini-2.5-flash-image";
+  const url = `${base}/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+  const payload = {
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
+    generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
+  };
+  const r = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY || "" },
+    body: JSON.stringify(payload),
+  });
+  const data = await r.json();
+  if (!r.ok) return err(502, `upstream ${r.status}: ${JSON.stringify(data).slice(0, 200)}`);
+  const parts = data.candidates?.[0]?.content?.parts || [];
+  let image = null;
+  for (const p of parts) {
+    const d = p.inlineData || p.inline_data;
+    if (d && d.data) { image = `data:${d.mimeType || d.mime_type || "image/png"};base64,${d.data}`; break; }
+  }
+  if (!image) return err(502, "no image in upstream response");
+  return new Response(JSON.stringify({ image }), { headers: { "content-type": "application/json", ...cors } });
 }
