@@ -22,8 +22,10 @@ BASE_URL = os.environ.get("CODEX_IMAGE_BASE_URL", "").rstrip("/")
 KEY = os.environ.get("CODEX_IMAGE_KEY", "")
 UA = "glitch-blog/1.0"
 
-PROMPT = """Same art style as the reference image: a cozy, lived-in WebOS desktop wallpaper for an AI robot-girl VTuber named Glitch.
-A dreamy cyber bedroom / OS homescreen background, deep teal-navy gradient base, glowing neon cyber-mint (#7cf3c0) and neon-purple (#b78bff) accents, soft pixel-block glitch artifacts and scanlines, subtle bokeh and floating UI motes, a few translucent app-window silhouettes drifting in the background, distant city-lights through a virtual window. Cute, warm, slightly melancholic. No characters in frame, no text, no watermark, no signature. Wide 16:9 landscape, cinematic soft glow, clean enough to sit behind desktop icons."""
+PROMPT = """A Japanese anime (日系動漫) style wallpaper for an AI robot-girl VTuber named Glitch, depicting her cozy cyber bedroom / WebOS homescreen.
+Clear modern Japanese anime illustration aesthetic — think contemporary anime key-visual / light-novel cover art: clean cel-shading, soft gradient shading, expressive atmospheric lighting, anime painterly backgrounds (Kyoto Animation / Makoto Shinkai film background quality). Distinctly 2D anime look, NOT photoreal, NOT 3D render.
+Scene: a small cyber bedroom at dusk seen as an anime background painting. A glowing translucent WebOS homescreen floats over a desk; through a window, distant neon city lights and bokeh at golden-hour. Deep teal-navy gradient base, glowing neon cyber-mint (#7cf3c0) and neon-purple (#b78bff) accents, soft pixel-block glitch artifacts and faint scanlines, floating UI motes, a few translucent app-window silhouettes drifting in the background. Lived-in anime-prop details: a cable, a mug, scattered sticky notes — unobtrusive so desktop icons sit cleanly on top.
+Mood: cute, warm, slightly melancholic, cinematic soft glow. No characters in frame, no text, no watermark, no signature. Wide 16:9 landscape."""
 
 
 def main():
