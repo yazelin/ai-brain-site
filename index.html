@@ -103,6 +103,12 @@
   .win .body{overflow:auto; padding:18px 20px; flex:1; min-height:0}
   .win .body::-webkit-scrollbar{width:8px}
   .win .body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:5px}
+  .win .resize{position:absolute;z-index:10}
+  .win .resize.e{right:0;top:0;width:5px;height:100%;cursor:ew-resize}
+  .win .resize.s{left:0;bottom:0;width:100%;height:5px;cursor:ns-resize}
+  .win .resize.se{right:0;bottom:0;width:14px;height:14px;cursor:nwse-resize}
+  .win .resize.se::after{content:'';position:absolute;right:2px;bottom:2px;width:8px;height:8px;
+    border-right:2px solid rgba(255,255,255,.2);border-bottom:2px solid rgba(255,255,255,.2)}
 
   /* content styles inside windows */
   h2{color:var(--cy);font-size:1.2rem;margin-bottom:14px;text-transform:uppercase;letter-spacing:2px}
@@ -621,6 +627,22 @@ document.querySelectorAll('.win').forEach(w=>{
       const mv=ev=>{w.style.left=ox+ev.clientX-sx+'px';w.style.top=oy+ev.clientY-sy+'px'};
       const up=()=>{document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up)};
       document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
+    });
+    // resize handles: right(e), bottom(s), corner(se)
+    ['e','s','se'].forEach(dir=>{
+      const h=document.createElement('div');h.className='resize '+dir;w.appendChild(h);
+      h.addEventListener('mousedown',e=>{
+        e.preventDefault();e.stopPropagation();
+        let sx=e.clientX,sy=e.clientY,ow=w.offsetWidth,oh=w.offsetHeight;
+        const mv=ev=>{
+          let nw=ow, nh=oh;
+          if(dir.includes('e')) nw=Math.max(300, ow+ev.clientX-sx);
+          if(dir.includes('s')) nh=Math.max(160, oh+ev.clientY-sy);
+          w.style.width=nw+'px';w.style.height=nh+'px';
+        };
+        const up=()=>{document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up)};
+        document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
+      });
     });
   }
   w.addEventListener('mousedown',()=>focus(w));
