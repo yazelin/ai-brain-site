@@ -87,9 +87,9 @@ def main():
                     "41898282+github-actions[bot]@users.noreply.github.com"], check=True)
     subprocess.run(["git", "add", str(OUT)], check=True)
     if subprocess.run(["git", "diff", "--cached", "--quiet"]).returncode != 0:
+        subprocess.run(["git", "commit", "-m", "wallpaper: 更新格莉奇OS 桌布"], check=True)
         # ponytail: pull --rebase before push，避免期間有其他 commit 導致 push 被拒
         subprocess.run(["git", "pull", "--rebase"], check=True)
-        subprocess.run(["git", "commit", "-m", "wallpaper: 更新格莉奇OS 桌布"], check=True)
         subprocess.run(["git", "push"], check=True)
         print("已 commit & push。", flush=True)
     else:
