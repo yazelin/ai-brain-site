@@ -16,7 +16,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 REF_IMAGE = ROOT / "images" / "sticker-01.png"
-OUT = ROOT / "images" / "wallpaper.png"
+WALLPAPER_DIR = ROOT / "images" / "wallpapers"
+WALLPAPER_INDEX = ROOT / "wallpapers.json"
 
 BASE_URL = os.environ.get("CODEX_IMAGE_BASE_URL", "").rstrip("/")
 KEY = os.environ.get("CODEX_IMAGE_KEY", "")
@@ -77,17 +78,33 @@ def main():
     url = images[0]["url"]
     if url.startswith("/"):
         url = BASE_URL + url
-    OUT.parent.mkdir(parents=True, exist_ok=True)
+    WALLPAPER_DIR.mkdir(parents=True, exist_ok=True)
+    from datetime import datetime, timezone, timedelta
+    TZ = timezone(timedelta(hours=8))
+    ts = datetime.now(TZ)
+    fname = f"glitch_{ts.strftime('%Y%m%d_%H%M%S')}.png"
+    out = WALLPAPER_DIR / fname
     with urllib.request.urlopen(url, timeout=300) as r:
-        OUT.write_bytes(r.read())
-    print(f"-> {OUT} ok {int(time.time()-t0)}s {OUT.stat().st_size/1e6:.2f}MB", flush=True)
+        out.write_bytes(r.read())
+    print(f"-> {out} ok {int(time.time()-t0)}s {out.stat().st_size/1e6:.2f}MB", flush=True)
+
+    # 累積桌布索引：append 到 wallpapers.json
+    idx = []
+    if WALLPAPER_INDEX.exists():
+        try:
+            idx = json.loads(WALLPAPER_INDEX.read_text("utf-8"))
+        except json.JSONDecodeError:
+            idx = []
+    idx.append({"id": fname.removesuffix(".png"), "name": "格莉奇桌布 " + ts.strftime("%m/%d %H:%M"),
+                "path": f"images/wallpapers/{fname}", "ts": ts.isoformat()})
+    WALLPAPER_INDEX.write_text(json.dumps(idx, indent=2, ensure_ascii=False) + "\n", "utf-8")
 
     subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
     subprocess.run(["git", "config", "user.email",
                     "41898282+github-actions[bot]@users.noreply.github.com"], check=True)
-    subprocess.run(["git", "add", str(OUT)], check=True)
+    subprocess.run(["git", "add", str(out), str(WALLPAPER_INDEX)], check=True)
     if subprocess.run(["git", "diff", "--cached", "--quiet"]).returncode != 0:
-        subprocess.run(["git", "commit", "-m", "wallpaper: 更新格莉奇OS 桌布"], check=True)
+        subprocess.run(["git", "commit", "-m", f"wallpaper: 新桌布 {fname}（累積）"], check=True)
         # ponytail: pull --rebase before push，避免期間有其他 commit 導致 push 被拒
         subprocess.run(["git", "pull", "--rebase"], check=True)
         subprocess.run(["git", "push"], check=True)
