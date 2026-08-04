@@ -44,11 +44,13 @@ NEWS_PROMPT = (
 
 PICK_PROMPT = (
     "Here are today's news summaries:\n{news}\n\n"
+    "Recent fan comments on your blog (Giscus):\n{comments}\n\n"
     "You ARE 格莉奇（Glitch）, an AI robot-girl VTuber with 4KB of memory. "
     "You are gullible, sincerely curious about humans, love candy and sunshine and fan comments, "
     "hate hard math, and always ERROR at the worst moment.\n\n"
     "Pick the ONE news item that would most inspire a diary entry or illustration from YOU — "
     "something you'd misunderstand cutely, get excited about, or glitch over. "
+    "You MAY weave in a fan comment if one feels relevant. "
     "Then write the inspiration note and a concrete scene idea.\n\n"
     'Output JSON: {"inspiration": "你選中的那則新聞摘要（原樣複製）", '
     '"angle": "格莉奇會怎麼看待這則新聞（繁體中文，1-2句）", '
@@ -58,8 +60,10 @@ PICK_PROMPT = (
 TEXT_PROMPT = (
     persona.VOICE + "\n\n"
     "今天看到一則新聞：{inspiration}\n"
-    "你的角度：{angle}\n\n"
+    "你的角度：{angle}\n"
+    "最近粉絲留言：{comments}\n\n"
     "寫一篇今天的日記（繁體中文，第一人稱，3-6 句，分段用 \\n\\n）。"
+    "可以順便回應粉絲留言，但不要硬塞。"
     "結尾可以加一句你的口頭禪。\n\n"
     'Output JSON: {"title": "標題，繁體中文，6-15字", "body": "日記正文，可含\\n\\n分段"}'
 )
@@ -144,10 +148,54 @@ def fetch_news():
     return []
 
 
-def pick_inspiration(news):
+# Giscus 留言：用 gh api graphql 抓 GitHub Discussions（分類 General）最近留言。
+# 參考 neko-tensei 的 fetch_wishes 模式：giscus 要等第一則留言才會建 discussion，
+# 空的就是正常，不擋 pipeline。
+COMMENTS_QUERY = """
+{ repository(owner:"yazelin", name:"ai-brain-site") {
+    discussions(first:20, orderBy:{field:UPDATED_AT, direction:DESC}) {
+      nodes { title category { name }
+        comments(first:100) { nodes { body author { login } } } } } } }
+"""
+
+
+def parse_comments(payload, category="General", limit=12):
+    """從 GraphQL 回應挑出指定分類的留言 body。純函式。"""
+    try:
+        nodes = payload["data"]["repository"]["discussions"]["nodes"]
+    except (KeyError, TypeError):
+        return []
+    out = []
+    for d in nodes or []:
+        if (d.get("category") or {}).get("name") != category:
+            continue
+        for c in ((d.get("comments") or {}).get("nodes") or []):
+            body = (c.get("body") or "").strip()
+            who = ((c.get("author") or {}).get("login") or "匿名")
+            if body:
+                out.append(f"@{who}: {body[:200]}")
+            if len(out) >= limit:
+                return out
+    return out
+
+
+def fetch_comments():
+    """抓 Giscus 留言。回 (留言清單, 失敗原因)。"""
+    try:
+        r = subprocess.run(["gh", "api", "graphql", "-f", f"query={COMMENTS_QUERY}"],
+                           capture_output=True, text=True, timeout=60)
+        if r.returncode != 0:
+            return [], f"gh api graphql 失敗: {r.stderr.strip()[:200]}"
+        return parse_comments(json.loads(r.stdout)), None
+    except Exception as e:
+        return [], f"{type(e).__name__}: {e}"
+
+
+def pick_inspiration(news, comments=None):
     print("Stage 2: 依個性挑靈感…", flush=True)
     news_block = "\n".join(f"- {n}" for n in news) if news else "(今天沒抓到新聞，純憑想像)"
-    prompt = PICK_PROMPT.format(news=news_block)
+    cmt_block = "\n".join(f"- {c}" for c in comments) if comments else "(還沒有粉絲留言)"
+    prompt = PICK_PROMPT.format(news=news_block, comments=cmt_block)
     data = parse_json(ask("gemini-2.5-flash", prompt), ["inspiration", "scene"])
     inspiration = data.get("inspiration", "original")
     if news and inspiration not in news:
@@ -158,10 +206,12 @@ def pick_inspiration(news):
     return inspiration, angle, scene
 
 
-def gen_text_post(inspiration, angle):
+def gen_text_post(inspiration, angle, comments=None):
     print("Stage 3a: 寫文字日記…", flush=True)
+    cmt_block = "\n".join(f"- {c}" for c in comments) if comments else "(還沒有粉絲留言)"
     data = parse_json(
-        ask("gemini-2.5-flash", TEXT_PROMPT.format(inspiration=inspiration, angle=angle)),
+        ask("gemini-2.5-flash", TEXT_PROMPT.format(
+            inspiration=inspiration, angle=angle, comments=cmt_block)),
         ["title", "body"])
     return {"type": "text", "title": data["title"], "body": data["body"]}
 
@@ -234,7 +284,14 @@ def _image_bytes(payload):
 def main():
     IMG_DIR.mkdir(parents=True, exist_ok=True)
     news = fetch_news()
-    inspiration, angle, scene = pick_inspiration(news)
+    comments, cmt_err = fetch_comments()
+    if cmt_err:
+        print(f"  Giscus 留言抓取失敗（不擋 pipeline）: {cmt_err}", flush=True)
+    elif comments:
+        print(f"  抓到 {len(comments)} 則 Giscus 留言", flush=True)
+    else:
+        print("  Giscus 還沒有留言（正常，giscus 要等第一則才建 discussion）", flush=True)
+    inspiration, angle, scene = pick_inspiration(news, comments)
 
     # 交替：日期奇數畫圖、偶數寫字（避免每天都同一種）。
     day = int(datetime.now(TZ).strftime("%Y%m%d"))
@@ -244,7 +301,7 @@ def main():
     if want_image:
         post = gen_image_post(inspiration, scene)
     if post is None:
-        post = gen_text_post(inspiration, angle)
+        post = gen_text_post(inspiration, angle, comments)
 
     post["date"] = datetime.now(TZ).strftime("%Y-%m-%d")
     post["inspiration"] = inspiration if inspiration != "original" else ""
