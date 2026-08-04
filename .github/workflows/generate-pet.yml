@@ -31,4 +31,6 @@ jobs:
         env:
           CODEX_IMAGE_KEY: ${{ secrets.CODEX_IMAGE_KEY }}
           CODEX_IMAGE_BASE_URL: ${{ secrets.CODEX_IMAGE_BASE_URL }}
-        run: python scripts/generate_pet.py
+        run: |
+          pip install --quiet pillow
+          python scripts/generate_pet.py

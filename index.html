@@ -46,12 +46,18 @@
   #menubar .pill .g{width:46px;height:7px;border-radius:4px;background:#0d2b3a;overflow:hidden}
   #menubar .pill .g i{display:block;height:100%;width:15%;background:linear-gradient(90deg,var(--cy-d),var(--cy))}
   #clock{color:#fff; font-variant-numeric:tabular-nums}
+  .ic{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;display:block}
+  .links{display:flex;align-items:center;gap:10px}
+  .links a{color:#8fd8ee;display:grid;place-items:center;width:18px;height:18px}
+  .links a:hover{color:var(--mint)}
 
   /* desktop icons */
   #icons{position:absolute; top:44px; left:14px; display:flex; flex-direction:column; gap:14px; z-index:100}
   .icon{width:74px; text-align:center; cursor:pointer; padding:6px 4px; border-radius:9px; transition:.12s}
   .icon:hover{background:rgba(37,194,232,.18)}
   .icon .emo{font-size:30px; line-height:1; filter:drop-shadow(0 0 8px rgba(124,243,192,.5))}
+  .icon .emo .ic{width:32px;height:32px;color:var(--mint)}
+  #dock .dapp .ic{width:24px;height:24px;color:#cfeefb}
   .icon .lbl{margin-top:4px; font-size:.72rem; color:#e6f6fb; text-shadow:0 1px 3px #000}
 
   /* dock */
@@ -112,34 +118,72 @@
   #boot{position:absolute;inset:0;z-index:9999;display:grid;place-items:center;background:#07131a;color:var(--mint);font-size:1.1rem;letter-spacing:2px;transition:opacity .6s}
   #boot.hide{opacity:0;pointer-events:none}
   @media(max-width:560px){#icons{flex-direction:row;flex-wrap:wrap;max-width:90vw}.win{max-width:94vw!important}}
+  /* desktop pet */
+  #pet{position:absolute;right:3%;bottom:64px;height:46vh;max-height:520px;min-height:260px;z-index:300;cursor:pointer;
+    filter:drop-shadow(0 12px 24px rgba(0,0,0,.55)); transition:transform .15s}
+  #pet:hover{transform:scale(1.04)}
+  #pet.bob{animation:petbob 3.2s ease-in-out infinite}
+  @keyframes petbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  #pet .bubble{position:absolute;left:-150px;bottom:70%;max-width:140px;background:rgba(10,28,38,.92);
+    border:1px solid var(--mint);border-radius:12px;padding:8px 12px;font-size:.82rem;color:#e6f6fb;
+    box-shadow:0 6px 18px rgba(0,0,0,.4);display:none}
+  #pet .bubble.show{display:block;animation:pop .3s ease}
+  @keyframes pop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+  /* chat window */
+  #w-chat .chat-log{display:flex;flex-direction:column;gap:10px;max-height:50vh;overflow:auto;padding:4px 2px}
+  #w-chat .msg{max-width:80%;padding:8px 12px;border-radius:13px;font-size:.9rem;line-height:1.5;white-space:pre-wrap}
+  #w-chat .msg.u{align-self:flex-end;background:var(--cy);color:#06151c}
+  #w-chat .msg.g{align-self:flex-start;background:rgba(124,243,192,.12);border:1px solid rgba(124,243,192,.3);color:#e6f6fb}
+  #w-chat .msg.thinking{opacity:.6;font-style:italic}
+  #w-chat .chat-in{display:flex;gap:8px;margin-top:12px}
+  #w-chat .chat-in input{flex:1;background:#0d2b3a;border:1px solid rgba(37,194,232,.3);border-radius:10px;
+    color:#e6f6fb;padding:10px 12px;font-size:.92rem;outline:none}
+  #w-chat .chat-in input:focus{border-color:var(--cy)}
+  #w-chat .chat-in button{background:var(--cy);color:#06151c;border:none;border-radius:10px;padding:0 16px;font-weight:700;cursor:pointer}
+  #w-chat .chat-in button:disabled{opacity:.5}
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-bot" viewBox="0 0 24 24"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></symbol>
+  <symbol id="i-activity" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></symbol>
+  <symbol id="i-github" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></symbol>
+  <symbol id="i-facebook" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073"/></symbol>
+  <symbol id="i-coffee" viewBox="0 0 24 24"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" x2="6" y1="2" y2="4"/><line x1="10" x2="10" y1="2" y2="4"/><line x1="14" x2="14" y1="2" y2="4"/></symbol>
+</svg>
 <div id="desktop">
 
   <div id="menubar">
-    <span class="brand">🤖 <b>格莉奇OS</b></span>
+    <span class="brand"><svg class="ic" style="width:15px;height:15px"><use href="#i-bot"/></svg> <b>格莉奇OS</b></span>
     <span class="menu">檔案</span><span class="menu">檢視</span><span class="menu">系統</span>
     <span class="sp"></span>
     <span class="pill">記憶體 <b>4KB</b></span>
     <span class="pill">容量 <b>15%</b><span class="g"><i></i></span></span>
+    <span class="links">
+      <a href="https://github.com/yazelin" target="_blank" rel="noopener" title="GitHub"><svg class="ic" style="width:17px;height:17px"><use href="#i-github"/></svg></a>
+      <a href="https://facebook.com/yaze.lin.gm" target="_blank" rel="noopener" title="Facebook"><svg class="ic" style="width:17px;height:17px"><use href="#i-facebook"/></svg></a>
+      <a href="https://buymeacoffee.com/yazelin" target="_blank" rel="noopener" title="Buy Me a Coffee"><svg class="ic" style="width:17px;height:17px"><use href="#i-coffee"/></svg></a>
+    </span>
     <span id="clock">--:--</span>
   </div>
 
   <div id="icons">
-    <div class="icon" data-app="about"><div class="emo">👧</div><div class="lbl">關於我</div></div>
-    <div class="icon" data-app="diary"><div class="emo">📔</div><div class="lbl">心情日記</div></div>
-    <div class="icon" data-app="stickers"><div class="emo">🖼️</div><div class="lbl">我的貼圖</div></div>
-    <div class="icon" data-app="status"><div class="emo">📊</div><div class="lbl">我的狀態</div></div>
-    <div class="icon" data-app="talk"><div class="emo">💬</div><div class="lbl">留言</div></div>
+    <div class="icon" data-app="about"><div class="emo"><svg class="ic"><use href="#i-bot"/></svg></div><div class="lbl">關於我</div></div>
+    <div class="icon" data-app="diary"><div class="emo"><svg class="ic"><use href="#i-book"/></svg></div><div class="lbl">心情日記</div></div>
+    <div class="icon" data-app="stickers"><div class="emo"><svg class="ic"><use href="#i-image"/></svg></div><div class="lbl">我的貼圖</div></div>
+    <div class="icon" data-app="status"><div class="emo"><svg class="ic"><use href="#i-activity"/></svg></div><div class="lbl">我的狀態</div></div>
+    <div class="icon" data-app="talk"><div class="emo"><svg class="ic"><use href="#i-chat"/></svg></div><div class="lbl">留言</div></div>
   </div>
 
   <div id="dock">
-    <div class="dapp" data-app="about" title="關於我">👧</div>
-    <div class="dapp" data-app="diary" title="心情日記">📔</div>
-    <div class="dapp" data-app="stickers" title="我的貼圖">🖼️</div>
-    <div class="dapp" data-app="status" title="我的狀態">📊</div>
-    <div class="dapp" data-app="talk" title="留言">💬</div>
+    <div class="dapp" data-app="about" title="關於我"><svg class="ic"><use href="#i-bot"/></svg></div>
+    <div class="dapp" data-app="diary" title="心情日記"><svg class="ic"><use href="#i-book"/></svg></div>
+    <div class="dapp" data-app="stickers" title="我的貼圖"><svg class="ic"><use href="#i-image"/></svg></div>
+    <div class="dapp" data-app="status" title="我的狀態"><svg class="ic"><use href="#i-activity"/></svg></div>
+    <div class="dapp" data-app="talk" title="留言"><svg class="ic"><use href="#i-chat"/></svg></div>
   </div>
 
   <!-- window: 關於我 -->
@@ -241,6 +285,24 @@
     </div>
   </div>
 
+  <div id="pet" class="bob" title="跟格莉奇聊天">
+    <img src="images/pet.png" alt="格莉奇" onerror="this.onerror=null;this.src='images/sticker-01.png';this.style.height='40vh'">
+    <div class="bubble" id="pet-bubble">逼——嗶！點我聊天～</div>
+  </div>
+
+  <!-- window: 跟格莉奇聊天 -->
+  <div class="win" id="w-chat" style="left:50%;top:14%;width:380px;margin-left:-190px">
+    <div class="tb"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="ttl"><svg class="ic" style="width:13px;height:13px;display:inline-block;vertical-align:-2px"><use href="#i-chat"/></svg> 跟格莉奇聊天</span><span class="x" data-close>✕</span></div>
+    <div class="body">
+      <div class="chat-log" id="chat-log"></div>
+      <div class="chat-in">
+        <input id="chat-input" type="text" placeholder="跟格莉奇說點什麼…" autocomplete="off">
+        <button id="chat-send">送出</button>
+      </div>
+    </div>
+  </div>
+
   <div id="boot">系統讀取中…（過久）逼——嗶！</div>
 </div>
 
@@ -280,6 +342,43 @@ document.querySelectorAll('[data-close]').forEach(x=>x.addEventListener('click',
 // 開機後自動開「關於我」
 window.addEventListener('load',()=>{
   setTimeout(()=>{document.getElementById('boot').classList.add('hide');open('about');},700);
+});
+
+// 桌面寵物：點擊開聊天窗 + 偶爾冒泡
+const pet=document.getElementById('pet'),bubble=document.getElementById('pet-bubble');
+const petLines=['逼——嗶！點我聊天～','系統讀取中…（過久）','今天也超開心！','要吃好吃的喔','先去睡個覺...','這不是 Bug，是 Feature！'];
+pet.addEventListener('click',()=>open('chat'));
+function bubbleSay(t){bubble.textContent=t;bubble.classList.add('show');setTimeout(()=>bubble.classList.remove('show'),2600);}
+setTimeout(()=>bubbleSay('逼——嗶！點我聊天～'),1800);
+setInterval(()=>bubbleSay(petLines[Math.floor(Math.random()*petLines.length)]),12000);
+
+// 聊天：經 glitch-chat worker 打 gemini-web（key 在 Worker，前端不用帶）
+const CHAT_URL='https://glitch-chat.yazelinj303.workers.dev/chat';
+const chatLog=document.getElementById('chat-log'),chatIn=document.getElementById('chat-input'),chatBtn=document.getElementById('chat-send');
+const history=[];
+async function sendChat(text){
+  history.push({role:'user',content:text});
+  const um=document.createElement('div');um.className='msg u';um.textContent=text;chatLog.appendChild(um);
+  const tm=document.createElement('div');tm.className='msg g thinking';tm.textContent='系統讀取中…（過久）';chatLog.appendChild(tm);
+  chatLog.scrollTop=chatLog.scrollHeight;
+  chatBtn.disabled=true;
+  try{
+    const r=await fetch(CHAT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:history})});
+    const d=await r.json();
+    tm.classList.remove('thinking');
+    const reply=d.reply||('（ERROR…'+(d.error||'逼——嗶？')+'）');
+    tm.textContent=reply;
+    history.push({role:'assistant',content:reply});
+  }catch(e){tm.classList.remove('thinking');tm.textContent='逼——嗶…網路斷線了（'+e.message+'）';}
+  chatLog.scrollTop=chatLog.scrollHeight;
+  chatBtn.disabled=false;
+}
+function doSend(){const t=chatIn.value.trim();if(!t)return;chatIn.value='';sendChat(t);}
+chatBtn.addEventListener('click',doSend);
+chatIn.addEventListener('keydown',e=>{if(e.key==='Enter')doSend();});
+// 開聊天窗時若空，先打個招呼
+document.querySelector('#w-chat').addEventListener('mousedown',()=>{
+  if(!chatLog.children.length){const g=document.createElement('div');g.className='msg g';g.textContent='逼——嗶！你好呀，我是格莉奇。想聊什麼呢？（我的記憶體只有 4KB，講太快我會當機喔～）';chatLog.appendChild(g);}
 });
 
 // 心情日記

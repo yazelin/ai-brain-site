@@ -11,6 +11,7 @@ import subprocess
 import sys
 import time
 import urllib.request
+from collections import deque
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -61,7 +62,13 @@ def main():
         url = BASE_URL + url
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with urllib.request.urlopen(url, timeout=300) as r:
-        OUT.write_bytes(r.read())
+        raw = r.read()
+    # codex 回的是不透明的近白底；從四邊 flood-fill 去白底，轉透明 PNG。
+    try:
+        transparent_bg(raw, OUT)
+    except Exception as e:
+        print(f"  去背失敗({e})，直接存原檔。", flush=True)
+        OUT.write_bytes(raw)
     print(f"-> {OUT} ok {int(time.time()-t0)}s {OUT.stat().st_size/1e6:.2f}MB", flush=True)
     subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
     subprocess.run(["git", "config", "user.email",
@@ -76,6 +83,41 @@ def main():
 def _fail(msg):
     print(f"::error::{msg}", file=sys.stderr)
     sys.exit(1)
+
+
+def transparent_bg(raw_bytes, out_path):
+    """codex 出圖是不透明的近白底；從四邊 flood-fill 去白，存透明 PNG。"""
+    from PIL import Image
+    im = Image.open(__import__("io").BytesIO(raw_bytes)).convert("RGB")
+    w, h = im.size
+    px = im.load()
+    thr = 238
+    bg = [[False] * w for _ in range(h)]
+    q = deque()
+    def near(i, j):
+        r, g, b = px[i, j]; return r > thr and g > thr and b > thr
+    for x in range(w):
+        for y in (0, h - 1):
+            if near(x, y): bg[y][x] = True; q.append((x, y))
+    for y in range(h):
+        for x in (0, w - 1):
+            if near(x, y): bg[y][x] = True; q.append((x, y))
+    while q:
+        x, y = q.popleft()
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < w and 0 <= ny < h and not bg[ny][nx] and near(nx, ny):
+                bg[ny][nx] = True; q.append((nx, ny))
+    alpha = Image.new("L", (w, h), 0)
+    al = alpha.load()
+    kept = 0
+    for y in range(h):
+        for x in range(w):
+            if not bg[y][x]:
+                al[x, y] = 255; kept += 1
+    out = im.convert("RGBA"); out.putalpha(alpha)
+    out.save(out_path)
+    print(f"  去背完成：保留 {100*kept/(w*h):.1f}% 像素", flush=True)
 
 
 if __name__ == "__main__":
