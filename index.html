@@ -238,6 +238,9 @@
   .mb.her .bub{background:#fff;color:#222;border-bottom-left-radius:6px;box-shadow:0 1px 1px rgba(0,0,0,.12)}
   .mb .t{font-size:.58rem;color:rgba(0,0,0,.55);align-self:flex-end;margin:0 2px;flex:0 0 auto}
   .mb.thinking .bub{opacity:.7;font-style:italic}
+  .mb .bub.img-bub{padding:3px;max-width:170px;background:transparent!important;box-shadow:none}
+  .mb .bub.img-bub img{display:block;width:100%;border-radius:14px}
+  .mb.her .bub.img-bub img{box-shadow:0 1px 3px rgba(0,0,0,.18)}
   #chat-log .day{align-self:center;background:rgba(0,0,0,.18);color:#fff;font-size:.62rem;padding:3px 10px;border-radius:8px;margin:4px 0}
   .in{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:7px 8px;background:#f7f7f7;border-top:1px solid rgba(0,0,0,.08)}
   .in input{flex:1;border:1px solid #cfd6da;border-radius:18px;padding:8px 12px;font-size:.84rem;outline:none;background:#fff;color:#222}
@@ -519,6 +522,7 @@ function focus(w){w.style.zIndex=++z;}
   });
 })();
 function open(app){const w=wins[app];if(!w)return;w.classList.add('open');focus(w);if(app==='talk')loadGiscus();if(app==='settings')openSettings();if(app==='chat')chatFocus();}
+function toggle(app){const w=wins[app];if(!w)return;if(w.classList.contains('open'))w.classList.remove('open');else open(app);}
 let _giscusLoaded=false;
 function loadGiscus(){
   if(_giscusLoaded)return;_giscusLoaded=true;
@@ -541,7 +545,7 @@ function loadGiscus(){
   s.async=true;
   document.getElementById('giscus-here').appendChild(s);
 }
-document.querySelectorAll('[data-app]').forEach(b=>b.addEventListener('click',()=>open(b.dataset.app)));
+document.querySelectorAll('[data-app]').forEach(b=>b.addEventListener('click',()=>toggle(b.dataset.app)));
 document.querySelectorAll('[data-close]').forEach(x=>x.addEventListener('click',e=>{
   e.target.closest('.win').classList.remove('open');}));
 
@@ -585,6 +589,8 @@ setInterval(()=>bubbleSay(petLines[Math.floor(Math.random()*petLines.length)]),1
    送出時帶 memory + 最近 16 則給 worker；每 10 則呼叫 /summarize 壓成記憶。 */
 const CHAT_URL='https://glitch-chat.yazelinj303.workers.dev/chat';
 const SUM_URL='https://glitch-chat.yazelinj303.workers.dev/summarize';
+const IMG_URL='https://glitch-chat.yazelinj303.workers.dev/img';
+const IMG_RE=/畫(一|隻|個|張|圖|個圖)?|draw|illustrate|生成圖|給我看.{0,4}(圖|畫)|畫圖/i;
 const AV='images/avatar.png';
 const AV_FALL='images/sticker-01.png';
 function avImg(){return `<img src="${AV}" onerror="this.onerror=null;this.src='${AV_FALL}'">`;}
@@ -602,7 +608,11 @@ function renderMsg(m,showAvatar,showTime){
     const b=document.createElement('div');b.className='bub';b.textContent=m.content;wrap.appendChild(b);
   }else{
     if(showAvatar){const a=document.createElement('div');a.className='av';a.innerHTML=avImg();wrap.appendChild(a);}
-    const b=document.createElement('div');b.className='bub';b.textContent=m.content;wrap.appendChild(b);
+    const b=document.createElement('div');
+    if(m.image){b.className='bub img-bub';const im=document.createElement('img');im.src=m.image;b.appendChild(im);
+      if(m.content){const c=document.createElement('div');c.style.cssText='padding:4px 6px 2px;font-size:.74rem;color:#666';c.textContent=m.content;b.appendChild(c);}}
+    else{b.className='bub';b.textContent=m.content;}
+    wrap.appendChild(b);
     if(t)wrap.appendChild(t);          // 對方訊息：時間在氣泡右邊
   }
   return wrap;
@@ -628,19 +638,36 @@ async function loadChat(){
 function chatFocus(){loadChat();setTimeout(()=>chatIn.focus(),50);}
 
 async function sendChat(text){
+  const isImg=IMG_RE.test(text);
   const msg={role:'user',content:text,ts:Date.now()};
   history.push(msg);await dbSet('chat',history);
   chatLog.appendChild(renderMsg(msg,true,true));
   const tm=document.createElement('div');tm.className='mb her thinking';
-  tm.innerHTML=`<div class="av">${avImg()}</div><div class="bub">系統讀取中…</div>`;
+  tm.innerHTML=`<div class="av">${avImg()}</div><div class="bub">${isImg?'畫圖中…':'系統讀取中…'}</div>`;
   chatLog.appendChild(tm);chatLog.scrollTop=chatLog.scrollHeight;chatBtn.disabled=true;
   const recent=history.filter(m=>m.content).slice(-16).map(({role,content})=>({role,content}));
   try{
-    const r=await fetch(CHAT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:recent,memory})});
-    const d=await r.json();
-    tm.classList.remove('thinking');tm.querySelector('.bub').textContent=d.reply||('（ERROR…'+(d.error||'逼——嗶？')+'）');
-    history.push({role:'assistant',content:tm.querySelector('.bub').textContent,ts:Date.now()});
-    await dbSet('chat',history);
+    if(isImg){
+      const r=await fetch(IMG_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:text})});
+      const d=await r.json();
+      tm.classList.remove('thinking');
+      if(d.image){
+        const b=tm.querySelector('.bub');b.className='bub img-bub';b.innerHTML='';
+        const im=document.createElement('img');im.src=d.image;b.appendChild(im);
+        const cap=document.createElement('div');cap.style.cssText='padding:4px 6px 2px;font-size:.74rem;color:#666';cap.textContent='逼——嗶！畫好啦～';b.appendChild(cap);
+        history.push({role:'assistant',content:'逼——嗶！畫好啦～',image:d.image,ts:Date.now()});
+      }else{
+        tm.querySelector('.bub').textContent='逼——嗶…畫筆壞了（'+(d.error||'未知錯誤')+'）';
+        history.push({role:'assistant',content:tm.querySelector('.bub').textContent,ts:Date.now()});
+      }
+      await dbSet('chat',history);
+    }else{
+      const r=await fetch(CHAT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:recent,memory})});
+      const d=await r.json();
+      tm.classList.remove('thinking');tm.querySelector('.bub').textContent=d.reply||('（ERROR…'+(d.error||'逼——嗶？')+'）');
+      history.push({role:'assistant',content:tm.querySelector('.bub').textContent,ts:Date.now()});
+      await dbSet('chat',history);
+    }
   }catch(e){tm.classList.remove('thinking');tm.querySelector('.bub').textContent='逼——嗶…網路斷線了（'+e.message+'）';}
   chatLog.scrollTop=chatLog.scrollHeight;chatBtn.disabled=false;
   maybeSummarize();
