@@ -155,12 +155,12 @@ COMMENTS_QUERY = """
 { repository(owner:"yazelin", name:"ai-brain-site") {
     discussions(first:20, orderBy:{field:UPDATED_AT, direction:DESC}) {
       nodes { title category { name }
-        comments(first:100) { nodes { body author { login } } } } } } }
+        comments(first:100) { nodes { body author { login } createdAt } } } } } }
 """
 
 
 def parse_comments(payload, category="General", limit=12):
-    """從 GraphQL 回應挑出指定分類的留言 body。純函式。"""
+    """從 GraphQL 回應挑出指定分類的留言，依時間倒序取最近 limit 則。純函式。"""
     try:
         nodes = payload["data"]["repository"]["discussions"]["nodes"]
     except (KeyError, TypeError):
@@ -171,12 +171,14 @@ def parse_comments(payload, category="General", limit=12):
             continue
         for c in ((d.get("comments") or {}).get("nodes") or []):
             body = (c.get("body") or "").strip()
+            if not body:
+                continue
             who = ((c.get("author") or {}).get("login") or "匿名")
-            if body:
-                out.append(f"@{who}: {body[:200]}")
-            if len(out) >= limit:
-                return out
-    return out
+            ts = c.get("createdAt") or ""
+            out.append((ts, f"@{who}: {body[:200]}"))
+    # 依 createdAt 倒序（最新在前），取前 limit 則
+    out.sort(key=lambda x: x[0], reverse=True)
+    return [s for _, s in out[:limit]]
 
 
 def fetch_comments():
