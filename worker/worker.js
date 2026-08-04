@@ -1,6 +1,7 @@
 /* glitch-chat: 格莉奇OS 聊天代理。
    前端不用帶 key。Worker 注入 GEMINI_API_KEY，把對話轉到 .11 的 gemini-web，
    並塞入格莉奇人設 system instruction。輕量限流（每 IP 每分鐘 12 次）。
+   路由：POST /chat 聊天（可帶 memory 摘要注入人設）；POST /summarize 把舊對話壓成記憶摘要。
    Secret: GEMINI_API_KEY。Var: GEMINI_WEB_BASE_URL、ALLOWED_ORIGINS、MODEL。
    ponytail: in-memory 限流，isolate 回收即歸零——聊天機器人夠用。 */
 
@@ -40,31 +41,68 @@ export default {
     const lim = limited(ip);
     if (lim) return err(429, lim);
 
+    const path = new URL(req.url).pathname.replace(/\/+$/, "");
     let body;
     try { body = await req.json(); } catch { return err(400, "bad json"); }
-    const msgs = Array.isArray(body.messages) ? body.messages : [{ role: "user", content: body.text || "" }];
-    const contents = msgs
-      .filter((m) => m && m.content)
-      .map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: String(m.content) }] }));
-    if (!contents.length) return err(400, "empty");
 
-    const base = (env.GEMINI_WEB_BASE_URL || "").replace(/\/+$/, "");
-    const model = env.MODEL || "gemini-2.5-flash";
-    const url = `${base}/v1beta/models/${encodeURIComponent(model)}:generateContent`;
-    const payload = {
-      systemInstruction: { parts: [{ text: SYSTEM }] },
-      contents,
-      generationConfig: { temperature: 1.1, maxOutputTokens: 400 },
-    };
-    const r = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY || "" },
-      body: JSON.stringify(payload),
-    });
-    const data = await r.json();
-    if (!r.ok) return err(502, `upstream ${r.status}: ${JSON.stringify(data).slice(0, 200)}`);
-    const text = (data.candidates?.[0]?.content?.parts || []).map((p) => p.text).join("").trim();
-    if (!text) return err(502, "no text in upstream response");
-    return new Response(JSON.stringify({ reply: text }), { headers: { "content-type": "application/json", ...cors } });
+    if (path.endsWith("/summarize")) return summarize(env, body, cors, err);
+    return chat(env, body, cors, err);
   },
 };
+
+async function gen(env, systemText, contents, maxTokens) {
+  const base = (env.GEMINI_WEB_BASE_URL || "").replace(/\/+$/, "");
+  const model = env.MODEL || "gemini-2.5-flash";
+  const url = `${base}/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+  const payload = {
+    systemInstruction: { parts: [{ text: systemText }] },
+    contents,
+    generationConfig: { temperature: 1.1, maxOutputTokens: maxTokens },
+  };
+  const r = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY || "" },
+    body: JSON.stringify(payload),
+  });
+  const data = await r.json();
+  if (!r.ok) return { ok: false, status: r.status, detail: JSON.stringify(data).slice(0, 200) };
+  const text = (data.candidates?.[0]?.content?.parts || []).map((p) => p.text).join("").trim();
+  return { ok: true, text };
+}
+
+async function chat(env, body, cors, err) {
+  const msgs = Array.isArray(body.messages) ? body.messages : [{ role: "user", content: body.text || "" }];
+  const contents = msgs
+    .filter((m) => m && m.content)
+    .map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: String(m.content) }] }));
+  if (!contents.length) return err(400, "empty");
+  // 記憶摘要（前端維護、本機儲存）注入人設，讓她記得之前聊過的事
+  let system = SYSTEM;
+  if (body.memory && String(body.memory).trim()) {
+    system += `\n\n【你對這位使用者的記憶摘要】（記得這些事，自然地延續，不要逐條複誦）：\n${String(body.memory).trim()}`;
+  }
+  const out = await gen(env, system, contents, 400);
+  if (!out.ok) return err(502, `upstream ${out.status}: ${out.detail}`);
+  if (!out.text) return err(502, "no text in upstream response");
+  return new Response(JSON.stringify({ reply: out.text }), { headers: { "content-type": "application/json", ...cors } });
+}
+
+const SUM_SYS = `你是格莉奇（Glitch）的記憶壓縮器。把給你的對話整理成一份給格莉奇本人讀的「記憶摘要」：
+用條列或短句記住：使用者叫什麼/喜歡什麼/聊過的重要事/約定/格莉奇答應過的事。只保留事實，不要寒暆，不要編造。
+若已有舊摘要，把它與新對話合併更新，輸出最終摘要（最多 300 字，繁體中文）。`;
+
+async function summarize(env, body, cors, err) {
+  const msgs = Array.isArray(body.messages) ? body.messages : [];
+  if (!msgs.length) return err(400, "empty");
+  const contents = msgs
+    .filter((m) => m && m.content)
+    .map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: String(m.content) }] }));
+  if (!contents.length) return err(400, "empty");
+  if (body.prevMemory && String(body.prevMemory).trim()) {
+    contents.unshift({ role: "user", parts: [{ text: `【舊記憶摘要】\n${String(body.prevMemory).trim()}` }] });
+  }
+  const out = await gen(env, SUM_SYS, contents, 500);
+  if (!out.ok) return err(502, `upstream ${out.status}: ${out.detail}`);
+  if (!out.text) return err(502, "no text in upstream response");
+  return new Response(JSON.stringify({ summary: out.text }), { headers: { "content-type": "application/json", ...cors } });
+}
