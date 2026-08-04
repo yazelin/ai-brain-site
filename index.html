@@ -598,11 +598,13 @@ if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
 /* ===== 桌布：套用使用者選的（IndexedDB blob 或預設 images/wallpaper.png）===== */
 const desktop=document.getElementById('desktop');
 async function applyWall(){
-  const choice=await dbGet('wallpaper');
+  const choice=(await dbGet('wallpaper'));
   let url='images/wallpaper.png',isUser=false;
-  if(choice==='default'){url=null;}
-  else if(choice==='upload'){const blob=await dbGet('wallpaper-blob');if(blob){url=URL.createObjectURL(blob);isUser=true;}}
-  if(url){const im=new Image();im.onload=()=>{desktop.classList.add('has-wall');desktop.style.backgroundImage=`url("${url}")`;if(!isUser)URL.revokeObjectURL&&0;};im.onerror=()=>{desktop.classList.remove('has-wall');};im.src=url;}
+  if(!choice||choice==='wallpaper'){/* default */}
+  else if(choice==='default'){url=null;}
+  else if(choice==='upload'){const blob=await dbGet('wallpaper-blob');if(blob){url=URL.createObjectURL(blob);isUser=true;}else{url=null;}}
+  else if(typeof choice==='string'&&choice.startsWith('images/')){url=choice;}
+  if(url){const im=new Image();im.onload=()=>{desktop.classList.add('has-wall');desktop.style.backgroundImage=`url("${url}")`};im.onerror=()=>{desktop.classList.remove('has-wall');};im.src=url;}
   else{desktop.classList.remove('has-wall');desktop.style.backgroundImage='';}
 }
 applyWall();
@@ -926,18 +928,31 @@ petTop.addEventListener('change',async()=>{await dbSet('pet-top',petTop.checked)
 (async()=>{const t=await dbGet('pet-top');if(t===false){petTop.checked=false;applyPetTop();}})();
 async function renderWallGrid(){
   const choice=(await dbGet('wallpaper'))||'wallpaper';
-  const opts=[['wallpaper','格莉奇OS 桌布','images/wallpaper.png'],['default','預設漸層',null],['upload','自訂上傳',null]];
   wallGrid.innerHTML='';
-  for(const [id,label,src] of opts){
-    const has=id==='upload'&&await dbGet('wallpaper-blob');
-    if(id==='upload'&&!has)continue;
-    const d=document.createElement('div');d.className='wall-opt'+(id==='upload'?' up':'')+(choice===id?' sel':'');
-    if(src){const im=document.createElement('img');im.src=src;im.onerror=()=>{d.querySelector('img')?.replaceWith(Object.assign(document.createElement('div'),{className:'ph'}));};d.appendChild(im);}
-    else{const ph=document.createElement('div');ph.className='ph';d.appendChild(ph);}
-    if(id==='upload'){const blob=await dbGet('wallpaper-blob');if(blob){const im=d.querySelector('img')||d.querySelector('.ph');const u=URL.createObjectURL(blob);const img=document.createElement('img');img.src=u;d.replaceChild(img,d.querySelector('img')||d.querySelector('.ph'));}}
-    const c=document.createElement('div');c.className='cap';c.textContent=label;d.appendChild(c);
-    d.onclick=async()=>{await dbSet('wallpaper',id);await applyWall();renderWallGrid();};
+  // 累積桌布：從 wallpapers.json 載入
+  let walls=[];
+  try{const r=await fetch('wallpapers.json',{cache:'no-store'});walls=await r.json();}catch(e){walls=[{id:'glitch_default',name:'格莉奇OS 桌布',path:'images/wallpaper.png'}];}
+  for(const w of walls){
+    const d=document.createElement('div');d.className='wall-opt'+(choice===w.path?' sel':'');
+    const im=document.createElement('img');im.src=w.path;im.onerror=()=>{d.querySelector('img')?.replaceWith(Object.assign(document.createElement('div'),{className:'ph'}));};d.appendChild(im);
+    const c=document.createElement('div');c.className='cap';c.textContent=w.name;d.appendChild(c);
+    d.onclick=async()=>{await dbSet('wallpaper',w.path);await applyWall();renderWallGrid();};
     wallGrid.appendChild(d);
+  }
+  // 預設漸層
+  const def=document.createElement('div');def.className='wall-opt'+(choice==='default'?' sel':'');
+  def.appendChild(Object.assign(document.createElement('div'),{className:'ph'}));
+  const dc=document.createElement('div');dc.className='cap';dc.textContent='預設漸層';def.appendChild(dc);
+  def.onclick=async()=>{await dbSet('wallpaper','default');await applyWall();renderWallGrid();};
+  wallGrid.appendChild(def);
+  // 自訂上傳
+  const blob=await dbGet('wallpaper-blob');
+  if(blob){
+    const up=document.createElement('div');up.className='wall-opt up'+(choice==='upload'?' sel':'');
+    const u=URL.createObjectURL(blob);const im=document.createElement('img');im.src=u;up.appendChild(im);
+    const c=document.createElement('div');c.className='cap';c.textContent='自訂上傳';up.appendChild(c);
+    up.onclick=async()=>{await dbSet('wallpaper','upload');await applyWall();renderWallGrid();};
+    wallGrid.appendChild(up);
   }
 }
 wallUpload.addEventListener('change',async e=>{
@@ -977,8 +992,9 @@ document.getElementById('chat-clear').addEventListener('click',async()=>{
         const body=p.body.split(/\n\n+/).map(t=>`<p>${t.replace(/\n/g,'<br>')}</p>`).join('');
         const img=p.image?`<img class="illust" src="${p.image}" alt="${p.title||''}" data-img="${p.image}">`:'';
         const insp=p.inspiration?`<p class="insp">靈感來源：${p.inspiration}</p>`:'';
+        const cmt=p.comment_source?`<p class="insp" style="color:var(--purple)">留言啟發：${p.comment_source}</p>`:'';
         const tag=p.type==='image'?'插畫':'文字';
-        return `<article class="post"><span class="ptype">${tag}</span><time>${p.date}</time><h3>${p.title||''}</h3>${img}${body}${insp}</article>`;
+        return `<article class="post"><span class="ptype">${tag}</span><time>${p.date}</time><h3>${p.title||''}</h3>${img}${body}${insp}${cmt}</article>`;
       }).join(''):'<p style="color:#5d8ba0;text-align:center;padding:30px 0">這個月份沒有日記。</p>';
       el.querySelectorAll('img.illust').forEach(im=>im.addEventListener('click',()=>openViewer(im.dataset.img,p.title)));
     }

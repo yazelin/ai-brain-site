@@ -48,15 +48,16 @@ PICK_PROMPT = (
     "You ARE 格莉奇（Glitch）, an AI robot-girl VTuber with 4KB of memory. "
     "You are gullible, sincerely curious about humans, love candy and sunshine and fan comments, "
     "hate hard math, and always ERROR at the worst moment.\n\n"
-    "Pick the ONE news item that would most inspire a diary entry or illustration from YOU — "
-    "something you'd misunderstand cutely, get excited about, or glitch over. "
-    "You MAY weave in a fan comment if one feels relevant. "
-    "Then write the inspiration note and a concrete scene idea.\n\n"
+    "Pick the ONE thing that would most inspire a diary entry or illustration from YOU — "
+    "it can be a news item OR a fan comment. Something you'd misunderstand cutely, "
+    "get excited about, or glitch over. You MAY also weave in a fan comment alongside the news.\n\n"
     "Your LINE stickers (pick 1-2 that match the mood of the scene):\n"
     "1=欸？搞錯了嗎？ 2=今天也超開心！ 3=大家加油喵！ 4=這個太難了吧... "
     "5=我沒有卡住！ 6=要吃好吃的喔 7=先去睡個覺... 8=這樣也可以！？ 9=謝謝大家的禮物！\n\n"
-    'Output JSON: {{"inspiration": "你選中的那則新聞摘要（原樣複製）", '
-    '"angle": "格莉奇會怎麼看待這則新聞（繁體中文，1-2句）", '
+    'Output JSON: {{"inspiration": "你選中的那則新聞摘要或粉絲留言（原樣複製）", '
+    '"source_type": "news 或 giscus（主要靈感來自哪）", '
+    '"comment_source": "若引用了粉絲留言，列出原文；無則空字串", '
+    '"angle": "格莉奇會怎麼看待這件事（繁體中文，1-2句）", '
     '"scene": "若要畫一張插畫，格莉奇在什麼場景做什麼動作（繁體中文，1-2句，具體）", '
     '"stickers": [1, 2]}}'
 )
@@ -204,7 +205,9 @@ def pick_inspiration(news, comments=None):
     prompt = PICK_PROMPT.format(news=news_block, comments=cmt_block)
     data = parse_json(ask("gemini-2.5-flash", prompt), ["inspiration", "scene"])
     inspiration = data.get("inspiration", "original")
-    if news and inspiration not in news:
+    source_type = data.get("source_type", "news")
+    comment_source = data.get("comment_source", "")
+    if news and inspiration not in news and source_type == "news":
         inspiration = news[0]
     angle = data.get("angle", "")
     scene = data.get("scene", "格莉奇坐在螢幕前，天線亂動，畫面出現像素 glitch 方塊。")
@@ -213,9 +216,11 @@ def pick_inspiration(news, comments=None):
         stickers = [s for s in stickers if isinstance(s, int) and 1 <= s <= 9][:2]
     else:
         stickers = []
-    print(f"  靈感: {inspiration[:80]}", flush=True)
+    print(f"  靈感({source_type}): {inspiration[:80]}", flush=True)
+    if comment_source:
+        print(f"  留言啟發: {comment_source[:80]}", flush=True)
     print(f"  貼圖: {stickers}", flush=True)
-    return inspiration, angle, scene, stickers
+    return inspiration, angle, scene, stickers, comment_source
 
 
 def gen_text_post(inspiration, angle, comments=None):
@@ -332,7 +337,7 @@ def main():
         print(f"  抓到 {len(comments)} 則 Giscus 留言", flush=True)
     else:
         print("  Giscus 還沒有留言（正常，giscus 要等第一則才建 discussion）", flush=True)
-    inspiration, angle, scene, stickers = pick_inspiration(news, comments)
+    inspiration, angle, scene, stickers, comment_source = pick_inspiration(news, comments)
 
     # 交替：日期奇數畫圖、偶數寫字（避免每天都同一種）。
     day = int(datetime.now(TZ).strftime("%Y%m%d"))
@@ -346,6 +351,8 @@ def main():
 
     post["date"] = datetime.now(TZ).strftime("%Y-%m-%d")
     post["inspiration"] = inspiration if inspiration != "original" else ""
+    if comment_source:
+        post["comment_source"] = comment_source
     # 同一天已有則覆蓋最新那篇，避免重跑堆疊。
     posts = json.loads(POSTS_JSON.read_text("utf-8")) if POSTS_JSON.exists() else []
     posts = [p for p in posts if p.get("date") != post["date"]]
