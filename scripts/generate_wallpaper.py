@@ -102,7 +102,8 @@ def main():
     subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
     subprocess.run(["git", "config", "user.email",
                     "41898282+github-actions[bot]@users.noreply.github.com"], check=True)
-    subprocess.run(["git", "add", str(out), str(WALLPAPER_INDEX)], check=True)
+    subprocess.run([sys.executable, str(ROOT / "scripts" / "update_sw_hashes.py")], check=True)
+    subprocess.run(["git", "add", str(out), str(WALLPAPER_INDEX), str(ROOT / "sw.js")], check=True)
     if subprocess.run(["git", "diff", "--cached", "--quiet"]).returncode != 0:
         subprocess.run(["git", "commit", "-m", f"wallpaper: 新桌布 {fname}（累積）"], check=True)
         # ponytail: pull --rebase before push，避免期間有其他 commit 導致 push 被拒

@@ -17,16 +17,17 @@
 
 | 功能 | 現況 |
 | --- | --- |
-| 桌面 OS 體驗 | BIOS 風開機動畫、桌面圖示與 Dock、可拖曳／縮放／切換層級的應用程式視窗 |
+| 桌面／手機 OS 體驗 | 桌面版提供可拖曳、縮放與切換層級的視窗；手機版改為四欄 App 主畫面、狀態列、Dock 與全螢幕 App |
 | 格莉奇桌寵 | 角色常駐桌面、隨機對話泡泡；點擊即可開啟聊天 |
 | AI 聊天 | LINE 風格介面，由 Cloudflare Worker 注入格莉奇人設，再轉送自架 `gemini-web` |
-| 長期記憶 | 聊天歷史存在本機 IndexedDB；累積約 10 次新對話後，自動把舊內容壓縮成可編輯的記憶摘要 |
+| 長期記憶 | 聊天歷史與摘要進度存在本機 IndexedDB；每累積 10 則新訊息會自動更新可編輯的記憶摘要 |
 | AI 畫圖 | 對格莉奇說「畫一張……」等指令會切到生圖；成品自動存進虛擬 `~/下載/` |
+| 專屬音樂 | 內建單曲〈格莉奇 4KB〉、完整歌詞、背景播放、Media Session 控制，以及由真實音訊頻譜驅動的環形頻譜／波形／光暈／粒子視覺 |
 | 看圖與檔案 | 圖片可縮放、拖曳、全螢幕與下載；虛擬檔案系統保存在目前瀏覽器 |
 | 心情日記 | 依月份與文字／插畫篩選；GitHub Actions 每天從世界新聞與 Giscus 留言取得靈感，自動累積新文章 |
 | 角色內容 | 完整角色設定、9 張 LINE 貼圖、4KB 記憶體狀態與 Giscus 討論區 |
-| 個人化 | 可選內建桌布、上傳只留在本機的桌布，以及切換桌寵是否永遠置頂 |
-| PWA／離線 | 可安裝到桌面或手機；Service Worker 快取 app shell 與已載入資產，離線仍可開機並查看本機聊天歷史 |
+| 個人化 | 分頁設定中心可完整查看聊天紀錄與記憶摘要，並獨立管理桌布、桌寵與系統資訊 |
+| PWA／離線 | 可安裝到桌面或手機；Service Worker 快取 app shell、專屬單曲與已載入資產，離線仍可開機、聽歌並查看本機聊天歷史 |
 
 > 聊天、記憶摘要、AI 畫圖與 Giscus 留言需要網路。離線模式不會產生新的 AI 回覆。
 
@@ -59,7 +60,8 @@ flowchart LR
 
 - `index.html` 包含完整桌面 UI、視窗管理、聊天、日記、設定、檔案與看圖功能。
 - `manifest.webmanifest` 提供 PWA 名稱、主題色與應用程式圖示。
-- `sw.js` 先快取 app shell，再以 stale-while-revalidate 快取同源圖片與 `posts.json`；跨域 API 不快取。
+- `sw.js` 分離短生命週期 shell 與長生命週期 asset cache：先優先快取開機頭像與 app shell，再背景暖載入角色圖片及音樂；HTML network-first、動態 JSON stale-while-revalidate、資產 cache-first，音檔支援離線 Range 回應。
+- `scripts/update_sw_hashes.py` 依 shell／asset 真實檔案內容產生兩組 cache hash，不需手動調整 `vN` 版號。
 - `posts.json` 與 `wallpapers.json` 是可累積的內容索引。
 
 ### 聊天後端
@@ -110,6 +112,8 @@ python3 -m http.server 8000
 
 推送到 `main` 後，GitHub Pages 會自動重建網站。
 
+修改 `index.html`、manifest、JSON、圖片或音樂後，執行 `python scripts/update_sw_hashes.py`。現有內容生成腳本會自動執行它；PR workflow 會檢查 hash，直接推送到 `main` 時也會自動補正並寫回。
+
 ### Cloudflare Worker
 
 需要 Node.js 與 Wrangler：
@@ -147,6 +151,7 @@ npx wrangler deploy
 - `generate-avatar.yml`：重建 `images/avatar.png`。
 - `generate-pet.yml`：生成桌寵、去除 chroma key 背景並裁切透明邊界。
 - `generate-wallpaper.yml`：生成新桌布，附加到 `wallpapers.json`。
+- `pwa-cache-hash.yml`：檢查或自動同步 shell／asset 內容 hash。
 
 ## 資料、隱私與限制
 
@@ -166,6 +171,7 @@ npx wrangler deploy
 ├── sw.js                       # Service Worker
 ├── posts.json                  # 日記內容索引
 ├── wallpapers.json             # 桌布索引
+├── audio/                      # 格莉奇專屬音樂
 ├── images/                     # 角色、貼圖、桌布、PWA 圖示與文章圖片
 ├── worker/
 │   ├── worker.js               # Cloudflare Worker：chat / summarize / img
@@ -175,6 +181,7 @@ npx wrangler deploy
 │   ├── generate_avatar.py      # 頭像生成
 │   ├── generate_pet.py         # 桌寵生成與去背
 │   ├── generate_wallpaper.py   # 桌布生成與索引累積
+│   ├── update_sw_hashes.py     # 依內容產生 PWA cache hash
 │   ├── persona.py              # 格莉奇共用角色設定
 │   └── remove_chroma_key.py    # 去背工具
 └── .github/workflows/          # 每日與手動素材自動化
