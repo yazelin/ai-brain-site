@@ -6,7 +6,7 @@
 const SHELL = ['./', './index.html', './manifest.webmanifest', './posts.json',
   'images/icon-192.png', 'images/icon-512.png', 'images/glitch-logo.svg'];
 const ASSET_RE = /^images\/|posts\.json$/;
-const V = 'glos-v2';
+const V = 'glos-v3';
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(V).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

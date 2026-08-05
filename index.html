@@ -101,8 +101,14 @@
   .win .tb .x{cursor:pointer;color:#8a9aa3;font-size:1rem;line-height:1;padding:0 4px}
   .win .tb .x:hover{color:#ff7a7a}
   .win .body{overflow:auto; padding:18px 20px; flex:1; min-height:0}
-  .win .body::-webkit-scrollbar{width:8px}
-  .win .body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:5px}
+  :where(.win .body,.diary-list,.mem,.settings-panel,.settings-chat-history,.fm-side,.fm-content,#chat-log){
+    scrollbar-width:thin;scrollbar-color:rgba(143,216,238,.34) transparent}
+  :where(.win .body,.diary-list,.mem,.settings-panel,.settings-chat-history,.fm-side,.fm-content,#chat-log)::-webkit-scrollbar{width:8px;height:8px}
+  :where(.win .body,.diary-list,.mem,.settings-panel,.settings-chat-history,.fm-side,.fm-content,#chat-log)::-webkit-scrollbar-track{background:transparent}
+  :where(.win .body,.diary-list,.mem,.settings-panel,.settings-chat-history,.fm-side,.fm-content,#chat-log)::-webkit-scrollbar-thumb{
+    min-height:32px;background:rgba(143,216,238,.28);background-clip:padding-box;border:2px solid transparent;border-radius:999px}
+  :where(.win .body,.diary-list,.mem,.settings-panel,.settings-chat-history,.fm-side,.fm-content,#chat-log)::-webkit-scrollbar-thumb:hover{
+    background:rgba(143,216,238,.48);background-clip:padding-box}
   .win .resize{position:absolute;z-index:10}
   .win .resize.e{right:0;top:0;width:5px;height:100%;cursor:ew-resize}
   .win .resize.s{left:0;bottom:0;width:100%;height:5px;cursor:ns-resize}
@@ -197,9 +203,54 @@
   #w-chat .chat-in button{background:var(--cy);color:#06151c;border:none;border-radius:10px;padding:0 16px;font-weight:700;cursor:pointer}
   #w-chat .chat-in button:disabled{opacity:.5}
 
-  /* 設定 app */
-  #w-settings .sec{margin:18px 0}
+  /* 設定 app：分頁＋聊天紀錄／記憶雙欄 */
+  #w-settings{width:min(780px,calc(100vw - 48px));height:min(640px,calc(100vh - 90px))}
+  #w-settings.open{z-index:10000!important}
+  #w-settings>.settings-body{padding:0;overflow:hidden;display:flex;flex-direction:column}
+  .settings-tabs{display:flex;gap:4px;padding:8px 12px;border-bottom:1px solid var(--hair);background:rgba(4,8,12,.2);flex:0 0 auto}
+  .settings-tab{display:flex;align-items:center;justify-content:center;gap:7px;min-width:0;border:1px solid transparent;border-radius:8px;
+    background:transparent;color:#8a9aa3;padding:7px 14px;font-size:.8rem;font-weight:650;cursor:pointer;transition:.15s}
+  .settings-tab:hover{color:#d7e3e8;background:rgba(255,255,255,.045)}
+  .settings-tab.active{color:var(--cy);background:rgba(37,194,232,.11);border-color:rgba(37,194,232,.22)}
+  .settings-tab .ic{width:15px;height:15px}
+  .settings-panels{position:relative;flex:1;min-height:0}
+  .settings-panel{display:none;height:100%;overflow:auto;padding:20px}
+  .settings-panel.active{display:block}
+  .settings-panel.settings-chat-panel.active{display:flex;flex-direction:column;overflow:hidden}
+  .settings-page-head{margin-bottom:16px}
+  .settings-page-head h3{margin:0;color:#dce7eb;font-size:1rem}
+  .settings-page-head p{margin:3px 0 0}
+  #w-settings .sec{margin:20px 0}
+  #w-settings .sec:first-child{margin-top:0}
+  #w-settings .sec:last-child{margin-bottom:0}
   #w-settings .sec>h3{margin-top:0}
+  .settings-chat-layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr);gap:14px;flex:1;min-height:0}
+  .settings-card{min-width:0;min-height:0;border:1px solid var(--hair);border-radius:12px;background:rgba(8,16,21,.46);overflow:hidden}
+  .settings-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:13px 15px;border-bottom:1px solid var(--hair)}
+  .settings-card-head h3{margin:0;color:var(--mint);font-size:.92rem}
+  .settings-card-head p{margin:2px 0 0}
+  .settings-count{flex:0 0 auto;color:var(--cy);background:rgba(37,194,232,.1);border:1px solid rgba(37,194,232,.18);
+    border-radius:999px;padding:2px 8px;font-size:.68rem;font-variant-numeric:tabular-nums}
+  .settings-history-card{display:flex;flex-direction:column}
+  .settings-chat-history{flex:1;min-height:0;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+  .settings-history-empty{margin:auto;color:#69777f;font-size:.8rem;text-align:center;padding:24px}
+  .settings-chat-item{max-width:88%;border:1px solid var(--hair);border-radius:10px;padding:8px 10px;background:rgba(255,255,255,.035)}
+  .settings-chat-item.user{align-self:flex-end;border-color:rgba(37,194,232,.24);background:rgba(37,194,232,.09)}
+  .settings-chat-item.assistant{align-self:flex-start;border-color:rgba(124,243,192,.18);background:rgba(124,243,192,.055)}
+  .settings-chat-meta{display:flex;justify-content:space-between;gap:12px;margin-bottom:4px;color:#718089;font-size:.62rem}
+  .settings-chat-item.user .settings-chat-role{color:var(--cy)}
+  .settings-chat-item.assistant .settings-chat-role{color:var(--mint)}
+  .settings-chat-text{color:#cbd7dc;font-size:.76rem;line-height:1.5;white-space:pre-wrap;word-break:break-word;user-select:text}
+  .settings-chat-image{display:block;max-width:150px;max-height:110px;object-fit:cover;border-radius:7px;margin-top:7px}
+  .settings-memory-card{display:flex;flex-direction:column;padding:15px}
+  .settings-memory-card h3{margin:0 0 4px;color:var(--mint);font-size:.92rem}
+  .settings-memory-card .mem{flex:1;min-height:180px;margin-top:10px;resize:none;line-height:1.55;user-select:text}
+  .settings-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  .settings-actions .btn{margin:0}
+  .settings-actions .danger{grid-column:1/-1}
+  .settings-system-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .settings-system-grid .settings-card{padding:16px}
+  .settings-system-grid h3{margin:0 0 8px}
   .wall-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
   .wall-opt{cursor:pointer;border:2px solid var(--hair);border-radius:10px;overflow:hidden;background:#0a0f13;position:relative}
   .wall-opt img,.wall-opt .ph{width:100%;aspect-ratio:16/9;object-fit:cover;display:block}
@@ -212,12 +263,23 @@
   .btn:hover{border-color:var(--cy)}
   .btn.danger{border-color:rgba(255,95,87,.5);color:#ffb3ae}
   .btn.danger:hover{background:rgba(255,95,87,.12)}
-  .mem{width:100%;min-height:90px;background:#0d2b3a;border:1px solid var(--hair);border-radius:9px;color:#e6f6fb;padding:10px;font-size:.84rem;font-family:inherit;resize:vertical}
+  .mem{width:100%;min-height:90px;background:#0d2b3a;border:1px solid var(--hair);border-radius:9px;color:#e6f6fb;padding:10px;font-size:.84rem;font-family:inherit;resize:vertical;outline:none}
+  .mem:focus{border-color:rgba(37,194,232,.55);box-shadow:0 0 0 2px rgba(37,194,232,.08)}
   .storage-bar{height:6px;border-radius:3px;background:#1a1d22;overflow:hidden;margin-top:8px}
   .storage-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cy),var(--mint));border-radius:3px;transition:width .4s ease}
   .filepick{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
   .muted{color:#6b7a82;font-size:.78rem}
   input[type=file]{color:#aeb8be;font-size:.8rem}
+  @media(max-width:720px){
+    #w-settings{left:3vw!important;top:42px!important;width:94vw!important;height:calc(100vh - 104px)!important}
+    .settings-tabs{padding:7px;gap:3px}
+    .settings-tab{flex:1;padding:7px 6px;font-size:.72rem}
+    .settings-panel{padding:14px}
+    .settings-panel.settings-chat-panel.active{overflow:auto}
+    .settings-chat-layout{grid-template-columns:1fr;grid-template-rows:minmax(260px,55vh) auto;flex:0 0 auto}
+    .settings-memory-card .mem{min-height:220px}
+    .settings-system-grid{grid-template-columns:1fr}
+  }
 
   /* 手機框 + LINE 聊天 */
   #w-chat{background:transparent!important;border:none!important;box-shadow:none!important;backdrop-filter:none!important;overflow:visible!important}
@@ -246,9 +308,11 @@
   .lh .nm small{display:block;font-weight:400;font-size:.62rem;color:#555}
   .lh .sp{flex:1}
   .lh .mi{font-size:1rem;color:#222;cursor:pointer}
-  #chat-log{flex:1;min-height:0;overflow-y:auto;padding:10px 8px 14px;display:flex;flex-direction:column;gap:6px;background:#7da3b8}
+  #chat-log{flex:1;min-height:0;overflow-y:auto;padding:10px 8px 14px;display:flex;flex-direction:column;gap:6px;background:#7da3b8;
+    scrollbar-color:rgba(0,0,0,.3) transparent}
   #chat-log::-webkit-scrollbar{width:5px}
-  #chat-log::-webkit-scrollbar-thumb{background:rgba(0,0,0,.2);border-radius:3px}
+  #chat-log::-webkit-scrollbar-thumb{background:rgba(0,0,0,.28);border:0;border-radius:3px}
+  #chat-log::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.42)}
   .mb{display:flex;gap:6px;align-items:flex-end;max-width:100%}
   .mb .av{width:30px;height:30px;border-radius:50%;flex:0 0 auto;align-self:flex-end;background:#25c2e8;overflow:hidden}
   .mb .av img{width:100%;height:100%;object-fit:cover}
@@ -493,43 +557,79 @@
   </div>
 
   <!-- window: 設定 -->
-  <div class="win" id="w-settings" style="left:12%;top:70px;width:520px">
+  <div class="win" id="w-settings" style="left:12%;top:54px">
     <div class="tb"><span class="dot r" data-close title="關閉"></span><span class="dot y"></span><span class="dot g"></span>
       <span class="ttl"><svg class="ic" style="width:13px;height:13px;display:inline-block;vertical-align:-2px"><use href="#i-gear"/></svg> 設定</span></div>
-    <div class="body">
-      <div class="sec">
-        <h3>桌布</h3>
-        <p class="muted">選一張桌布；上傳的圖只存在你的瀏覽器（IndexedDB），不會上傳伺服器。</p>
-        <div class="wall-grid" id="wall-grid"></div>
-        <div class="row" style="margin-top:10px">
-          <label class="btn filepick" for="wall-upload"><svg class="ic" style="width:14px;height:14px;display:inline-block;vertical-align:-2px"><use href="#i-image"/></svg> 選擇圖片</label>
-          <input type="file" id="wall-upload" accept="image/*" hidden>
-        </div>
+    <div class="body settings-body">
+      <div class="settings-tabs" role="tablist" aria-label="設定分類">
+        <button class="settings-tab active" id="settings-tab-chat" type="button" role="tab" aria-selected="true" aria-controls="settings-panel-chat" data-settings-tab="chat">
+          <svg class="ic"><use href="#i-chat"/></svg><span>聊天與記憶</span>
+        </button>
+        <button class="settings-tab" id="settings-tab-desktop" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-desktop" data-settings-tab="desktop">
+          <svg class="ic"><use href="#i-image"/></svg><span>桌面外觀</span>
+        </button>
+        <button class="settings-tab" id="settings-tab-system" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-system" data-settings-tab="system">
+          <svg class="ic"><use href="#i-gear"/></svg><span>系統</span>
+        </button>
       </div>
-      <div class="sec">
-        <h3>桌寵</h3>
-        <label class="row" style="gap:8px;align-items:center;cursor:pointer">
-          <input type="checkbox" id="pet-top" checked> <span class="muted" style="margin:0">格莉奇永遠顯示在最上層</span>
-        </label>
-      </div>
-      <div class="sec">
-        <h3>聊天記憶</h3>
-        <p class="muted" id="mem-count">訊息數：載入中…</p>
-        <textarea class="mem" id="mem-edit" placeholder="格莉奇對你的記憶摘要（可手動編輯；留空＝她還不記得你）"></textarea>
-        <div class="row">
-          <button class="btn" id="mem-save">儲存記憶</button>
-          <button class="btn" id="mem-regen">重新摘要</button>
-          <button class="btn danger" id="chat-clear">清空聊天紀錄</button>
-        </div>
-      </div>
-      <div class="sec">
-        <h3>儲存空間</h3>
-        <p class="muted" id="storage-info">計算中…</p>
-        <div class="storage-bar"><i id="storage-fill"></i></div>
-      </div>
-      <div class="sec">
-        <h3>關於</h3>
-        <p class="muted">格莉奇OS 是 PWA：可安裝到桌面/手機，離線時仍能開機與查看聊天歷史（聊天需連網才能回覆）。</p>
+
+      <div class="settings-panels">
+        <section class="settings-panel settings-chat-panel active" id="settings-panel-chat" role="tabpanel" aria-labelledby="settings-tab-chat" data-settings-panel="chat">
+          <div class="settings-chat-layout">
+            <div class="settings-card settings-history-card">
+              <div class="settings-card-head">
+                <div><h3>聊天紀錄</h3><p class="muted">完整紀錄只保存在這個瀏覽器。</p></div>
+                <span class="settings-count" id="settings-chat-count">載入中…</span>
+              </div>
+              <div class="settings-chat-history" id="settings-chat-history" aria-live="polite"></div>
+            </div>
+
+            <div class="settings-card settings-memory-card">
+              <h3>聊天記憶摘要</h3>
+              <p class="muted" id="mem-count">摘要與訊息載入中…</p>
+              <textarea class="mem" id="mem-edit" placeholder="格莉奇對你的記憶摘要（可手動編輯；留空＝她還不記得你）"></textarea>
+              <div class="settings-actions">
+                <button class="btn" id="mem-save" type="button">儲存記憶</button>
+                <button class="btn" id="mem-regen" type="button">重新摘要</button>
+                <button class="btn danger" id="chat-clear" type="button">清空聊天紀錄與記憶</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="settings-panel" id="settings-panel-desktop" role="tabpanel" aria-labelledby="settings-tab-desktop" data-settings-panel="desktop" hidden>
+          <div class="settings-page-head"><h3>桌面外觀</h3><p class="muted">調整格莉奇OS 的桌布與桌寵顯示方式。</p></div>
+          <div class="sec">
+            <h3>桌布</h3>
+            <p class="muted">選一張桌布；上傳的圖只存在你的瀏覽器（IndexedDB），不會上傳伺服器。</p>
+            <div class="wall-grid" id="wall-grid"></div>
+            <div class="row" style="margin-top:10px">
+              <label class="btn filepick" for="wall-upload"><svg class="ic" style="width:14px;height:14px;display:inline-block;vertical-align:-2px"><use href="#i-image"/></svg> 選擇圖片</label>
+              <input type="file" id="wall-upload" accept="image/*" hidden>
+            </div>
+          </div>
+          <div class="sec">
+            <h3>桌寵</h3>
+            <label class="row" style="gap:8px;align-items:center;cursor:pointer">
+              <input type="checkbox" id="pet-top" checked> <span class="muted" style="margin:0">格莉奇永遠顯示在最上層</span>
+            </label>
+          </div>
+        </section>
+
+        <section class="settings-panel" id="settings-panel-system" role="tabpanel" aria-labelledby="settings-tab-system" data-settings-panel="system" hidden>
+          <div class="settings-page-head"><h3>系統</h3><p class="muted">查看本機儲存用量與離線能力。</p></div>
+          <div class="settings-system-grid">
+            <div class="settings-card">
+              <h3>儲存空間</h3>
+              <p class="muted" id="storage-info">計算中…</p>
+              <div class="storage-bar"><i id="storage-fill"></i></div>
+            </div>
+            <div class="settings-card">
+              <h3>關於</h3>
+              <p class="muted">格莉奇OS 是 PWA：可安裝到桌面／手機，離線時仍能開機與查看聊天歷史；聊天與 AI 畫圖需連網。</p>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   </div>
@@ -761,9 +861,9 @@ function renderMsg(m,showAvatar,showTime){
 }
 async function loadChat(){
   if(chatReady)return;chatReady=true;
-  const h=await dbGet('chat');history=Array.isArray(h)?h:[];
+  const h=await dbGet('chat'),hasSavedChat=Array.isArray(h);history=hasSavedChat?h:[];
   memory=(await dbGet('memory'))||'';
-  if(!history.length){
+  if(!hasSavedChat){
     history.push({role:'assistant',content:'逼——嗶！你好呀，我是格莉奇。想聊什麼呢？（我的記憶體只有 4KB，講太快我會當機喔～）',ts:Date.now()});
     await dbSet('chat',history);
   }
@@ -814,19 +914,30 @@ async function sendChat(text){
     }
   }catch(e){tm.classList.remove('thinking');tm.querySelector('.bub').textContent='逼——嗶…網路斷線了（'+e.message+'）';}
   chatLog.scrollTop=chatLog.scrollHeight;chatBtn.disabled=false;
-  maybeSummarize();
+  renderSettingsChatHistory();
+  void maybeSummarize();
 }
-// 每 10 則新訊息（user+assistant>=10 自上次摘要後）壓一次記憶
-let sinceSum=0;
+// 每累積 10 則新訊息自動摘要；進度存進 IndexedDB，重新整理後不會歸零。
+let summaryBusy=false;
+function chatContentCount(){return history.filter(m=>m.content).length;}
 async function maybeSummarize(){
-  sinceSum+=1;
-  if(sinceSum<10)return;sinceSum=0;
+  if(summaryBusy)return;
+  summaryBusy=true;
   try{
-    const prev=history.filter(m=>m.content).slice(0,-2).map(({role,content})=>({role,content}));
-    if(prev.length<4)return;
-    const r=await fetch(SUM_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:prev,prevMemory:memory})});
-    const d=await r.json();if(d.summary){memory=d.summary;await dbSet('memory',memory);}
-  }catch(e){}
+    const messages=history.filter(m=>m.content).map(({role,content})=>({role,content}));
+    const summarizedCount=Number(await dbGet('chat-summary-count'))||0;
+    if(messages.length-summarizedCount<10)return;
+    updateMemoryStatus('自動摘要中…');
+    const r=await fetch(SUM_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages,prevMemory:memory})});
+    if(!r.ok)throw new Error('摘要服務回應 '+r.status);
+    const d=await r.json();
+    if(!d.summary)throw new Error('摘要內容為空');
+    memory=d.summary;
+    await dbSet('memory',memory);await dbSet('chat-summary-count',messages.length);
+    if(memEdit)memEdit.value=memory;
+    updateMemoryStatus('已自動摘要');
+  }catch(e){updateMemoryStatus('自動摘要失敗，稍後將再試');}
+  finally{summaryBusy=false;}
 }
 function doSend(){const t=chatIn.value.trim();if(!t||chatBtn.disabled)return;chatIn.value='';sendChat(t);}
 chatBtn.addEventListener('click',doSend);
@@ -909,13 +1020,71 @@ async function openFiles(){
 /* ===== 設定 app ===== */
 const wallGrid=document.getElementById('wall-grid'),wallUpload=document.getElementById('wall-upload');
 const memEdit=document.getElementById('mem-edit'),memCount=document.getElementById('mem-count');
+const settingsChatHistory=document.getElementById('settings-chat-history'),settingsChatCount=document.getElementById('settings-chat-count');
+const settingsTabs=[...document.querySelectorAll('[data-settings-tab]')],settingsPanels=[...document.querySelectorAll('[data-settings-panel]')];
+
+function updateMemoryStatus(label){
+  const state=label||(memory?'已建立摘要':'尚未建立摘要');
+  memCount.textContent=state+' · 訊息數：'+history.length+' 則';
+}
+function renderSettingsChatHistory(){
+  if(!settingsChatHistory)return;
+  settingsChatCount.textContent=history.length+' 則';
+  settingsChatHistory.replaceChildren();
+  if(!history.length){
+    const empty=document.createElement('p');empty.className='settings-history-empty';empty.textContent='目前沒有聊天紀錄。';
+    settingsChatHistory.appendChild(empty);return;
+  }
+  const frag=document.createDocumentFragment();
+  history.forEach(m=>{
+    const isUser=m.role==='user';
+    const date=new Date(m.ts),hasTime=m.ts&&Number.isFinite(date.getTime());
+    const item=document.createElement('article');item.className='settings-chat-item '+(isUser?'user':'assistant');
+    const meta=document.createElement('div');meta.className='settings-chat-meta';
+    const role=document.createElement('span');role.className='settings-chat-role';role.textContent=isUser?'你':'格莉奇';
+    const time=document.createElement('time');
+    time.dateTime=hasTime?date.toISOString():'';
+    time.textContent=hasTime?date.toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'時間未知';
+    meta.append(role,time);item.appendChild(meta);
+    if(m.content){const body=document.createElement('div');body.className='settings-chat-text';body.textContent=m.content;item.appendChild(body);}
+    if(m.image){const image=document.createElement('img');image.className='settings-chat-image';image.src=m.image;image.alt=m.content||'聊天圖片';image.loading='lazy';item.appendChild(image);}
+    frag.appendChild(item);
+  });
+  settingsChatHistory.appendChild(frag);
+  requestAnimationFrame(()=>{settingsChatHistory.scrollTop=settingsChatHistory.scrollHeight;});
+}
+function setSettingsTab(name,persist=true){
+  if(!settingsTabs.some(tab=>tab.dataset.settingsTab===name))name='chat';
+  settingsTabs.forEach(tab=>{
+    const active=tab.dataset.settingsTab===name;
+    tab.classList.toggle('active',active);tab.setAttribute('aria-selected',String(active));tab.tabIndex=active?0:-1;
+  });
+  settingsPanels.forEach(panel=>{
+    const active=panel.dataset.settingsPanel===name;
+    panel.classList.toggle('active',active);panel.hidden=!active;
+  });
+  if(name==='chat')renderSettingsChatHistory();
+  if(name==='system')void updateStorage();
+  if(persist)void dbSet('settings-tab',name);
+}
+settingsTabs.forEach((tab,index)=>{
+  tab.addEventListener('click',()=>setSettingsTab(tab.dataset.settingsTab));
+  tab.addEventListener('keydown',e=>{
+    if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;
+    e.preventDefault();
+    const next=e.key==='Home'?0:e.key==='End'?settingsTabs.length-1:(index+(e.key==='ArrowRight'?1:-1)+settingsTabs.length)%settingsTabs.length;
+    settingsTabs[next].focus();setSettingsTab(settingsTabs[next].dataset.settingsTab);
+  });
+});
 async function openSettings(){
   await loadChat();
   renderWallGrid();
   memEdit.value=memory||'';
-  memCount.textContent='訊息數：'+history.length+' 則';
+  updateMemoryStatus();renderSettingsChatHistory();
+  setSettingsTab((await dbGet('settings-tab'))||'chat',false);
   const top=await dbGet('pet-top');petTop.checked=top!==false;applyPetTop();
   updateStorage();
+  void maybeSummarize();
 }
 async function updateStorage(){
   const el=document.getElementById('storage-info'),bar=document.getElementById('storage-fill');
@@ -969,17 +1138,24 @@ wallUpload.addEventListener('change',async e=>{
   const f=e.target.files[0];if(!f)return;
   await dbSet('wallpaper-blob',f);await dbSet('wallpaper','upload');await applyWall();renderWallGrid();
 });
-document.getElementById('mem-save').addEventListener('click',async()=>{memory=memEdit.value.trim();await dbSet('memory',memory);memCount.textContent='已儲存記憶。訊息數：'+history.length+' 則';});
+document.getElementById('mem-save').addEventListener('click',async()=>{
+  memory=memEdit.value.trim();await dbSet('memory',memory);await dbSet('chat-summary-count',chatContentCount());updateMemoryStatus('已儲存記憶');
+});
 document.getElementById('mem-regen').addEventListener('click',async()=>{
-  memCount.textContent='重新摘要中…';try{
-    const r=await fetch(SUM_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:history.map(({role,content})=>({role,content})),prevMemory:memory})});
-    const d=await r.json();if(d.summary){memory=d.summary;memEdit.value=memory;await dbSet('memory',memory);memCount.textContent='已重新摘要。訊息數：'+history.length+' 則';return;}
-  }catch(e){}memCount.textContent='摘要失敗，請稍後再試。';
+  const button=document.getElementById('mem-regen');button.disabled=true;updateMemoryStatus('重新摘要中…');
+  try{
+    const messages=history.filter(m=>m.content).map(({role,content})=>({role,content}));
+    const r=await fetch(SUM_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages,prevMemory:memory})});
+    if(!r.ok)throw new Error('摘要服務回應 '+r.status);
+    const d=await r.json();if(!d.summary)throw new Error('摘要內容為空');
+    memory=d.summary;memEdit.value=memory;await dbSet('memory',memory);await dbSet('chat-summary-count',messages.length);updateMemoryStatus('已重新摘要');
+  }catch(e){updateMemoryStatus('摘要失敗，請稍後再試');}
+  finally{button.disabled=false;}
 });
 document.getElementById('chat-clear').addEventListener('click',async()=>{
   if(!confirm('確定清空聊天紀錄與記憶？此動作無法復原。'))return;
-  await dbDel('chat');await dbDel('memory');history=[];memory='';chatLog.innerHTML='';memEdit.value='';memCount.textContent='已清空。訊息數：0 則';
-  chatReady=false;loadChat();
+  await dbSet('chat',[]);await dbDel('memory');await dbDel('chat-summary-count');history=[];memory='';chatLog.innerHTML='';memEdit.value='';chatReady=true;
+  renderSettingsChatHistory();updateMemoryStatus('已清空');
 });
 
 // 心情日記
