@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://yazelin.github.io/ai-brain-site/sitemap.xml
