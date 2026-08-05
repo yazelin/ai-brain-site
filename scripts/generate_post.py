@@ -61,6 +61,7 @@ PICK_PROMPT = (
     "5=我沒有卡住！ 6=要吃好吃的喔 7=先去睡個覺... 8=這樣也可以！？ 9=謝謝大家的禮物！\n\n"
     'Output JSON: {{"inspiration": "你選中的那則新聞摘要或粉絲留言（原樣複製）", '
     '"source_type": "news 或 giscus（主要靈感來自哪）", '
+    '"comment_key": "若引用粉絲留言，填該留言的 C 編號（例如 C1）；無則空字串", '
     '"comment_source": "若引用了粉絲留言，列出原文；無則空字串", '
     '"angle": "格莉奇會怎麼看待這件事（繁體中文，1-2句）", '
     '"scene": "若要畫一張插畫，格莉奇在什麼場景做什麼動作（繁體中文，1-2句，具體）", '
@@ -165,16 +166,44 @@ COMMENTS_QUERY = """
 { repository(owner:"yazelin", name:"ai-brain-site") {
     discussions(first:20, orderBy:{field:UPDATED_AT, direction:DESC}) {
       nodes { title category { name }
-        comments(first:100) { nodes { body author { login } createdAt } } } } } }
+        comments(last:100) { nodes { id body author { login } createdAt } } } } } }
 """
 
 
-def parse_comments(payload, category="General", limit=12):
-    """從 GraphQL 回應挑出指定分類的留言，依時間倒序取最近 limit 則。純函式。"""
+def normalize_comment_text(value):
+    """正規化留言文字，供沒有 GitHub ID 的舊文章相容比對。"""
+    return re.sub(r"\s+", " ", str(value or "")).strip().casefold()
+
+
+def used_comment_markers(posts):
+    """從既有文章取得已使用的留言 ID，以及舊資料可用的文字標記。"""
+    used_ids = set()
+    used_texts = set()
+    for post in posts or []:
+        comment_id = str(post.get("comment_id") or "").strip()
+        if comment_id:
+            used_ids.add(comment_id)
+        else:
+            # 只有尚未保存 ID 的舊文章才以文字比對，避免同文不同留言被誤判。
+            comment_source = normalize_comment_text(post.get("comment_source"))
+            if comment_source:
+                used_texts.add(comment_source)
+            # 更早期文章若以留言作為主要 inspiration，可能連 comment_source 都沒有。
+            inspiration = str(post.get("inspiration") or "").strip()
+            if inspiration.startswith("@"):
+                used_texts.add(normalize_comment_text(inspiration))
+    return used_ids, used_texts
+
+
+def parse_comments(payload, category="General", limit=12, used_ids=None, used_texts=None):
+    """依時間倒序取得最近 limit 則未使用留言；GitHub ID 優先、舊文以文字相容。"""
     try:
         nodes = payload["data"]["repository"]["discussions"]["nodes"]
     except (KeyError, TypeError):
         return []
+    used_ids = {str(value).strip() for value in (used_ids or []) if str(value).strip()}
+    used_texts = {normalize_comment_text(value) for value in (used_texts or [])
+                  if normalize_comment_text(value)}
     out = []
     for d in nodes or []:
         if (d.get("category") or {}).get("name") != category:
@@ -185,34 +214,85 @@ def parse_comments(payload, category="General", limit=12):
                 continue
             who = ((c.get("author") or {}).get("login") or "匿名")
             ts = c.get("createdAt") or ""
-            out.append((ts, f"@{who}: {body[:200]}"))
-    # 依 createdAt 倒序（最新在前），取前 limit 則
-    out.sort(key=lambda x: x[0], reverse=True)
-    return [s for _, s in out[:limit]]
+            comment_id = str(c.get("id") or "").strip()
+            text = f"@{who}: {body[:200]}"
+            if (comment_id and comment_id in used_ids) or normalize_comment_text(text) in used_texts:
+                continue
+            out.append({"id": comment_id, "text": text, "created_at": ts})
+    # 先排除已使用留言，再依 createdAt 倒序取最近 limit 則。
+    out.sort(key=lambda item: item["created_at"], reverse=True)
+    return out[:limit]
 
 
-def fetch_comments():
-    """抓 Giscus 留言。回 (留言清單, 失敗原因)。"""
+def fetch_comments(used_ids=None, used_texts=None):
+    """抓 Giscus 未使用留言。回 (候選清單, 失敗原因)。"""
     try:
         r = subprocess.run(["gh", "api", "graphql", "-f", f"query={COMMENTS_QUERY}"],
                            capture_output=True, text=True, timeout=60)
         if r.returncode != 0:
             return [], f"gh api graphql 失敗: {r.stderr.strip()[:200]}"
-        return parse_comments(json.loads(r.stdout)), None
+        return parse_comments(json.loads(r.stdout), used_ids=used_ids, used_texts=used_texts), None
     except Exception as e:
         return [], f"{type(e).__name__}: {e}"
+
+
+def comment_prompt_block(comments, with_keys=False):
+    """把內部留言候選轉為提示文字；只有選題階段需要短期 C 編號。"""
+    if not comments:
+        return "(沒有尚未回覆的粉絲留言)"
+    lines = []
+    for index, comment in enumerate(comments, 1):
+        prefix = f"[C{index}] " if with_keys else ""
+        lines.append(f"- {prefix}{comment['text']}")
+    return "\n".join(lines)
+
+
+def resolve_comment(comments, comment_key="", comment_source="", inspiration=""):
+    """把模型回傳的短期 C 編號／原文解析回具有穩定 GitHub ID 的留言。"""
+    match = re.search(r"\bC(\d+)\b", str(comment_key or ""), re.I)
+    if match:
+        index = int(match.group(1)) - 1
+        if 0 <= index < len(comments):
+            return comments[index]
+    targets = {normalize_comment_text(comment_source), normalize_comment_text(inspiration)} - {""}
+    for comment in comments:
+        text = normalize_comment_text(comment["text"])
+        if text in targets:
+            return comment
+    return None
 
 
 def pick_inspiration(news, comments=None, recent=None):
     print("Stage 2: 依個性挑靈感…", flush=True)
     news_block = "\n".join(f"- {n}" for n in news) if news else "(今天沒抓到新聞，純憑想像)"
-    cmt_block = "\n".join(f"- {c}" for c in comments) if comments else "(還沒有粉絲留言)"
+    comments = comments or []
+    cmt_block = comment_prompt_block(comments, with_keys=True)
     recent_block = "\n".join(f"- {r}" for r in recent) if recent else "(還沒有發過文)"
     prompt = PICK_PROMPT.format(news=news_block, comments=cmt_block, recent=recent_block)
-    data = parse_json(ask("gemini-2.5-flash", prompt), ["inspiration", "scene"])
+    data = parse_json(
+        ask("gemini-2.5-flash", prompt),
+        ["inspiration", "scene", "source_type", "comment_key"])
     inspiration = data.get("inspiration", "original")
     source_type = data.get("source_type", "news")
     comment_source = data.get("comment_source", "")
+    selected_comment = resolve_comment(
+        comments, data.get("comment_key", ""), comment_source, inspiration)
+    if not selected_comment and source_type == "giscus" and comments:
+        # 模型若漏填／填錯 C 編號，仍只允許使用候選清單內的未使用留言。
+        print("  留言編號無法解析，改用最新一則未使用留言", flush=True)
+        selected_comment = comments[0]
+    if selected_comment:
+        comment_source = selected_comment["text"]
+        comment_id = selected_comment["id"]
+        if source_type == "giscus":
+            inspiration = comment_source
+    else:
+        # 不保留無法映射到 GitHub ID 的模型輸出，避免同一留言日後再次入選。
+        comment_source = ""
+        comment_id = ""
+        if source_type == "giscus":
+            source_type = "news"
+            inspiration = news[0] if news else "original"
     if news and inspiration not in news and source_type == "news":
         inspiration = news[0]
     angle = data.get("angle", "")
@@ -226,12 +306,12 @@ def pick_inspiration(news, comments=None, recent=None):
     if comment_source:
         print(f"  留言啟發: {comment_source[:80]}", flush=True)
     print(f"  貼圖: {stickers}", flush=True)
-    return inspiration, angle, scene, stickers, comment_source
+    return inspiration, angle, scene, stickers, comment_source, comment_id
 
 
-def gen_text_post(inspiration, angle, comments=None):
+def gen_text_post(inspiration, angle, comment_source=""):
     print("Stage 3a: 寫文字日記…", flush=True)
-    cmt_block = "\n".join(f"- {c}" for c in comments) if comments else "(還沒有粉絲留言)"
+    cmt_block = f"- {comment_source}" if comment_source else "(沒有尚未回覆的粉絲留言)"
     data = parse_json(
         ask("gemini-2.5-flash", TEXT_PROMPT.format(
             inspiration=inspiration, angle=angle, comments=cmt_block)),
@@ -342,19 +422,21 @@ def stamp_image(img_path, stickers):
 # ── main ─────────────────────────────────────────────────────────────────────
 def main():
     IMG_DIR.mkdir(parents=True, exist_ok=True)
-    news = fetch_news()
-    comments, cmt_err = fetch_comments()
-    # 已發過的文章靈感，給選題參考避免重複。
     existing = json.loads(POSTS_JSON.read_text("utf-8")) if POSTS_JSON.exists() else []
+    used_comment_ids, used_comment_texts = used_comment_markers(existing)
+    news = fetch_news()
+    comments, cmt_err = fetch_comments(used_comment_ids, used_comment_texts)
+    # 已發過的文章靈感，給選題參考避免重複。
     recent = [p.get("inspiration") or p.get("title") or "" for p in existing
               if (p.get("inspiration") or p.get("title"))][-10:]
     if cmt_err:
         print(f"  Giscus 留言抓取失敗（不擋 pipeline）: {cmt_err}", flush=True)
     elif comments:
-        print(f"  抓到 {len(comments)} 則 Giscus 留言", flush=True)
+        print(f"  抓到 {len(comments)} 則尚未使用的 Giscus 留言", flush=True)
     else:
-        print("  Giscus 還沒有留言（正常，giscus 要等第一則才建 discussion）", flush=True)
-    inspiration, angle, scene, stickers, comment_source = pick_inspiration(news, comments)
+        print("  最近沒有尚未使用的 Giscus 留言，改從新聞選題", flush=True)
+    inspiration, angle, scene, stickers, comment_source, comment_id = pick_inspiration(
+        news, comments, recent)
 
     # 交替：日期奇數畫圖、偶數寫字（避免每天都同一種）。FORCE_IMAGE 可覆寫。
     import os
@@ -365,12 +447,14 @@ def main():
     if want_image:
         post = gen_image_post(inspiration, scene, stickers)
     if post is None:
-        post = gen_text_post(inspiration, angle, comments)
+        post = gen_text_post(inspiration, angle, comment_source)
 
     post["date"] = datetime.now(TZ).strftime("%Y-%m-%d")
     post["inspiration"] = inspiration if inspiration != "original" else ""
     if comment_source:
         post["comment_source"] = comment_source
+    if comment_id:
+        post["comment_id"] = comment_id
     # 每跑一次就 append 一篇，同一天累積，不覆蓋。
     posts = json.loads(POSTS_JSON.read_text("utf-8")) if POSTS_JSON.exists() else []
     posts.append(post)
