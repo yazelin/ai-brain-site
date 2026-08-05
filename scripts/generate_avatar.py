@@ -66,7 +66,8 @@ def main():
     subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
     subprocess.run(["git", "config", "user.email",
                     "41898282+github-actions[bot]@users.noreply.github.com"], check=True)
-    subprocess.run(["git", "add", str(OUT)], check=True)
+    subprocess.run([sys.executable, str(ROOT / "scripts" / "update_sw_hashes.py")], check=True)
+    subprocess.run(["git", "add", str(OUT), str(ROOT / "sw.js")], check=True)
     if subprocess.run(["git", "diff", "--cached", "--quiet"]).returncode != 0:
         subprocess.run(["git", "commit", "-m", "avatar: 格莉奇高品質方形頭像"], check=True)
         subprocess.run(["git", "pull", "--rebase"], check=True)

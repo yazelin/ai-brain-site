@@ -60,7 +60,8 @@ flowchart LR
 
 - `index.html` 包含完整桌面 UI、視窗管理、聊天、日記、設定、檔案與看圖功能。
 - `manifest.webmanifest` 提供 PWA 名稱、主題色與應用程式圖示。
-- `sw.js` 先快取 app shell，再以 stale-while-revalidate 快取同源圖片與 `posts.json`；跨域 API 不快取。
+- `sw.js` 分離短生命週期 shell 與長生命週期 asset cache：先優先快取開機頭像與 app shell，再背景暖載入角色圖片及音樂；HTML network-first、動態 JSON stale-while-revalidate、資產 cache-first，音檔支援離線 Range 回應。
+- `scripts/update_sw_hashes.py` 依 shell／asset 真實檔案內容產生兩組 cache hash，不需手動調整 `vN` 版號。
 - `posts.json` 與 `wallpapers.json` 是可累積的內容索引。
 
 ### 聊天後端
@@ -111,6 +112,8 @@ python3 -m http.server 8000
 
 推送到 `main` 後，GitHub Pages 會自動重建網站。
 
+修改 `index.html`、manifest、JSON、圖片或音樂後，執行 `python scripts/update_sw_hashes.py`。現有內容生成腳本會自動執行它；PR workflow 會檢查 hash，直接推送到 `main` 時也會自動補正並寫回。
+
 ### Cloudflare Worker
 
 需要 Node.js 與 Wrangler：
@@ -148,6 +151,7 @@ npx wrangler deploy
 - `generate-avatar.yml`：重建 `images/avatar.png`。
 - `generate-pet.yml`：生成桌寵、去除 chroma key 背景並裁切透明邊界。
 - `generate-wallpaper.yml`：生成新桌布，附加到 `wallpapers.json`。
+- `pwa-cache-hash.yml`：檢查或自動同步 shell／asset 內容 hash。
 
 ## 資料、隱私與限制
 
@@ -177,6 +181,7 @@ npx wrangler deploy
 │   ├── generate_avatar.py      # 頭像生成
 │   ├── generate_pet.py         # 桌寵生成與去背
 │   ├── generate_wallpaper.py   # 桌布生成與索引累積
+│   ├── update_sw_hashes.py     # 依內容產生 PWA cache hash
 │   ├── persona.py              # 格莉奇共用角色設定
 │   └── remove_chroma_key.py    # 去背工具
 └── .github/workflows/          # 每日與手動素材自動化

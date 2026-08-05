@@ -8,6 +8,7 @@
 <link rel="alternate icon" href="images/a8qmb3a8qmb3a8qm.png" type="image/png">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="images/icon-192.png">
+<link rel="preload" href="images/avatar.png" as="image" fetchpriority="high">
 <meta name="theme-color" content="#04080c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -954,7 +955,7 @@ ERROR 連帽衫也很帥吧
   </div>
 
   <div id="boot">
-    <div class="boot-av"><img src="images/avatar.png" alt="格莉奇" onerror="this.onerror=null;this.src='images/sticker-01.png'"></div>
+    <div class="boot-av"><img src="images/avatar.png" alt="格莉奇" fetchpriority="high" decoding="sync" onerror="this.onerror=null;this.src='images/sticker-01.png'"></div>
     <div class="boot-lines" id="boot-lines"></div>
     <div class="boot-bar"><i id="boot-fill"></i></div>
     <div class="boot-cap" id="boot-cap">系統讀取中…</div>
@@ -971,7 +972,17 @@ async function dbSet(k,v){const d=await db();return new Promise((res,rej)=>{cons
 async function dbDel(k){const d=await db();return new Promise((res,rej)=>{const q=d.transaction(STORE,'readwrite').objectStore(STORE).delete(k);q.onsuccess=()=>res();q.onerror=()=>rej(q.error);});}
 
 /* ===== Service Worker（PWA 兩階段載入）===== */
-if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
+window.__glosCacheProgress=null;
+if('serviceWorker'in navigator){
+  const requestAssetWarm=()=>navigator.serviceWorker.ready.then(reg=>reg.active?.postMessage({type:'warm-assets'})).catch(()=>{});
+  navigator.serviceWorker.addEventListener('message',event=>{
+    if(event.data?.type!=='cache-progress')return;
+    window.__glosCacheProgress=event.data;window.dispatchEvent(new CustomEvent('glos-cache-progress',{detail:event.data}));
+  });
+  requestAssetWarm();
+  navigator.serviceWorker.register('sw.js').then(requestAssetWarm).catch(()=>{});
+  navigator.serviceWorker.addEventListener('controllerchange',requestAssetWarm);
+}
 
 /* ===== 桌布：套用使用者選的（IndexedDB blob 或預設 images/wallpaper.png）===== */
 const desktop=document.getElementById('desktop');
@@ -1079,7 +1090,7 @@ document.querySelectorAll('[data-close]').forEach(x=>x.addEventListener('click',
   e.target.closest('.win').classList.remove('open');syncMobileOSState();}));
 mobileOS.addEventListener?.('change',syncMobileOSState);
 
-// 開機動畫：逐行 BIOS 訊息＋進度條，結束後淡出開「關於我」
+// 開機動畫：BIOS 文字維持戲劇節奏；下方進度條只顯示 Service Worker 真實快取進度。
 (function(){
   const linesEl=document.getElementById('boot-lines'),fill=document.getElementById('boot-fill'),cap=document.getElementById('boot-cap'),boot=document.getElementById('boot');
   const L=[
@@ -1091,19 +1102,38 @@ mobileOS.addEventListener?.('change',syncMobileOSState);
     ['校準貓耳天線 ......... 收到雜訊','w'],
     ['啟動桌面環境 ......... ','ok'],
   ];
-  let i=0;
+  let i=0,linesDone=false,cacheSeen=false,cacheDone=!('serviceWorker'in navigator),cacheFailed=0,finished=false;
+  const fallback=setTimeout(()=>{if(cacheDone)return;cacheDone=true;cap.textContent='離線快取逾時，先以網路模式啟動';finish();},20000);
+  function loadLabel(path=''){
+    const name=path.replace(/^\.\//,'').split('/').pop();
+    if(name==='avatar.png')return '格莉奇大頭照';if(name==='glitch-4kb.mp3')return '格莉奇 4KB';if(name==='pet.png')return '桌面格莉奇';return name||'離線資產';
+  }
+  function applyCacheProgress(data){
+    if(!data||!data.total)return;cacheSeen=true;cacheFailed=data.failed||0;
+    const pct=Math.max(0,Math.min(100,Math.round(data.done/data.total*100)));fill.style.width=pct+'%';
+    cacheDone=data.done>=data.total;
+    cap.textContent=cacheDone?(cacheFailed?`離線快取完成 · ${cacheFailed} 項稍後重試`:'離線資產準備完成'):`離線快取 ${data.done}/${data.total} · ${loadLabel(data.current)}`;
+    finish();
+  }
+  function finish(){
+    if(finished||!linesDone||!cacheDone)return;finished=true;clearTimeout(fallback);
+    if(!cacheSeen)fill.style.width='100%';cap.textContent=cacheFailed?'逼——嗶！網路模式啟動':'逼——嗶！啟動完成';cap.classList.add('glitch');
+    setTimeout(()=>{boot.classList.add('hide');open('about');},520);
+  }
+  window.addEventListener('glos-cache-progress',event=>applyCacheProgress(event.detail));
+  if(window.__glosCacheProgress)applyCacheProgress(window.__glosCacheProgress);
   function step(){
     if(i<L.length){
       const [t,c]=L[i];
       const ln=document.createElement('div');if(c)ln.className=c;ln.textContent=t;linesEl.appendChild(ln);
-      fill.style.width=Math.round((i+1)/L.length*100)+'%';
       i++;setTimeout(step,260);
     }else{
-      cap.textContent='逼——嗶！啟動完成';cap.classList.add('glitch');
-      setTimeout(()=>{boot.classList.add('hide');open('about');},650);
+      linesDone=true;if(!cacheSeen&&!cacheDone)cap.textContent='建立離線快取中…';finish();
     }
   }
-  window.addEventListener('load',()=>setTimeout(step,300));
+  // 此 script 位於頁尾，DOM 已可用；不要等待 window.load（大型圖片／音樂會拖慢它）。
+  // BIOS 文字可立即演出，真正的載入百分比則由上方 cache-progress 事件獨立更新。
+  setTimeout(step,300);
 })();
 
 // 桌面寵物：點擊開聊天窗 + 偶爾冒泡

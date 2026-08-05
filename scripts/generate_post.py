@@ -385,7 +385,8 @@ def commit_push(date):
     subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
     subprocess.run(["git", "config", "user.email",
                     "41898282+github-actions[bot]@users.noreply.github.com"], check=True)
-    subprocess.run(["git", "add", "posts.json", "images/posts"], check=True)
+    subprocess.run([sys.executable, str(ROOT / "scripts" / "update_sw_hashes.py")], check=True)
+    subprocess.run(["git", "add", "posts.json", "images/posts", "sw.js"], check=True)
     r = subprocess.run(["git", "diff", "--cached", "--quiet"])
     if r.returncode == 0:
         print("  沒有變更，不 commit。", flush=True)
