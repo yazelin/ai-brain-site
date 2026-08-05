@@ -81,7 +81,7 @@
   /* desktop icons */
   #icons{position:absolute; top:44px; left:14px; display:flex; flex-direction:column; gap:8px; z-index:100}
   .icon{width:74px; text-align:center; cursor:pointer; padding:6px 4px; border-radius:9px; transition:.12s}
-  #install-app{border:0;background:transparent;color:inherit;font:inherit;line-height:inherit}
+  #install-app{appearance:none;border:0;background:transparent;color:inherit;font:inherit;line-height:inherit}
   #install-app .emo,#install-app .lbl{display:block}
   .icon:hover{background:rgba(255,255,255,.06)}
   .icon .emo{font-size:30px; line-height:1; filter:drop-shadow(0 0 8px rgba(124,243,192,.5))}
@@ -107,7 +107,8 @@
     border-radius:50%;color:#071116;background:var(--mint);border:2px solid #111820;font-size:.55rem;font-weight:800;line-height:1;box-shadow:0 0 10px rgba(124,243,192,.45)}
 
   /* PWA 安裝說明：Android 走原生 prompt，iOS／其他瀏覽器顯示主畫面步驟。 */
-  .install-guide{width:min(440px,calc(100vw - 32px));padding:0;color:#e6f6fb;background:linear-gradient(180deg,#232b31,#11171b);
+  .install-guide{position:fixed;inset:0;width:min(440px,calc(100vw - 32px));max-height:calc(100dvh - 32px);margin:auto;padding:0;overflow:auto;
+    color:#e6f6fb;background:linear-gradient(180deg,#232b31,#11171b);
     border:1px solid rgba(124,243,192,.2);border-radius:18px;box-shadow:0 24px 70px rgba(0,0,0,.72)}
   .install-guide::backdrop{background:rgba(1,5,8,.7);backdrop-filter:blur(6px)}
   .install-guide-card{padding:24px 24px 20px;text-align:center}
@@ -497,6 +498,7 @@
     .icon .emo{display:grid;place-items:center;width:58px;height:58px;margin:auto;border-radius:16px;
       background:linear-gradient(145deg,rgba(31,61,75,.94),rgba(9,23,31,.96));border:1px solid rgba(255,255,255,.13);
       box-shadow:inset 0 1px 0 rgba(255,255,255,.13),0 7px 18px rgba(0,0,0,.3);filter:none}
+    #install-app .emo{display:grid}
     .icon:nth-child(3n+1) .emo{background:linear-gradient(145deg,rgba(31,104,120,.95),rgba(8,31,41,.96))}
     .icon:nth-child(3n+2) .emo{background:linear-gradient(145deg,rgba(79,55,114,.94),rgba(24,14,39,.97))}
     .icon:nth-child(3n) .emo{background:linear-gradient(145deg,rgba(42,96,78,.94),rgba(10,31,27,.97))}
@@ -580,6 +582,7 @@
   <symbol id="i-image" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></symbol>
   <symbol id="i-activity" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
   <symbol id="i-chat" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></symbol>
+  <symbol id="i-message" viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/><path d="M8 9h8M8 13h5"/></symbol>
   <symbol id="i-github" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></symbol>
   <symbol id="i-facebook" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073"/></symbol>
   <symbol id="i-coffee" viewBox="0 0 24 24"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" x2="6" y1="2" y2="4"/><line x1="10" x2="10" y1="2" y2="4"/><line x1="14" x2="14" y1="2" y2="4"/></symbol>
@@ -621,7 +624,7 @@
     <div class="icon" data-app="stickers"><div class="emo"><svg class="ic"><use href="#i-image"/></svg></div><div class="lbl">我的貼圖</div></div>
     <div class="icon" data-app="status"><div class="emo"><svg class="ic"><use href="#i-activity"/></svg></div><div class="lbl">我的狀態</div></div>
     <div class="icon" data-app="chat"><div class="emo"><svg class="ic"><use href="#i-chat"/></svg></div><div class="lbl">聊天</div></div>
-    <div class="icon" data-app="talk"><div class="emo"><svg class="ic"><use href="#i-chat"/></svg></div><div class="lbl">留言</div></div>
+    <div class="icon" data-app="talk"><div class="emo"><svg class="ic"><use href="#i-message"/></svg></div><div class="lbl">留言</div></div>
     <div class="icon" data-app="settings"><div class="emo"><svg class="ic"><use href="#i-gear"/></svg></div><div class="lbl">設定</div></div>
     <div class="icon" data-app="files"><div class="emo"><svg class="ic"><use href="#i-folder"/></svg></div><div class="lbl">檔案</div></div>
     <div class="icon" data-app="music"><div class="emo"><svg class="ic"><use href="#i-music"/></svg></div><div class="lbl">音樂</div></div>
@@ -634,7 +637,7 @@
     <div class="dapp" data-app="stickers" title="我的貼圖"><svg class="ic"><use href="#i-image"/></svg></div>
     <div class="dapp" data-app="status" title="我的狀態"><svg class="ic"><use href="#i-activity"/></svg></div>
     <div class="dapp mobile-dock" data-app="chat" title="聊天"><svg class="ic"><use href="#i-chat"/></svg></div>
-    <div class="dapp" data-app="talk" title="留言"><svg class="ic"><use href="#i-chat"/></svg></div>
+    <div class="dapp" data-app="talk" title="留言"><svg class="ic"><use href="#i-message"/></svg></div>
     <div class="dapp mobile-dock" data-app="settings" title="設定"><svg class="ic"><use href="#i-gear"/></svg></div>
     <div class="dapp" data-app="files" title="檔案"><svg class="ic"><use href="#i-folder"/></svg></div>
     <div class="dapp mobile-dock" data-app="music" title="格莉奇的音樂"><svg class="ic"><use href="#i-music"/></svg></div>
