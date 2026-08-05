@@ -79,14 +79,15 @@
   .links a:hover{color:#e6f6fb}
 
   /* desktop icons */
-  #icons{position:absolute; top:44px; left:14px; display:flex; flex-direction:column; gap:14px; z-index:100}
+  #icons{position:absolute; top:44px; left:14px; display:flex; flex-direction:column; gap:8px; z-index:100}
   .icon{width:74px; text-align:center; cursor:pointer; padding:6px 4px; border-radius:9px; transition:.12s}
-  #install-app{border:0;background:transparent;color:inherit;font:inherit}
+  #install-app{border:0;background:transparent;color:inherit;font:inherit;line-height:inherit}
+  #install-app .emo,#install-app .lbl{display:block}
   .icon:hover{background:rgba(255,255,255,.06)}
   .icon .emo{font-size:30px; line-height:1; filter:drop-shadow(0 0 8px rgba(124,243,192,.5))}
   .icon .emo .ic{width:32px;height:32px;color:#b9c4cb}
   #dock .dapp .ic{width:24px;height:24px;color:#c4ced3}
-  .icon .lbl{margin-top:4px; font-size:.72rem; color:#e6f6fb; text-shadow:0 1px 3px #000}
+  .icon .lbl{margin-top:4px; font-size:.72rem; color:#e6f6fb; text-shadow:0 1px 3px #000;white-space:nowrap}
   .icon .emo img,#dock .dapp img{border-radius:50%;object-fit:cover}
   .icon .emo img{width:34px;height:34px;filter:drop-shadow(0 0 8px rgba(124,243,192,.5))}
   #dock .dapp img{width:28px;height:28px}
