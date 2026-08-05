@@ -27,7 +27,7 @@
 | 心情日記 | 依月份與文字／插畫篩選；GitHub Actions 每天從世界新聞與 Giscus 留言取得靈感，自動累積新文章 |
 | 角色內容 | 完整角色設定、9 張 LINE 貼圖、4KB 記憶體狀態與 Giscus 討論區 |
 | 個人化 | 分頁設定中心可完整查看聊天紀錄與記憶摘要，並獨立管理桌布、桌寵與系統資訊 |
-| PWA／離線 | 可安裝到桌面或手機；Service Worker 快取 app shell、專屬單曲與已載入資產，離線仍可開機、聽歌並查看本機聊天歷史 |
+| PWA／離線 | 桌面提供「安裝 App」入口；Android／桌面可叫出原生安裝提示，iOS 提供加入主畫面步驟。Service Worker 快取 app shell、專屬單曲與已載入資產，離線仍可開機、聽歌並查看本機聊天歷史 |
 
 > 聊天、記憶摘要、AI 畫圖與 Giscus 留言需要網路。離線模式不會產生新的 AI 回覆。
 
@@ -60,6 +60,7 @@ flowchart LR
 
 - `index.html` 包含完整桌面 UI、視窗管理、聊天、日記、設定、檔案與看圖功能。
 - `manifest.webmanifest` 提供 PWA 名稱、主題色與應用程式圖示。
+- `index.html` 提供 SEO description、canonical、Open Graph／Twitter Card，以及 Android／iOS PWA 安裝入口。
 - `sw.js` 分離短生命週期 shell 與長生命週期 asset cache：先優先快取開機頭像與 app shell，再背景暖載入角色圖片及音樂；HTML network-first、動態 JSON stale-while-revalidate、資產 cache-first，音檔支援離線 Range 回應。
 - `scripts/update_sw_hashes.py` 依 shell／asset 真實檔案內容產生兩組 cache hash，不需手動調整 `vN` 版號。
 - `posts.json` 與 `wallpapers.json` 是可累積的內容索引。
@@ -169,6 +170,8 @@ npx wrangler deploy
 ├── index.html                  # WebOS UI 與前端邏輯
 ├── manifest.webmanifest        # PWA manifest
 ├── sw.js                       # Service Worker
+├── robots.txt                  # 搜尋引擎爬取規則
+├── sitemap.xml                 # 正式站 sitemap
 ├── posts.json                  # 日記內容索引
 ├── wallpapers.json             # 桌布索引
 ├── audio/                      # 格莉奇專屬音樂

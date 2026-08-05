@@ -4,13 +4,32 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>格莉奇OS · Glitch</title>
+<meta name="description" content="格莉奇OS：只有 4KB 記憶體的 AI 機器人女孩 WebOS／PWA，支援 LINE 風格聊天、長期記憶、專屬音樂、手機 OS、AI 日記與離線使用。">
+<link rel="canonical" href="https://yazelin.github.io/ai-brain-site/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="格莉奇OS · Glitch">
+<meta property="og:locale" content="zh_TW">
+<meta property="og:title" content="格莉奇OS · 4KB 記憶體 AI 機器人女孩">
+<meta property="og:description" content="在桌面與手機 OS 裡跟格莉奇聊天、聽她的專屬音樂、閱讀 AI 日記，也能安裝成離線 PWA。">
+<meta property="og:url" content="https://yazelin.github.io/ai-brain-site/">
+<meta property="og:image" content="https://yazelin.github.io/ai-brain-site/images/glitch-os-preview.png">
+<meta property="og:image:width" content="1440">
+<meta property="og:image:height" content="900">
+<meta property="og:image:alt" content="格莉奇OS 桌面、格莉奇角色與應用程式視窗">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="格莉奇OS · 4KB 記憶體 AI 機器人女孩">
+<meta name="twitter:description" content="可聊天、聽專屬音樂並離線安裝的格莉奇 WebOS。">
+<meta name="twitter:image" content="https://yazelin.github.io/ai-brain-site/images/glitch-os-preview.png">
 <link rel="icon" href="images/glitch-logo.svg" type="image/svg+xml">
-<link rel="alternate icon" href="images/a8qmb3a8qmb3a8qm.png" type="image/png">
+<link rel="icon" href="images/icon-192.png" sizes="192x192" type="image/png">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="images/icon-192.png">
+<link rel="apple-touch-icon" href="images/icon-192.png" sizes="192x192">
 <link rel="preload" href="images/avatar.png" as="image" fetchpriority="high">
 <meta name="theme-color" content="#04080c">
+<meta name="application-name" content="格莉奇OS">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="格莉奇OS">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
   :root{
@@ -62,6 +81,7 @@
   /* desktop icons */
   #icons{position:absolute; top:44px; left:14px; display:flex; flex-direction:column; gap:14px; z-index:100}
   .icon{width:74px; text-align:center; cursor:pointer; padding:6px 4px; border-radius:9px; transition:.12s}
+  #install-app{border:0;background:transparent;color:inherit;font:inherit}
   .icon:hover{background:rgba(255,255,255,.06)}
   .icon .emo{font-size:30px; line-height:1; filter:drop-shadow(0 0 8px rgba(124,243,192,.5))}
   .icon .emo .ic{width:32px;height:32px;color:#b9c4cb}
@@ -84,6 +104,20 @@
   [data-app].has-notification{position:relative}
   [data-app].has-notification::after{content:"1";position:absolute;z-index:3;top:0;right:2px;display:grid;place-items:center;width:16px;height:16px;
     border-radius:50%;color:#071116;background:var(--mint);border:2px solid #111820;font-size:.55rem;font-weight:800;line-height:1;box-shadow:0 0 10px rgba(124,243,192,.45)}
+
+  /* PWA 安裝說明：Android 走原生 prompt，iOS／其他瀏覽器顯示主畫面步驟。 */
+  .install-guide{width:min(440px,calc(100vw - 32px));padding:0;color:#e6f6fb;background:linear-gradient(180deg,#232b31,#11171b);
+    border:1px solid rgba(124,243,192,.2);border-radius:18px;box-shadow:0 24px 70px rgba(0,0,0,.72)}
+  .install-guide::backdrop{background:rgba(1,5,8,.7);backdrop-filter:blur(6px)}
+  .install-guide-card{padding:24px 24px 20px;text-align:center}
+  .install-guide-mark{display:grid;place-items:center;width:58px;height:58px;margin:0 auto 13px;border-radius:17px;
+    color:#07151b;background:linear-gradient(135deg,var(--mint),var(--cy));box-shadow:0 8px 25px rgba(37,194,232,.28)}
+  .install-guide-mark .ic{width:29px;height:29px}
+  .install-guide h2{margin:0 0 8px;font-size:1.05rem;letter-spacing:.08em;text-transform:none}
+  .install-guide h2::before{content:""}
+  .install-guide p{color:#aebbc1;font-size:.82rem;line-height:1.75;white-space:pre-line}
+  .install-guide button{margin-top:17px;min-width:112px;border:1px solid rgba(37,194,232,.28);border-radius:10px;padding:8px 16px;
+    color:#ddf9ff;background:rgba(37,194,232,.11);font-weight:700;cursor:pointer}
 
   /* windows */
   .win{
@@ -451,19 +485,12 @@
     #desktop::before{opacity:.68;background:
       linear-gradient(180deg,rgba(3,8,12,.08),rgba(3,8,12,.25)),
       repeating-linear-gradient(0deg,rgba(124,243,192,.025) 0 2px,transparent 2px 4px)}
-    #desktop::after{content:"••";position:absolute;left:50%;bottom:calc(86px + env(safe-area-inset-bottom));z-index:95;
+    #desktop::after{content:"••";position:absolute;left:50%;bottom:calc(82px + env(safe-area-inset-bottom));z-index:95;
       transform:translateX(-50%);color:rgba(255,255,255,.7);font-size:.68rem;letter-spacing:5px;transition:.2s}
-    #menubar{position:fixed;height:calc(32px + env(safe-area-inset-top));padding-top:env(safe-area-inset-top);padding-inline:16px;
-      border:0;background:rgba(4,8,12,.72);backdrop-filter:blur(18px);z-index:9000}
-    #menubar::before{content:"";position:absolute;left:50%;top:calc(5px + env(safe-area-inset-top));width:94px;height:22px;
-      transform:translateX(-50%);border-radius:999px;background:#020406;box-shadow:0 1px 0 rgba(255,255,255,.06)}
-    #menubar::after{content:"4KB  ▰";position:absolute;right:16px;top:calc(6px + env(safe-area-inset-top));color:#e5edf0;font-size:.67rem;letter-spacing:.05em}
-    #menubar .brand,#menubar .menu,#menubar .pill,#menubar .links,#menubar .sp{display:none}
-    #clock{position:absolute;left:17px;top:calc(5px + env(safe-area-inset-top));font-size:.7rem;font-weight:700;color:#edf5f7}
-    #desktop.music-playing #menubar::before{content:"♫";display:grid;place-items:center;color:var(--mint);font-size:.72rem;
-      box-shadow:0 0 18px rgba(124,243,192,.24),inset 0 0 0 1px rgba(124,243,192,.1)}
+    /* 手機只模擬 App／桌面，不再額外偽造系統狀態列或動態島。 */
+    #menubar{display:none}
 
-    #icons{position:absolute;top:calc(58px + env(safe-area-inset-top));left:0;right:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+    #icons{position:absolute;top:calc(22px + env(safe-area-inset-top));left:0;right:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
       gap:17px 6px;max-width:none;padding:0 12px;z-index:100;transition:opacity .18s,transform .18s}
     .icon{width:auto;min-width:0;padding:0;background:transparent!important}
     .icon .emo{display:grid;place-items:center;width:58px;height:58px;margin:auto;border-radius:16px;
@@ -477,10 +504,11 @@
     .icon:active .emo{transform:scale(.92);filter:brightness(1.12)}
     .icon.is-playing .emo{box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 0 0 2px rgba(124,243,192,.42),0 0 22px rgba(124,243,192,.26)}
     .icon.has-notification::after{top:-5px;right:calc(50% - 33px)}
+    .install-guide{border-radius:20px}.install-guide-card{padding:22px 19px 18px}
 
-    #dock{position:fixed;left:10px;right:10px;bottom:calc(8px + env(safe-area-inset-bottom));width:auto;height:70px;transform:none;
-      display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:8px 12px;border-radius:23px;background:rgba(8,14,20,.7);
-      border:1px solid rgba(255,255,255,.13);box-shadow:0 12px 34px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.1);transition:.2s}
+    #dock{position:fixed;left:0;right:0;bottom:0;width:auto;height:calc(76px + env(safe-area-inset-bottom));transform:none;
+      display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:8px 12px calc(8px + env(safe-area-inset-bottom));border-radius:0;background:rgba(8,14,20,.82);
+      border:0;border-top:1px solid rgba(255,255,255,.13);box-shadow:0 -10px 30px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.08);transition:.2s}
     #dock .dapp{display:none;width:52px;height:52px;justify-self:center;border-radius:15px;background:linear-gradient(145deg,rgba(28,66,80,.96),rgba(9,25,33,.97));
       border:1px solid rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.1);transition:.12s}
     #dock .dapp.mobile-dock{display:grid}
@@ -489,21 +517,21 @@
     #dock .dapp .ic{width:25px;height:25px;color:#dff9fc}
     #dock .dapp.is-playing{box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 0 0 2px rgba(124,243,192,.35),0 0 18px rgba(124,243,192,.22)}
 
-    #pet{right:-7%;bottom:calc(83px + env(safe-area-inset-bottom));height:min(34vh,285px);min-height:0;max-height:none;z-index:80;
+    #pet{right:-7%;bottom:calc(76px + env(safe-area-inset-bottom));height:min(34vh,285px);min-height:0;max-height:none;z-index:80;
       filter:drop-shadow(0 10px 18px rgba(0,0,0,.45));transition:opacity .18s,transform .18s}
     #pet>img{height:100%;width:auto}
     #pet .bubble{left:auto;right:58%;top:4%;max-width:165px;font-size:.72rem;padding:7px 10px}
     #pet .bubble::after{left:100%;right:auto}
 
-    .win,#w-settings,#w-music{position:fixed!important;left:0!important;right:0!important;top:calc(32px + env(safe-area-inset-top))!important;bottom:0!important;
-      width:100vw!important;height:calc(100vh - 32px - env(safe-area-inset-top))!important;height:calc(100dvh - 32px - env(safe-area-inset-top))!important;
-      min-width:0;min-height:0;max-width:none!important;max-height:none!important;margin:0!important;border-radius:22px 22px 0 0;
-      border-inline:0;box-shadow:0 -12px 45px rgba(0,0,0,.52);backdrop-filter:blur(18px)}
+    .win,#w-settings,#w-music{position:fixed!important;left:0!important;right:0!important;top:0!important;bottom:0!important;
+      width:100vw!important;height:100vh!important;height:100dvh!important;
+      min-width:0;min-height:0;max-width:none!important;max-height:none!important;margin:0!important;border-radius:0;
+      border:0;box-shadow:none;backdrop-filter:blur(18px)}
     #w-settings.open{z-index:8000!important}
     .win.open{animation:mobile-app-open .22s cubic-bezier(.2,.8,.25,1)}
-    .win::after{content:"";position:absolute;left:50%;bottom:calc(5px + env(safe-area-inset-bottom));z-index:40;width:116px;height:4px;
-      transform:translateX(-50%);border-radius:999px;background:rgba(230,240,243,.6);pointer-events:none}
-    .win .tb{position:relative;min-height:49px;padding:8px 12px;cursor:default;background:rgba(255,255,255,.035)}
+    .win::after{display:none}
+    .win .tb{position:relative;min-height:calc(49px + env(safe-area-inset-top));padding:calc(8px + env(safe-area-inset-top)) 12px 8px;
+      cursor:default;background:rgba(255,255,255,.035)}
     .win .tb .dot{display:none}
     .win .tb .dot.r{display:grid;place-items:center;width:30px;height:30px;background:rgba(37,194,232,.1);border:1px solid rgba(37,194,232,.18)}
     .win .tb .dot.r::before{content:"‹";color:var(--cy);font-size:1.5rem;line-height:.8;transform:translateY(-1px)}
@@ -516,12 +544,12 @@
     #desktop.mobile-app-open #pet{transform:translateY(15px)}
     #desktop.mobile-app-open::after{opacity:0}
 
-    #w-chat{background:#7da3b8!important;border:0!important;box-shadow:0 -12px 45px rgba(0,0,0,.5)!important;overflow:hidden!important}
+    #w-chat{background:#7da3b8!important;border:0!important;box-shadow:none!important;overflow:hidden!important}
     #w-chat>.body{height:100%;padding:0!important;overflow:hidden!important}
     #w-chat .phone{width:100%;height:100%;margin:0;border:0;border-radius:0;box-shadow:none;cursor:default;background:#7da3b8}
     #w-chat .phone .notch,#w-chat .ph-x,#w-chat .statusbar{display:none!important}
     #w-chat .phone .screen{border-radius:0;background:#7da3b8}
-    #w-chat .lh{height:51px;padding-inline:14px;background:rgba(225,232,235,.94)}
+    #w-chat .lh{height:calc(51px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 14px 0;background:rgba(225,232,235,.94)}
     #w-chat .lh .back{font-size:1.7rem}
     #chat-log{padding-bottom:calc(17px + env(safe-area-inset-bottom))}
     #w-chat .in{padding-bottom:calc(8px + env(safe-area-inset-bottom))}
@@ -596,6 +624,7 @@
     <div class="icon" data-app="settings"><div class="emo"><svg class="ic"><use href="#i-gear"/></svg></div><div class="lbl">設定</div></div>
     <div class="icon" data-app="files"><div class="emo"><svg class="ic"><use href="#i-folder"/></svg></div><div class="lbl">檔案</div></div>
     <div class="icon" data-app="music"><div class="emo"><svg class="ic"><use href="#i-music"/></svg></div><div class="lbl">音樂</div></div>
+    <button class="icon" id="install-app" type="button" hidden><span class="emo"><svg class="ic"><use href="#i-download"/></svg></span><span class="lbl">安裝 App</span></button>
   </div>
 
   <div id="dock">
@@ -609,6 +638,15 @@
     <div class="dapp" data-app="files" title="檔案"><svg class="ic"><use href="#i-folder"/></svg></div>
     <div class="dapp mobile-dock" data-app="music" title="格莉奇的音樂"><svg class="ic"><use href="#i-music"/></svg></div>
   </div>
+
+  <dialog class="install-guide" id="install-guide" aria-labelledby="install-guide-title">
+    <div class="install-guide-card">
+      <div class="install-guide-mark"><svg class="ic"><use href="#i-download"/></svg></div>
+      <h2 id="install-guide-title">安裝格莉奇OS</h2>
+      <p id="install-guide-copy">從瀏覽器選單將格莉奇OS 加到主畫面。</p>
+      <button id="install-guide-close" type="button">知道了</button>
+    </div>
+  </dialog>
 
   <!-- window: 關於我 -->
   <div class="win" id="w-about" style="left:8%;top:60px;width:560px">
@@ -844,7 +882,7 @@
         </div>
         <label class="music-volume" for="music-volume"><svg class="ic"><use href="#i-volume"/></svg><input class="music-range" id="music-volume" type="range" min="0" max="1" value="0.8" step="0.01" aria-label="音量"><output id="music-volume-value">80%</output></label>
       </div>
-      <audio id="music-audio" src="audio/glitch-4kb.mp3" preload="metadata" loop></audio>
+      <audio id="music-audio" src="audio/glitch-4kb.mp3" preload="none" playsinline loop></audio>
 
       <aside class="music-lyrics-panel" id="music-lyrics" aria-hidden="true" aria-labelledby="music-lyrics-title">
         <div class="music-lyrics-head"><h3 id="music-lyrics-title">格莉奇 4KB · 完整歌詞</h3><button class="music-lyrics-close" id="music-lyrics-close" type="button" aria-label="關閉歌詞">×</button></div>
@@ -984,6 +1022,44 @@ if('serviceWorker'in navigator){
   navigator.serviceWorker.addEventListener('controllerchange',requestAssetWarm);
 }
 
+/* ===== PWA 安裝：Android／桌面原生 prompt，iOS 顯示加入主畫面指引。 ===== */
+(function(){
+  const button=document.getElementById('install-app'),guide=document.getElementById('install-guide');
+  const copy=document.getElementById('install-guide-copy'),close=document.getElementById('install-guide-close');
+  if(!button||!guide)return;
+  const KEY='glos-pwa-installed';
+  const standalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  let deferred=null;
+  function showButton(){button.hidden=standalone()||localStorage.getItem(KEY)==='yes';}
+  function showGuide(installed=false){
+    document.getElementById('install-guide-title').textContent=installed?'安裝完成':'安裝格莉奇OS';
+    copy.textContent=installed?'請回到手機主畫面，點「格莉奇OS」圖示開啟全螢幕離線版。':ios
+      ?'請點 Safari 的「分享」按鈕，選擇「加入主畫面」，再按右上角「新增」。'
+      :'請開啟瀏覽器選單，選擇「安裝應用程式」或「加到主畫面」。';
+    if(typeof guide.showModal==='function'){if(!guide.open)guide.showModal();}else guide.setAttribute('open','');
+  }
+  window.addEventListener('beforeinstallprompt',event=>{
+    event.preventDefault();deferred=event;localStorage.removeItem(KEY);showButton();
+  });
+  window.addEventListener('appinstalled',()=>{
+    deferred=null;localStorage.setItem(KEY,'yes');button.hidden=true;showGuide(true);
+  });
+  button.addEventListener('click',async()=>{
+    if(!deferred){showGuide();return;}
+    const prompt=deferred;deferred=null;
+    try{
+      await prompt.prompt();const choice=await prompt.userChoice;
+      if(choice?.outcome==='accepted'){localStorage.setItem(KEY,'yes');button.hidden=true;showGuide(true);}
+      else button.hidden=false;
+    }catch(e){button.hidden=false;showGuide();}
+  });
+  close.addEventListener('click',()=>guide.close?.()||guide.removeAttribute('open'));
+  guide.addEventListener('click',event=>{if(event.target===guide)guide.close?.();});
+  matchMedia('(display-mode: standalone)').addEventListener?.('change',showButton);
+  showButton();
+})();
+
 /* ===== 桌布：套用使用者選的（IndexedDB blob 或預設 images/wallpaper.png）===== */
 const desktop=document.getElementById('desktop');
 async function applyWall(){
@@ -1056,13 +1132,31 @@ function focus(w){w.style.zIndex=++z;}
 const mobileOS=matchMedia('(max-width:600px)');
 function syncMobileOSState(){desktop.classList.toggle('mobile-app-open',Object.values(wins).some(w=>w.classList.contains('open')));}
 function setChatNotification(show){document.querySelectorAll('[data-app="chat"]').forEach(el=>el.classList.toggle('has-notification',show));}
-function open(app){
+function syncMobileAppHistory(app){
+  if(!mobileOS.matches)return;
+  const state={...(window.history.state||{}),glosApp:app};
+  if(window.history.state?.glosApp)window.history.replaceState(state,'');else window.history.pushState(state,'');
+}
+function closeAppWindow(w){
+  if(!w)return;
+  const app=w.id.replace(/^w-/,'');
+  if(mobileOS.matches&&w.classList.contains('open')&&window.history.state?.glosApp===app){window.history.back();return;}
+  w.classList.remove('open');syncMobileOSState();
+}
+function open(app,syncHistory=true){
   const w=wins[app];if(!w)return;
   if(mobileOS.matches)Object.entries(wins).forEach(([name,win])=>{if(name!==app)win.classList.remove('open');});
   w.classList.add('open');focus(w);syncMobileOSState();
+  if(syncHistory)syncMobileAppHistory(app);
   if(app==='talk')loadGiscus();if(app==='settings')openSettings();if(app==='chat'){setChatNotification(false);chatFocus();}if(app==='files')openFiles();if(app==='music')startMusicVisualizer();
 }
-function toggle(app){const w=wins[app];if(!w)return;if(w.classList.contains('open')){w.classList.remove('open');syncMobileOSState();}else open(app);}
+function toggle(app){const w=wins[app];if(!w)return;if(w.classList.contains('open'))closeAppWindow(w);else open(app);}
+window.addEventListener('popstate',event=>{
+  if(!mobileOS.matches)return;
+  const app=event.state?.glosApp;
+  if(app&&wins[app])open(app,false);
+  else{Object.values(wins).forEach(w=>w.classList.remove('open'));syncMobileOSState();}
+});
 let _giscusLoaded=false;
 function loadGiscus(){
   if(_giscusLoaded)return;_giscusLoaded=true;
@@ -1087,7 +1181,7 @@ function loadGiscus(){
 }
 document.querySelectorAll('[data-app]').forEach(b=>b.addEventListener('click',()=>toggle(b.dataset.app)));
 document.querySelectorAll('[data-close]').forEach(x=>x.addEventListener('click',e=>{
-  e.target.closest('.win').classList.remove('open');syncMobileOSState();}));
+  closeAppWindow(e.target.closest('.win'));}));
 mobileOS.addEventListener?.('change',syncMobileOSState);
 
 // 開機動畫：BIOS 文字維持戲劇節奏；下方進度條只顯示 Service Worker 真實快取進度。
@@ -1151,7 +1245,7 @@ const musicPlay=document.getElementById('music-play'),musicPlayIcon=document.get
 const musicProgress=document.getElementById('music-progress'),musicCurrent=document.getElementById('music-current'),musicDuration=document.getElementById('music-duration');
 const musicVolume=document.getElementById('music-volume'),musicVolumeValue=document.getElementById('music-volume-value'),musicStatus=document.getElementById('music-status');
 const musicLyrics=document.getElementById('music-lyrics'),musicLyricsToggle=document.getElementById('music-lyrics-toggle');
-let musicContext=null,musicAnalyser=null,musicFrequency=null,musicWave=null,musicFrame=0,musicFirstPlay=true,musicVolumeTimer=0;
+let musicContext=null,musicSource=null,musicAnalyser=null,musicFrequency=null,musicWave=null,musicFrame=0,musicFirstPlay=true,musicVolumeTimer=0,musicHadError=false;
 let musicParticles=[];
 const musicReducedMotion=matchMedia('(prefers-reduced-motion:reduce)').matches;
 
@@ -1173,17 +1267,25 @@ function updateMusicProgress(){
 }
 async function ensureMusicAudioGraph(){
   const AudioCtx=window.AudioContext||window.webkitAudioContext;if(!AudioCtx)return;
-  if(!musicContext){
-    musicContext=new AudioCtx();musicAnalyser=musicContext.createAnalyser();musicAnalyser.fftSize=512;musicAnalyser.smoothingTimeConstant=.82;
-    musicFrequency=new Uint8Array(musicAnalyser.frequencyBinCount);musicWave=new Uint8Array(musicAnalyser.fftSize);
-    const source=musicContext.createMediaElementSource(musicAudio);source.connect(musicAnalyser);musicAnalyser.connect(musicContext.destination);
-  }
+  if(!musicContext)musicContext=new AudioCtx();
+  // iOS 必須在點擊手勢仍有效時 resume；先恢復 context，成功後才接管 media element，
+  // 如此視覺化初始化失敗也不會讓原生 <audio> 一起靜音。
   if(musicContext.state==='suspended')await musicContext.resume();
+  if(!musicAnalyser){
+    musicAnalyser=musicContext.createAnalyser();musicAnalyser.fftSize=512;musicAnalyser.smoothingTimeConstant=.82;
+    musicFrequency=new Uint8Array(musicAnalyser.frequencyBinCount);musicWave=new Uint8Array(musicAnalyser.fftSize);
+    musicSource=musicContext.createMediaElementSource(musicAudio);musicSource.connect(musicAnalyser);musicAnalyser.connect(musicContext.destination);
+  }
 }
 async function toggleMusic(){
   if(musicAudio.paused){
-    try{await ensureMusicAudioGraph();await musicAudio.play();}
-    catch(e){musicStatus.textContent='無法播放';}
+    musicHadError=false;musicStatus.textContent='讀取中…';
+    // play() 與 AudioContext.resume() 都要直接發生在同一次使用者點擊中；不可先 await 其中之一。
+    const playback=musicAudio.play(),graph=ensureMusicAudioGraph();
+    try{await playback;}
+    catch(e){musicStatus.textContent='無法播放';console.warn('music playback failed',e);return;}
+    try{await graph;}
+    catch(e){console.warn('music visualizer unavailable; native audio continues',e);}
   }else musicAudio.pause();
 }
 function setMusicLyrics(show){
@@ -1204,8 +1306,14 @@ musicAudio.addEventListener('loadedmetadata',updateMusicProgress);
 musicAudio.addEventListener('durationchange',updateMusicProgress);
 musicAudio.addEventListener('timeupdate',updateMusicProgress);
 musicAudio.addEventListener('waiting',()=>{musicStatus.textContent='讀取中…';});
-musicAudio.addEventListener('error',()=>{musicStatus.textContent='音訊載入失敗';});
+musicAudio.addEventListener('playing',()=>{musicStatus.textContent='播放中';});
+musicAudio.addEventListener('error',()=>{
+  musicHadError=true;musicStatus.textContent='音訊載入失敗，請再按一次播放';
+  // controller 剛切換時，舊的 metadata 串流可能失效；重設管線但不自動播放，下一次點擊即可乾淨重試。
+  setTimeout(()=>{if(musicHadError&&musicAudio.paused)musicAudio.load();},0);
+});
 musicAudio.addEventListener('play',()=>{
+  musicHadError=false;
   musicPlayer.classList.add('playing');musicPlayIcon.setAttribute('href','#i-pause');musicPlay.title='暫停';musicPlay.setAttribute('aria-label','暫停');musicStatus.textContent='播放中';
   desktop.classList.add('music-playing');document.querySelectorAll('[data-app="music"]').forEach(el=>el.classList.add('is-playing'));
   if('mediaSession'in navigator)navigator.mediaSession.playbackState='playing';
@@ -1213,7 +1321,7 @@ musicAudio.addEventListener('play',()=>{
   startMusicVisualizer();
 });
 musicAudio.addEventListener('pause',()=>{
-  musicPlayer.classList.remove('playing');musicPlayIcon.setAttribute('href','#i-play');musicPlay.title='播放';musicPlay.setAttribute('aria-label','播放');musicStatus.textContent='已暫停';
+  musicPlayer.classList.remove('playing');musicPlayIcon.setAttribute('href','#i-play');musicPlay.title='播放';musicPlay.setAttribute('aria-label','播放');if(!musicHadError)musicStatus.textContent='已暫停';
   desktop.classList.remove('music-playing');document.querySelectorAll('[data-app="music"]').forEach(el=>el.classList.remove('is-playing'));
   if('mediaSession'in navigator)navigator.mediaSession.playbackState='paused';
 });
