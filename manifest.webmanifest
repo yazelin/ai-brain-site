@@ -1,17 +1,31 @@
 {
   "name": "格莉奇OS · Glitch",
   "short_name": "格莉奇OS",
-  "description": "格莉奇——記憶體只有 4KB 的 AI 機器人女孩 VTuber 的桌面 OS。可跟她在 LINE 上聊天（離線也能看歷史）。",
-  "start_url": "./index.html",
+  "description": "只有 4KB 記憶體的 AI 機器人女孩 WebOS，可聊天、聽專屬音樂、閱讀日記並離線使用。",
+  "id": "./",
+  "lang": "zh-Hant-TW",
+  "dir": "ltr",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#04080c",
   "theme_color": "#25c2e8",
+  "categories": ["entertainment", "music", "social"],
+  "prefer_related_applications": false,
   "icons": [
     { "src": "images/glitch-logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
     { "src": "images/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "images/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "images/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    {
+      "src": "images/glitch-os-preview.png",
+      "sizes": "1440x900",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "格莉奇OS 桌面與應用程式"
+    }
   ]
 }
