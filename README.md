@@ -1,6 +1,190 @@
-# AI 腦 · 容量不足
+<div align="center">
+  <img src="images/avatar.png" width="128" alt="格莉奇頭像">
+  <h1>格莉奇OS · Glitch</h1>
+  <p><strong>只有 4KB 記憶體的 AI 機器人女孩 VTuber，把自己的房間做成了一套瀏覽器桌面 OS。</strong></p>
+  <p>
+    <a href="https://yazelin.github.io/ai-brain-site/"><strong>立即啟動格莉奇OS</strong></a>
+    ·
+    <a href="https://github.com/yazelin/ai-brain-site/discussions">留言給格莉奇</a>
+  </p>
+</div>
 
-「AI 腦」LINE 貼圖角色的個人網站，以 GitHub Pages 托管。
+![格莉奇OS 桌面、角色與關於我視窗](images/glitch-os-preview.png)
 
-- 主色：青藍 `#25c2e8`（取自角色貼圖主色）
-- 深色科技風背景，凸顯角色氣質
+格莉奇OS 是「AI 腦 · 容量不足」LINE 貼圖角色格莉奇（Glitch）的互動式個人網站。它以 WebOS／桌面環境呈現角色設定、日記、貼圖、留言與 AI 聊天，前端不依賴框架或建置工具，直接由 GitHub Pages 發佈。
+
+## 現有功能
+
+| 功能 | 現況 |
+| --- | --- |
+| 桌面 OS 體驗 | BIOS 風開機動畫、桌面圖示與 Dock、可拖曳／縮放／切換層級的應用程式視窗 |
+| 格莉奇桌寵 | 角色常駐桌面、隨機對話泡泡；點擊即可開啟聊天 |
+| AI 聊天 | LINE 風格介面，由 Cloudflare Worker 注入格莉奇人設，再轉送自架 `gemini-web` |
+| 長期記憶 | 聊天歷史存在本機 IndexedDB；累積約 10 次新對話後，自動把舊內容壓縮成可編輯的記憶摘要 |
+| AI 畫圖 | 對格莉奇說「畫一張……」等指令會切到生圖；成品自動存進虛擬 `~/下載/` |
+| 看圖與檔案 | 圖片可縮放、拖曳、全螢幕與下載；虛擬檔案系統保存在目前瀏覽器 |
+| 心情日記 | 依月份與文字／插畫篩選；GitHub Actions 每天從世界新聞與 Giscus 留言取得靈感，自動累積新文章 |
+| 角色內容 | 完整角色設定、9 張 LINE 貼圖、4KB 記憶體狀態與 Giscus 討論區 |
+| 個人化 | 可選內建桌布、上傳只留在本機的桌布，以及切換桌寵是否永遠置頂 |
+| PWA／離線 | 可安裝到桌面或手機；Service Worker 快取 app shell 與已載入資產，離線仍可開機並查看本機聊天歷史 |
+
+> 聊天、記憶摘要、AI 畫圖與 Giscus 留言需要網路。離線模式不會產生新的 AI 回覆。
+
+## 系統架構
+
+```mermaid
+flowchart LR
+    Browser["瀏覽器 PWA<br>HTML · CSS · JavaScript"]
+    IDB["IndexedDB<br>聊天 · 記憶 · 桌布 · 圖片"]
+    SW["Service Worker<br>離線 shell 與資產快取"]
+    Worker["Cloudflare Worker<br>人設 · CORS · 限流"]
+    Gemini["自架 gemini-web<br>文字與圖片生成"]
+    Giscus["Giscus<br>GitHub Discussions"]
+    Actions["GitHub Actions<br>每日文章與角色素材"]
+    Repo["posts.json · images/"]
+    Pages["GitHub Pages"]
+
+    Browser <--> IDB
+    Browser <--> SW
+    Browser -->|/chat · /summarize · /img| Worker
+    Worker -->|專用 consumer key| Gemini
+    Browser <--> Giscus
+    Actions --> Gemini
+    Actions --> Repo
+    Repo --> Pages
+    Pages --> Browser
+```
+
+### 前端
+
+- `index.html` 包含完整桌面 UI、視窗管理、聊天、日記、設定、檔案與看圖功能。
+- `manifest.webmanifest` 提供 PWA 名稱、主題色與應用程式圖示。
+- `sw.js` 先快取 app shell，再以 stale-while-revalidate 快取同源圖片與 `posts.json`；跨域 API 不快取。
+- `posts.json` 與 `wallpapers.json` 是可累積的內容索引。
+
+### 聊天後端
+
+`worker/worker.js` 是公開前端與 AI 服務之間的安全邊界：
+
+1. 確認允許的 Origin，處理 CORS。
+2. 以記憶體內計數器限制每個 IP 每分鐘最多 12 次請求。
+3. 為聊天注入格莉奇的繁體中文人設與本機記憶摘要。
+4. 將 `/chat`、`/summarize`、`/img` 轉送到自架 `gemini-web`。
+5. 從 Cloudflare secret 注入 `GEMINI_API_KEY`；key 不會進入前端或 Git 歷史。
+
+目前文字模型預設為 `gemini-2.5-flash`，圖片模型預設為 `gemini-2.5-flash-image`，都可透過 Worker vars 覆寫。
+
+### 每日格莉奇日記
+
+`.github/workflows/daily-post.yml` 每天台北時間 22:10 執行 `scripts/generate_post.py`：
+
+1. 使用 Google Search grounding 蒐集不同地區、非災難／政治爭議類的當日新聞。
+2. 讀取 Giscus 最近留言，並優先把粉絲互動納入靈感。
+3. 奇數日期產生插畫、偶數日期產生文字；手動執行可用 `force_image` 強制畫圖。
+4. 為文章保留新聞靈感與引用的粉絲留言，插畫可疊上符合情境的角色貼圖。
+5. 將文章附加到 `posts.json`，圖片存入 `images/posts/`，再由 Actions bot commit 與 push。
+
+同一天重跑會新增文章與遞增圖片檔名，不會覆蓋既有內容。
+
+## 本機預覽
+
+前端沒有 npm 相依或編譯步驟；請用 HTTP server 開啟，避免直接讀取 `file://` 導致 Service Worker 或模組行為不同。
+
+```bash
+git clone https://github.com/yazelin/ai-brain-site.git
+cd ai-brain-site
+python3 -m http.server 8000
+```
+
+瀏覽 <http://localhost:8000>。靜態介面、IndexedDB 與 PWA 可直接測試；若要讓本機聊天可用，請把精確 Origin（例如 `http://localhost:8000`）加入 Worker 的 `ALLOWED_ORIGINS` 後重新部署。
+
+## 部署與設定
+
+### GitHub Pages
+
+正式站由 `main` 分支根目錄發佈：
+
+- 網址：<https://yazelin.github.io/ai-brain-site/>
+- Source：`main` / `/`
+- HTTPS：啟用
+
+推送到 `main` 後，GitHub Pages 會自動重建網站。
+
+### Cloudflare Worker
+
+需要 Node.js 與 Wrangler：
+
+```bash
+cd worker
+npx wrangler secret put GEMINI_API_KEY
+npx wrangler deploy
+```
+
+`worker/wrangler.toml` 內的非機密設定：
+
+| Var | 用途 | 預設／範例 |
+| --- | --- | --- |
+| `GEMINI_WEB_BASE_URL` | `gemini-web` 的 Google GenAI 相容端點 | `https://ching-tech.ddns.net/gemini-web` |
+| `MODEL` | 聊天與摘要模型 | `gemini-2.5-flash` |
+| `IMAGE_MODEL` | 聊天生圖模型；未設定時使用程式預設 | `gemini-2.5-flash-image` |
+| `ALLOWED_ORIGINS` | 可呼叫 Worker 的完整 Origin，逗號分隔 | 正式 GitHub Pages Origin；本機測試時加入精確 port |
+
+若 Worker 網址改變，也要同步修改 `index.html` 中的 `CHAT_URL`、`SUM_URL` 與 `IMG_URL`。
+
+### GitHub Actions secrets 與 variables
+
+| 名稱 | 類型 | 使用位置 | 說明 |
+| --- | --- | --- | --- |
+| `GEMINI_API_KEY` | Secret | 每日日記 | 與 Cloudflare Worker 共用同一把 `gemini-web` 專用 consumer key |
+| `GEMINI_WEB_BASE_URL` | Secret | 每日日記 | 自架 `gemini-web` base URL；未設定時腳本會改打 Google 官方端點 |
+| `GEMINI_IMAGE_MODEL` | Repository variable | 每日日記 | 選用；未設定時使用 `gemini-2.5-flash-image` |
+| `CODEX_IMAGE_KEY` | Secret | 頭像／桌寵／桌布 workflows | `codex-image-service` 金鑰 |
+| `CODEX_IMAGE_BASE_URL` | Secret | 頭像／桌寵／桌布 workflows | `codex-image-service` base URL |
+| `GITHUB_TOKEN` | Actions 內建 | 所有會寫回 repo 的 workflow | commit、push 與讀取 Discussions |
+
+手動素材 workflows：
+
+- `generate-avatar.yml`：重建 `images/avatar.png`。
+- `generate-pet.yml`：生成桌寵、去除 chroma key 背景並裁切透明邊界。
+- `generate-wallpaper.yml`：生成新桌布，附加到 `wallpapers.json`。
+
+## 資料、隱私與限制
+
+- 聊天紀錄、記憶摘要、使用者桌布及 AI 生成圖片都存在目前瀏覽器的 IndexedDB，不會同步到其他裝置。
+- 使用 AI 功能時，最近 16 則文字訊息與記憶摘要會送往 Cloudflare Worker，再交由 `gemini-web` 處理。
+- 清除網站資料會一併刪除本機聊天歷史、記憶、桌布與虛擬下載檔案；目前沒有雲端復原機制。
+- Giscus 只在開啟「留言」視窗時載入，留言會公開保存於本 repo 的 GitHub Discussions。
+- Worker 的每 IP 限流保存在 isolate 記憶體中，isolate 回收後會重置；它是輕量防連點，不是持久配額系統。
+- PWA 快取不包含跨域聊天／生圖 API，因此離線時只能使用已快取內容與本機資料。
+
+## 專案結構
+
+```text
+.
+├── index.html                  # WebOS UI 與前端邏輯
+├── manifest.webmanifest        # PWA manifest
+├── sw.js                       # Service Worker
+├── posts.json                  # 日記內容索引
+├── wallpapers.json             # 桌布索引
+├── images/                     # 角色、貼圖、桌布、PWA 圖示與文章圖片
+├── worker/
+│   ├── worker.js               # Cloudflare Worker：chat / summarize / img
+│   └── wrangler.toml           # Worker 部署設定
+├── scripts/
+│   ├── generate_post.py        # 每日新聞／留言驅動的日記產線
+│   ├── generate_avatar.py      # 頭像生成
+│   ├── generate_pet.py         # 桌寵生成與去背
+│   ├── generate_wallpaper.py   # 桌布生成與索引累積
+│   ├── persona.py              # 格莉奇共用角色設定
+│   └── remove_chroma_key.py    # 去背工具
+└── .github/workflows/          # 每日與手動素材自動化
+```
+
+## 回報問題與交流
+
+- Bug 或功能建議：[GitHub Issues](https://github.com/yazelin/ai-brain-site/issues)
+- 留言與角色互動：[GitHub Discussions](https://github.com/yazelin/ai-brain-site/discussions)
+
+---
+
+作者：[GitHub](https://github.com/yazelin) | [Facebook](https://www.facebook.com/yaze.lin.gm) | [Buy Me a Coffee](https://buymeacoffee.com/yazelin)
