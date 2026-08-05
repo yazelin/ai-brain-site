@@ -82,9 +82,9 @@ flowchart LR
 `.github/workflows/daily-post.yml` 每天台北時間 22:10 執行 `scripts/generate_post.py`：
 
 1. 使用 Google Search grounding 蒐集不同地區、非災難／政治爭議類的當日新聞。
-2. 讀取 Giscus 最近留言，並優先把粉絲互動納入靈感。
+2. 以 GitHub Comment ID 排除已使用留言，再從最近 12 筆未使用的 Giscus 留言中優先挑選粉絲互動；舊文章則以留言原文相容去重。
 3. 奇數日期產生插畫、偶數日期產生文字；手動執行可用 `force_image` 強制畫圖。
-4. 為文章保留新聞靈感與引用的粉絲留言，插畫可疊上符合情境的角色貼圖。
+4. 為文章保留新聞靈感、引用的粉絲留言與穩定留言 ID，插畫可疊上符合情境的角色貼圖。
 5. 將文章附加到 `posts.json`，圖片存入 `images/posts/`，再由 Actions bot commit 與 push。
 
 同一天重跑會新增文章與遞增圖片檔名，不會覆蓋既有內容。
