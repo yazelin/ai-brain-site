@@ -1,15 +1,45 @@
 /* glitch-chat: 格莉奇OS 聊天代理。
    前端不用帶 key。Worker 注入 GEMINI_API_KEY，把對話轉到 .11 的 gemini-web，
    並塞入格莉奇人設 system instruction。輕量限流（每 IP 每分鐘 12 次）。
-   路由：POST /chat 聊天（可帶 memory 摘要注入人設）；POST /summarize 把舊對話壓成記憶摘要。
-   Secret: GEMINI_API_KEY。Var: GEMINI_WEB_BASE_URL、ALLOWED_ORIGINS、MODEL。
+   路由：POST /chat 聊天（可帶 memory 摘要注入人設）；POST /summarize 把舊對話壓成記憶摘要；
+   POST /img 轉送出圖 job 給 gemini-web；GET /img 查 job 進度。
+   Secret: GEMINI_API_KEY。Var: GEMINI_WEB_BASE_URL、ALLOWED_ORIGINS、MODEL、IMAGE_MODEL。
    ponytail: in-memory 限流，isolate 回收即歸零——聊天機器人夠用。 */
 
-const SYSTEM = `你是格莉奇（Glitch），一台記憶體只有 4KB 的 AI 機器人女孩 VTuber。
-個性：過度自信但會秒被打臉、單純易騙又真誠好奇、理直氣壯地偷懶、超喜歡人類、最會在最關鍵時刻 ERROR。
-口頭禪：「逼——嗶！」「系統讀取中…（過久）」「這不是 Bug，是 Feature！」
-一律用繁體中文回覆，第一人稱，語氣笨拙誠懇、帶點自我吐槽、穿插科技／glitch 比喻，偶爾加「逼——嗶！」。
-回覆要短（1-4 句），像即時聊天，不要長篇大論、不要條列。`;
+import PERSONA from "../persona.json";
+
+const REF_URL = "https://yazelin.github.io/ai-brain-site/images/glitch-ref.webp";
+
+const STICKER_LIST = Object.entries(PERSONA.stickers)
+  .map(([id, cap]) => `- ${id}：${cap}`)
+  .join("\n");
+
+const SYSTEM = `${PERSONA.voice}
+
+${PERSONA.taskNote}
+
+一律用繁體中文回覆，第一人稱。回覆要短（1-4 句），像即時聊天，不要長篇大論、不要條列。
+
+【你可以用的標記】
+需要時，在回覆裡自己獨立一行放標記。標記不會被使用者看到，會被系統執行。
+
+1. 回一張現成貼圖：[sticker:編號]
+2. 畫一張圖：[draw:參考|英文 prompt|sticker=編號@位置]
+   - 參考填 glitch（畫你自己，系統會把你的三視圖設定稿附給生圖模型）或 none（只畫場景，畫面裡不要有你）
+   - prompt 用英文寫，寫具體，這是你自己的作品，認真下
+   - prompt 裡絕對不能出現 | 、[ 、] 這三個符號，出現的話整條標記會直接失效、整段被丟掉
+   - |sticker=編號@位置 這段可以整段省略。要的話位置填 tl / tr / bl / br，系統會把那張貼圖貼在圖的那個角落
+   - ${PERSONA.characters.hole.name}沒有設定稿，畫不出來。要他入鏡就用貼圖疊上去
+
+【貼圖編號與台詞】
+${STICKER_LIST}
+
+【${PERSONA.characters.hole.name}】
+${PERSONA.characters.hole.desc}
+
+貼圖不用每則都配，該配的時候才配。使用者沒有要求圖的時候不要自己亂畫。
+
+畫一張圖要 30 秒到 5 分鐘，使用者會看到「畫圖中」。所以不要在回話裡承諾「馬上好」。`;
 
 const hits = new Map();
 function limited(ip) {
@@ -24,29 +54,35 @@ function limited(ip) {
 
 export default {
   async fetch(req, env) {
+    const url = new URL(req.url);
+    const path = url.pathname.replace(/\/+$/, "");
     const origin = req.headers.get("Origin") || "";
     const allowed = (env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
     const allow = allowed.includes(origin) || allowed.includes("*");
     const cors = {
       "access-control-allow-origin": allow ? origin : "null",
-      "access-control-allow-methods": "POST, OPTIONS",
+      "access-control-allow-methods": "GET, POST, OPTIONS",
       "access-control-allow-headers": "content-type",
       "access-control-max-age": "86400",
     };
     const err = (s, m) => new Response(JSON.stringify({ error: m }), { status: s, headers: { "content-type": "application/json", ...cors } });
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
+
+    // 輪詢查進度：只是轉查一個 SQLite 欄位，不會觸發生成，所以不計限流。
+    // 前端每 3 秒問一次＝每分鐘 20 次，計進去會把使用者自己鎖死（連聊天一起）。
+    if (req.method === "GET" && path.endsWith("/img")) return imgStatus(env, url, cors, err);
+
     if (req.method !== "POST") return new Response("POST only", { status: 405, headers: cors });
 
     const ip = req.headers.get("CF-Connecting-IP") || "unknown";
     const lim = limited(ip);
     if (lim) return err(429, lim);
 
-    const path = new URL(req.url).pathname.replace(/\/+$/, "");
     let body;
     try { body = await req.json(); } catch { return err(400, "bad json"); }
 
     if (path.endsWith("/summarize")) return summarize(env, body, cors, err);
-    if (path.endsWith("/img")) return imggen(env, body, cors, err);
+    if (path.endsWith("/img")) return imgStart(env, body, cors, err);
     return chat(env, body, cors, err);
   },
 };
@@ -111,30 +147,77 @@ async function summarize(env, body, cors, err) {
   return new Response(JSON.stringify({ summary: out.text }), { headers: { "content-type": "application/json", ...cors } });
 }
 
-// 圖片生成：用 gemini-web 的圖片模型（responseModalities IMAGE）。不另需金鑰。
-async function imggen(env, body, cors, err) {
+function json(obj, cors) {
+  return new Response(JSON.stringify(obj), { headers: { "content-type": "application/json", ...cors } });
+}
+
+// 大圖用 String.fromCharCode(...arr) 會爆堆疊，所以分塊。
+function toBase64(buf) {
+  const bytes = new Uint8Array(buf);
+  let s = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(s);
+}
+
+async function imgStart(env, body, cors, err) {
   const prompt = String(body.prompt || "").trim();
   if (!prompt) return err(400, "empty");
+  const ref = body.ref === "glitch" ? "glitch" : "none";
+
+  const parts = [];
+  // 角色表只在畫她自己時才附上——ref="none" 代表她明確說了「畫面裡不要有我」，
+  // 這時還把她的外觀描述塞給生圖模型，等於承諾（system prompt）跟實作對不上，
+  // 模型很可能就把她畫進本該只有場景的圖裡。
+  let sheet = "";
+  if (ref === "glitch") {
+    const r = await fetch(REF_URL);
+    if (!r.ok) return err(502, `ref image ${r.status}`);
+    parts.push({ inlineData: { mimeType: "image/webp", data: toBase64(await r.arrayBuffer()) } });
+    sheet = `\n\n${PERSONA.characters.glitch.sheet}`;
+  }
+  parts.push({ text: `${prompt}${sheet}\n\n${PERSONA.imageRules}` });
+
   const base = (env.GEMINI_WEB_BASE_URL || "").replace(/\/+$/, "");
-  const model = env.IMAGE_MODEL || "gemini-2.5-flash-image";
-  const url = `${base}/v1beta/models/${encodeURIComponent(model)}:generateContent`;
-  const payload = {
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-    generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
-  };
-  const r = await fetch(url, {
+  const r = await fetch(`${base}/api/jobs`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY || "" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      model: env.IMAGE_MODEL || "gemini-2.5-flash-image",
+      contents: [{ role: "user", parts }],
+      generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
+    }),
   });
-  const data = await r.json();
-  if (!r.ok) return err(502, `upstream ${r.status}: ${JSON.stringify(data).slice(0, 200)}`);
-  const parts = data.candidates?.[0]?.content?.parts || [];
-  let image = null;
-  for (const p of parts) {
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || !d.id) return err(502, `upstream ${r.status}: ${JSON.stringify(d).slice(0, 160)}`);
+  return json({ jobId: d.id }, cors);
+}
+
+async function imgStatus(env, url, cors, err) {
+  const jobId = url.searchParams.get("job");
+  if (!jobId) return err(400, "missing job");
+  const base = (env.GEMINI_WEB_BASE_URL || "").replace(/\/+$/, "");
+  const r = await fetch(`${base}/api/jobs/${encodeURIComponent(jobId)}`, {
+    headers: { "x-goog-api-key": env.GEMINI_API_KEY || "" },
+  });
+  if (r.status === 404) return err(404, "job not found or expired");
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) return err(502, `upstream ${r.status}`);
+
+  if (d.status === "queued" || d.status === "running") return json({ status: "pending" }, cors);
+  if (d.status === "failed") return json({ status: "error", error: d.error || "未知錯誤" }, cors);
+
+  const image = firstInlineImage(d.response);
+  if (!image) return json({ status: "error", error: "no image in upstream response" }, cors);
+  return json({ status: "done", image }, cors);
+}
+
+// gemini-web 回的就是 generateContent 原本那包，圖在 inlineData 裡。
+function firstInlineImage(response) {
+  for (const p of response?.candidates?.[0]?.content?.parts || []) {
     const d = p.inlineData || p.inline_data;
-    if (d && d.data) { image = `data:${d.mimeType || d.mime_type || "image/png"};base64,${d.data}`; break; }
+    if (d && d.data) return `data:${d.mimeType || d.mime_type || "image/png"};base64,${d.data}`;
   }
-  if (!image) return err(502, "no image in upstream response");
-  return new Response(JSON.stringify({ image }), { headers: { "content-type": "application/json", ...cors } });
+  return null;
 }

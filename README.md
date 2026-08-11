@@ -21,11 +21,11 @@
 | 格莉奇桌寵 | 角色常駐桌面、隨機對話泡泡；點擊即可開啟聊天 |
 | AI 聊天 | LINE 風格介面，由 Cloudflare Worker 注入格莉奇人設，再轉送自架 `gemini-web` |
 | 長期記憶 | 聊天歷史與摘要進度存在本機 IndexedDB；每累積 10 則新訊息會自動更新可編輯的記憶摘要 |
-| AI 畫圖 | 對格莉奇說「畫一張……」等指令會切到生圖；成品自動存進虛擬 `~/下載/` |
+| AI 畫圖 | 前端不再用關鍵字判斷；由格莉奇自己決定要不要畫，回覆中夾帶標記即觸發生圖；成品自動存進虛擬 `~/下載/` |
 | 專屬音樂 | 內建單曲〈格莉奇 4KB〉、完整歌詞、背景播放、Media Session 控制，以及由真實音訊頻譜驅動的環形頻譜／波形／光暈／粒子視覺 |
 | 看圖與檔案 | 圖片可縮放、拖曳、全螢幕與下載；虛擬檔案系統保存在目前瀏覽器 |
 | 心情日記 | 依月份與文字／插畫篩選；GitHub Actions 每天從世界新聞與 Giscus 留言取得靈感，自動累積新文章 |
-| 角色內容 | 完整角色設定、9 張 LINE 貼圖、4KB 記憶體狀態與 Giscus 討論區 |
+| 角色內容 | 完整角色設定、18 張 LINE 貼圖（格莉奇與黑洞先生各 9 張）、4KB 記憶體狀態與 Giscus 討論區 |
 | 個人化 | 分頁設定中心可完整查看聊天紀錄與記憶摘要，並獨立管理桌布、桌寵與系統資訊 |
 | PWA／離線 | 桌面提供「安裝 App」入口；Android／桌面可叫出原生安裝提示，iOS 提供加入主畫面步驟。Service Worker 快取 app shell、專屬單曲與已載入資產，離線仍可開機、聽歌並查看本機聊天歷史 |
 
@@ -115,6 +115,8 @@ python3 -m http.server 8000
 
 修改 `index.html`、manifest、JSON、圖片或音樂後，執行 `python scripts/update_sw_hashes.py`。現有內容生成腳本會自動執行它；PR workflow 會檢查 hash，直接推送到 `main` 時也會自動補正並寫回。
 
+> 改了 `persona.json`（人設、角色表或貼圖清單）之後，除了重跑 `scripts/update_sw_hashes.py`，還必須重新部署 Cloudflare Worker。Worker 是在 build time 用 `import PERSONA from "../persona.json"` 打包進去的，前端則是 runtime `fetch`；只改一邊會讓兩邊的貼圖清單不同步，結果是格莉奇講出來的貼圖編號前端不認得，標記會被靜默丟掉。
+
 ### Cloudflare Worker
 
 需要 Node.js 與 Wrangler：
@@ -170,12 +172,15 @@ npx wrangler deploy
 ├── index.html                  # WebOS UI 與前端邏輯
 ├── manifest.webmanifest        # PWA manifest
 ├── sw.js                       # Service Worker
+├── persona.json                # 格莉奇（與黑洞先生）人設單一來源
 ├── robots.txt                  # 搜尋引擎爬取規則
 ├── sitemap.xml                 # 正式站 sitemap
 ├── posts.json                  # 日記內容索引
 ├── wallpapers.json             # 桌布索引
 ├── audio/                      # 格莉奇專屬音樂
 ├── images/                     # 角色、貼圖、桌布、PWA 圖示與文章圖片
+├── js/
+│   └── tags.js                 # 解析聊天回覆裡的 [sticker:...] / [draw:...] 標記
 ├── worker/
 │   ├── worker.js               # Cloudflare Worker：chat / summarize / img
 │   └── wrangler.toml           # Worker 部署設定
@@ -185,9 +190,12 @@ npx wrangler deploy
 │   ├── generate_pet.py         # 桌寵生成與去背
 │   ├── generate_wallpaper.py   # 桌布生成與索引累積
 │   ├── update_sw_hashes.py     # 依內容產生 PWA cache hash
-│   ├── persona.py              # 格莉奇共用角色設定
+│   ├── persona.py              # 讀取 persona.json 的共用角色設定
 │   └── remove_chroma_key.py    # 去背工具
-└── .github/workflows/          # 每日與手動素材自動化
+├── tests/
+│   ├── test_generate_post.py   # 日記產線與人設載入的單元測試
+│   └── test_tags.mjs           # 標記解析（parseTags）的單元測試
+└── .github/workflows/          # 每日與手動素材自動化，以及 CI 檢查
 ```
 
 ## 回報問題與交流

@@ -126,5 +126,17 @@ class CommentDeduplicationTests(unittest.TestCase):
         self.assertNotIn("[C", prompt)
 
 
+class PersonaTests(unittest.TestCase):
+    def test_persona_loads_from_json(self):
+        from scripts import persona
+
+        self.assertEqual(persona.REF_IMAGE, "images/sticker-01.png")
+        self.assertIn("CAT-EAR ANTENNAS", persona.SHEET)
+        self.assertIn("NEVER Simplified Chinese", persona.RULES)
+        self.assertIn("4KB", persona.VOICE)
+        self.assertTrue(
+            persona.BASE.startswith("Same art style as reference image 1"))
+
+
 if __name__ == "__main__":
     unittest.main()

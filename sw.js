@@ -5,8 +5,8 @@
    聊天歷史與使用者資料在 IndexedDB；跨域 AI / Giscus 請求不快取。 */
 
 /* cache:start — scripts/update_sw_hashes.py 產生，勿手改 */
-const SHELL_CACHE = 'glos-shell-2b624eb0640a';
-const ASSET_CACHE = 'glos-assets-a2656363e3e4';
+const SHELL_CACHE = 'glos-shell-e7f4b591c90d';
+const ASSET_CACHE = 'glos-assets-c8baa8596829';
 /* cache:end */
 const KEEP = [SHELL_CACHE, ASSET_CACHE];
 const MATCH = { ignoreSearch: true, ignoreVary: true };
@@ -14,6 +14,7 @@ const MATCH = { ignoreSearch: true, ignoreVary: true };
 const SHELL_FILES = [
 /* shell:start */
   './', './index.html', './manifest.webmanifest', './posts.json', './wallpapers.json',
+  './persona.json', './js/tags.js',
   './images/icon-192.png', './images/icon-512.png', './images/glitch-logo.svg'
 /* shell:end */
 ];
@@ -28,6 +29,9 @@ const WARM_ASSETS = [
   './images/sticker-01.png', './images/sticker-02.png', './images/sticker-03.png',
   './images/sticker-04.png', './images/sticker-05.png', './images/sticker-06.png',
   './images/sticker-07.png', './images/sticker-08.png', './images/sticker-09.png',
+  './images/hole-01.png', './images/hole-02.png', './images/hole-03.png',
+  './images/hole-04.png', './images/hole-05.png', './images/hole-06.png',
+  './images/hole-07.png', './images/hole-08.png', './images/hole-09.png',
   './images/music-4kb-cover.jpg', './audio/glitch-4kb.mp3'
 /* warm:end */
 ];
