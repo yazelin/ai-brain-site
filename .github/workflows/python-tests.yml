@@ -5,12 +5,14 @@ on:
     paths:
       - 'scripts/**.py'
       - 'tests/**.py'
+      - 'persona.json'
       - '.github/workflows/python-tests.yml'
   push:
     branches: [main]
     paths:
       - 'scripts/**.py'
       - 'tests/**.py'
+      - 'persona.json'
       - '.github/workflows/python-tests.yml'
 
 permissions:

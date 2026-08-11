@@ -718,6 +718,7 @@
     <div class="tb"><span class="dot r" data-close title="關閉"></span><span class="dot y"></span><span class="dot g"></span>
       <span class="ttl">我的貼圖</span></div>
     <div class="body">
+      <h3 style="margin:0 0 10px;font-size:.95rem;color:#cfe9f2">格莉奇</h3>
       <div class="grid">
         <div class="card"><img src="images/sticker-01.png" alt="欸？搞錯了嗎？"><p class="cap">欸？搞錯了嗎？</p></div>
         <div class="card"><img src="images/sticker-02.png" alt="今天也超開心！"><p class="cap">今天也超開心！</p></div>
@@ -729,8 +730,23 @@
         <div class="card"><img src="images/sticker-08.png" alt="這樣也可以！？"><p class="cap">這樣也可以！？</p></div>
         <div class="card"><img src="images/sticker-09.png" alt="謝謝大家的禮物！"><p class="cap">謝謝大家的禮物！</p></div>
       </div>
-      <p style="margin-top:14px;text-align:center">
+      <p style="margin:14px 0 24px;text-align:center">
         <a class="btn" style="display:inline-block;text-decoration:none" href="https://line.me/S/sticker/35674259" target="_blank" rel="noopener">到 LINE 貼圖小舖購買</a>
+      </p>
+      <h3 style="margin:0 0 10px;font-size:.95rem;color:#cfe9f2">黑洞先生（格莉奇的朋友）</h3>
+      <div class="grid">
+        <div class="card"><img src="images/hole-01.png" alt="偷偷看著你"><p class="cap">偷偷看著你</p></div>
+        <div class="card"><img src="images/hole-02.png" alt="假裝很忙"><p class="cap">假裝很忙</p></div>
+        <div class="card"><img src="images/hole-03.png" alt="靈魂出竅"><p class="cap">靈魂出竅</p></div>
+        <div class="card"><img src="images/hole-04.png" alt="心已下班"><p class="cap">心已下班</p></div>
+        <div class="card"><img src="images/hole-05.png" alt="我去趟洗手間"><p class="cap">我去趟洗手間</p></div>
+        <div class="card"><img src="images/hole-06.png" alt="薪水小偷是我"><p class="cap">薪水小偷是我</p></div>
+        <div class="card"><img src="images/hole-07.png" alt="現在不要吵我"><p class="cap">現在不要吵我</p></div>
+        <div class="card"><img src="images/hole-08.png" alt="滑個手機先"><p class="cap">滑個手機先</p></div>
+        <div class="card"><img src="images/hole-09.png" alt="點心時間到"><p class="cap">點心時間到</p></div>
+      </div>
+      <p style="margin-top:14px;text-align:center">
+        <a class="btn" style="display:inline-block;text-decoration:none" href="https://line.me/S/sticker/35730991" target="_blank" rel="noopener">到 LINE 貼圖小舖購買</a>
       </p>
     </div>
   </div>
@@ -1384,11 +1400,40 @@ if('mediaSession'in navigator){
 const CHAT_URL='https://glitch-chat.yazelinj303.workers.dev/chat';
 const SUM_URL='https://glitch-chat.yazelinj303.workers.dev/summarize';
 const IMG_URL='https://glitch-chat.yazelinj303.workers.dev/img';
-const IMG_RE=/畫(一|隻|個|張|圖|個圖)?|draw|illustrate|生成圖|給我看.{0,4}(圖|畫)|畫圖/i;
+/* 貼圖 id 到檔名。格莉奇那組的檔名歷史上叫 sticker-0N，不改名以免踩到
+   sw.js 快取清單與既有的 onerror fallback。 */
+function stickerSrc(id){return 'images/'+(id.startsWith('hole-')?id:id.replace('glitch-','sticker-'))+'.png';}
+
+/* 出圖是非同步 job：POST 拿 jobId，之後每 3 秒問一次，最多 6 分鐘。
+   限流那邊已經把輪詢排除，這裡不用怕把自己鎖死。 */
+async function pollImg(jobId){
+  const deadline=Date.now()+6*60*1000;
+  while(Date.now()<deadline){
+    await new Promise(r=>setTimeout(r,3000));
+    const r=await fetch(IMG_URL+'?job='+encodeURIComponent(jobId));
+    const d=await r.json();
+    // worker 的 GET /img 有兩種回應形狀：正常輪詢是 HTTP 200 + {status:...}；
+    // 基礎建設層級失敗（缺 job 參數、job 不存在或過期、上游掛掉）是非 2xx +
+    // {error:...}，沒有 status 欄位。不先擋 r.ok，d.status 會是 undefined，
+    // 兩個 if 都不成立，迴圈只會傻傻轉到六分鐘逾時，明明早就壞了。
+    if(!r.ok)throw new Error(d.error||('HTTP '+r.status));
+    if(d.status==='done')return d.image;
+    if(d.status==='error')throw new Error(d.error||'未知錯誤');
+  }
+  throw new Error('TIMEOUT');
+}
 const AV='images/avatar.png';
 const AV_FALL='images/sticker-01.png';
 function avImg(){return `<img src="${AV}" onerror="this.onerror=null;this.src='${AV_FALL}'">`;}
 const chatLog=document.getElementById('chat-log'),chatIn=document.getElementById('chat-input'),chatBtn=document.getElementById('chat-send');
+// 解析器（parseTags）就緒前不接受送出：結構性擋掉那段「module 還沒跑完就
+// 送訊息」的空窗，不是靠 await 撞運氣。下面 module script 一 import 成功
+// 就會立刻打開這顆按鈕；如果 js/tags.js 抓不到，按鈕會永遠是 disabled——
+// 這是刻意的，沒有解析器聊天本來就不能正常運作，總比送出後看到
+// 「window.parseTags is not a function」這種誤導訊息好。貼圖清單
+// （STICKER_IDS）不在這個 gate 裡：它靠 persona.json 的 fetch，失敗時只是
+// 退化成沒有貼圖，不該連文字聊天一起鎖住，細節見 module script 裡的註解。
+chatBtn.disabled=true;
 let history=[],memory='',chatReady=false,chatOpened=false;
 
 function lastDay(ts){return new Date(ts).toLocaleDateString('zh-TW',{month:'long',day:'numeric',weekday:'short'});}
@@ -1404,7 +1449,12 @@ function renderMsg(m,showAvatar,showTime){
     if(showAvatar){const a=document.createElement('div');a.className='av';a.innerHTML=avImg();wrap.appendChild(a);}
     const b=document.createElement('div');
     if(m.image){b.className='bub img-bub';const im=document.createElement('img');im.src=m.image;b.appendChild(im);b.style.cursor='pointer';b.addEventListener('click',()=>openViewer(m.image));
-      if(m.content){const c=document.createElement('div');c.style.cssText='padding:4px 6px 2px;font-size:.74rem;color:#666';c.textContent=m.content;b.appendChild(c);}}
+      // m.content 為了記憶（history.filter(m=>m.content)）必須非空，但那不等於
+      // 「她說了這句話、要顯示在貼圖下面」——貼圖單獨送出時 content 存的是貼圖
+      // 台詞，不是她真的講的話。m.wordless 才是「要不要顯示說明文字」的判準：
+      // 她沒有講話、貼圖本身就是訊息時才會是 true。舊資料沒有這個欄位，
+      // m.wordless 是 undefined，!undefined 為 true，行為等同原本只看 m.content。
+      if(m.content&&!m.wordless){const c=document.createElement('div');c.style.cssText='padding:4px 6px 2px;font-size:.74rem;color:#666';c.textContent=m.content;b.appendChild(c);}}
     else{b.className='bub';b.textContent=m.content;}
     wrap.appendChild(b);
     if(t)wrap.appendChild(t);          // 對方訊息：時間在氣泡右邊
@@ -1432,44 +1482,99 @@ async function loadChat(){
 function chatFocus(){loadChat();setTimeout(()=>chatIn.focus(),50);}
 
 async function sendChat(text){
-  const isImg=IMG_RE.test(text);
   const msg={role:'user',content:text,ts:Date.now()};
   history.push(msg);await dbSet('chat',history);
   chatLog.appendChild(renderMsg(msg,true,true));
   const tm=document.createElement('div');tm.className='mb her thinking';
-  tm.innerHTML=`<div class="av">${avImg()}</div><div class="bub">${isImg?'畫圖中…':'系統讀取中…'}</div>`;
+  tm.innerHTML=`<div class="av">${avImg()}</div><div class="bub">系統讀取中…</div>`;
   chatLog.appendChild(tm);chatLog.scrollTop=chatLog.scrollHeight;chatBtn.disabled=true;
   const recent=history.filter(m=>m.content).slice(-16).map(({role,content})=>({role,content}));
   let replyStored=false;
   try{
-    if(isImg){
-      const r=await fetch(IMG_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:text})});
-      const d=await r.json();
-      tm.classList.remove('thinking');
-      if(d.image){
-        const b=tm.querySelector('.bub');b.className='bub img-bub';b.innerHTML='';
-        const im=document.createElement('img');im.src=d.image;b.appendChild(im);
-        b.style.cursor='pointer';b.addEventListener('click',()=>openViewer(d.image));
-        const cap=document.createElement('div');cap.style.cssText='padding:4px 6px 2px;font-size:.74rem;color:#666';cap.textContent='逼——嗶！畫好啦～';b.appendChild(cap);
-        const fn=saveFile(d.image);
-        history.push({role:'assistant',content:'逼——嗶！畫好啦～',image:d.image,file:fn,ts:Date.now()});
-      }else{
-        tm.querySelector('.bub').textContent='逼——嗶…畫筆壞了（'+(d.error||'未知錯誤')+'）';
-        history.push({role:'assistant',content:tm.querySelector('.bub').textContent,ts:Date.now()});
-      }
-      await dbSet('chat',history);replyStored=true;
+    const r=await fetch(CHAT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:recent,memory})});
+    const d=await r.json();
+    if(!d.reply)throw new Error(d.error||'逼——嗶？');
+    await window.PERSONA_READY;
+    const {clean,sticker,draw}=window.parseTags(d.reply,window.STICKER_IDS||[]);
+    tm.classList.remove('thinking');
+    const bub=tm.querySelector('.bub');
+    if(sticker){
+      const src=stickerSrc(sticker);
+      bub.className='bub img-bub';bub.innerHTML='';
+      const im=document.createElement('img');im.src=src;bub.appendChild(im);
+      if(clean){const c=document.createElement('div');c.style.cssText='padding:4px 6px 2px;font-size:.74rem;color:#666';c.textContent=clean;bub.appendChild(c);}
+      // 沒有文字時畫面不多顯示一行，但 content 仍要存這張貼圖的台詞，
+      // 不然 history.filter(m=>m.content) 會把這則訊息整個濾掉，她會忘記
+      // 自己送過貼圖。content 非空與「要不要顯示說明文字」是兩件事：記憶要
+      // content 非空，畫面（含重新整理後 renderMsg 的重繪）要看 wordless——
+      // 她沒有講話、貼圖本身就是訊息時才是 true，此時就算 content 有字也不顯示。
+      history.push({role:'assistant',content:clean||window.PERSONA?.stickers?.[sticker]||'',image:src,wordless:!clean,ts:Date.now()});
     }else{
-      const r=await fetch(CHAT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:recent,memory})});
-      const d=await r.json();
-      tm.classList.remove('thinking');tm.querySelector('.bub').textContent=d.reply||('（ERROR…'+(d.error||'逼——嗶？')+'）');
-      history.push({role:'assistant',content:tm.querySelector('.bub').textContent,ts:Date.now()});
-      await dbSet('chat',history);replyStored=true;
+      bub.textContent=clean||'…';
+      history.push({role:'assistant',content:clean||'…',ts:Date.now()});
     }
-  }catch(e){tm.classList.remove('thinking');tm.querySelector('.bub').textContent='逼——嗶…網路斷線了（'+e.message+'）';}
+    await dbSet('chat',history);replyStored=true;
+    if(draw)await runDraw(draw);
+  }catch(e){
+    tm.classList.remove('thinking');
+    tm.querySelector('.bub').textContent='逼——嗶…網路斷線了（'+e.message+'）';
+    // 使用者那則訊息在 try 之前就已經存進 history 了；這裡的錯誤訊息也要
+    // 存，否則重新整理後對話會變成「問了一句、什麼都沒有」，錯誤就此消失。
+    history.push({role:'assistant',content:tm.querySelector('.bub').textContent,ts:Date.now()});
+    await dbSet('chat',history);
+  }
   chatLog.scrollTop=chatLog.scrollHeight;chatBtn.disabled=false;
   if(replyStored&&!wins.chat.classList.contains('open')){setChatNotification(true);bubbleSay('逼——嗶！我的回覆送到囉～');}
   renderSettingsChatHistory();
   void maybeSummarize();
+}
+
+/* 把現成貼圖疊到生成圖上。純前端算術，不經模型，所以貼圖的長相 100% 不會跑掉。
+   貼圖寬度取底圖的 28%，邊距 4%。`stickerSrc` 在 Task 6 已經定義，這裡直接用。 */
+function loadImg(src){return new Promise((res,rej)=>{const i=new Image();i.crossOrigin='anonymous';i.onload=()=>res(i);i.onerror=()=>rej(new Error('圖載入失敗：'+src));i.src=src;});}
+async function compositeSticker(baseDataUrl,stickerId,pos){
+  const [base,st]=await Promise.all([loadImg(baseDataUrl),loadImg(stickerSrc(stickerId))]);
+  const c=document.createElement('canvas');c.width=base.width;c.height=base.height;
+  const ctx=c.getContext('2d');ctx.drawImage(base,0,0);
+  const w=Math.round(base.width*0.28),h=Math.round(w*st.height/st.width);
+  const m=Math.round(base.width*0.04);
+  const x=(pos==='tl'||pos==='bl')?m:base.width-w-m;
+  const y=(pos==='tl'||pos==='tr')?m:base.height-h-m;
+  ctx.drawImage(st,x,y,w,h);
+  return c.toDataURL('image/png');
+}
+
+/* 出圖是獨立一則訊息：先放「畫圖中…」的泡泡，拿到圖再換掉。 */
+async function runDraw(draw){
+  const tm=document.createElement('div');tm.className='mb her thinking';
+  tm.innerHTML=`<div class="av">${avImg()}</div><div class="bub">畫圖中…（可能要幾分鐘）</div>`;
+  chatLog.appendChild(tm);chatLog.scrollTop=chatLog.scrollHeight;
+  try{
+    const r=await fetch(IMG_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:draw.prompt,ref:draw.ref})});
+    const d=await r.json();
+    if(!d.jobId)throw new Error(d.error||'沒拿到 job');
+    let image=await pollImg(d.jobId);
+    // 疊貼圖失敗（載圖失敗、canvas 出錯）不能連累已經花了幾十秒到幾分鐘畫好的
+    // 底圖：貼圖只是裝飾，退回原圖顯示，別讓整張圖因為裝飾失敗而消失。
+    if(draw.sticker&&draw.pos){
+      try{image=await compositeSticker(image,draw.sticker,draw.pos);}
+      catch(err){console.warn('疊貼圖失敗，用原圖',err);}
+    }
+    tm.classList.remove('thinking');
+    const b=tm.querySelector('.bub');b.className='bub img-bub';b.innerHTML='';
+    const im=document.createElement('img');im.src=image;b.appendChild(im);
+    b.style.cursor='pointer';b.addEventListener('click',()=>openViewer(image));
+    const cap=document.createElement('div');cap.style.cssText='padding:4px 6px 2px;font-size:.74rem;color:#666';cap.textContent='逼——嗶！畫好啦～';b.appendChild(cap);
+    const fn=saveFile(image);
+    history.push({role:'assistant',content:'逼——嗶！畫好啦～',image,file:fn,ts:Date.now()});
+  }catch(e){
+    tm.classList.remove('thinking');
+    const m=e.message==='TIMEOUT'?'畫太久被放棄了，圖可能已經畫好但沒送到':e.message;
+    tm.querySelector('.bub').textContent='逼——嗶…'+m;
+    history.push({role:'assistant',content:tm.querySelector('.bub').textContent,ts:Date.now()});
+  }
+  await dbSet('chat',history);
+  chatLog.scrollTop=chatLog.scrollHeight;
 }
 // 每累積 10 則新訊息自動摘要；進度存進 IndexedDB，重新整理後不會歸零。
 let summaryBusy=false;
@@ -1741,6 +1846,36 @@ document.getElementById('chat-clear').addEventListener('click',async()=>{
     render();
   }catch(e){el.innerHTML='<p style="color:#5d8ba0">系統讀取中…（過久）</p>';}
 })();
+</script>
+<script type="module">
+  import { parseTags } from './js/tags.js';
+  window.parseTags = parseTags;
+  // parseTags 是硬性必要條件：import 成功就代表解析器可用，聊天按鈕在這裡
+  // 立刻打開。classic script 一開始把 chatBtn 設成 disabled，doSend（click
+  // 與 Enter 兩條送出路徑都經過它）會檢查 chatBtn.disabled，所以在這行執行
+  // 到之前按鈕結構性按不下去——不是靠 await 撞運氣躲開「module 還沒跑完就
+  // 送訊息」的空窗。若 js/tags.js 抓不到，這行永遠不會執行到，按鈕就永遠
+  // disabled，這是刻意的：沒有解析器聊天本來就不能正常運作。
+  document.getElementById('chat-send').disabled = false;
+  // STICKER_IDS（貼圖清單）不是必要條件：sendChat 本來就用 window.
+  // STICKER_IDS||[] 兜底，缺席時退化成「沒有貼圖」而不是整個聊天壞掉。所以
+  // 這條 fetch 失敗不該鎖按鈕，補 .catch 讓它永遠 resolve；失敗時留一則
+  // console.warn 並把 STICKER_IDS 設成空陣列。sendChat 裡的
+  // await window.PERSONA_READY 因此保證不會 throw。這行雖然在原始碼順序上
+  // 排在按鈕打開之後，但兩者之間沒有任何 await／yield——同一個同步執行
+  // 區塊跑完才會把控制權交還事件迴圈，使用者點擊觸發的 doSend／sendChat
+  // 不可能插進這兩行中間，所以「按鈕打開時 PERSONA_READY 還沒被賦值」這件
+  // 事不會發生，先前那個「await undefined 等於空操作」的空窗依然是關著的。
+  window.PERSONA_READY = fetch('persona.json', { cache: 'no-store' })
+    .then((r) => r.json())
+    .then((p) => {
+      window.PERSONA = p;
+      window.STICKER_IDS = Object.keys(p.stickers);
+    })
+    .catch((e) => {
+      console.warn('persona.json 載入失敗，貼圖清單停用：', e);
+      window.STICKER_IDS = [];
+    });
 </script>
 <script>
 /* yz-promo-footer (trimmed) | 三件套+BMC 注意力效果 | https://github.com/yazelin/promo-footer-skill

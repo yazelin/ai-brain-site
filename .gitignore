@@ -1,2 +1,8 @@
 __pycache__/
 *.pyc
+
+# npx wrangler 會在 worker/ 底下裝相依,那是本機工具的產物,不進版控。
+worker/node_modules/
+worker/preview.toml
+.superpowers/
+docs/superpowers/

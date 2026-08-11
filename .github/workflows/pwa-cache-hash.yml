@@ -11,6 +11,8 @@ on:
       - 'images/**'
       - 'audio/**'
       - 'scripts/update_sw_hashes.py'
+      - 'persona.json'
+      - 'js/**'
   push:
     branches: [main]
     paths:
@@ -22,6 +24,8 @@ on:
       - 'images/**'
       - 'audio/**'
       - 'scripts/update_sw_hashes.py'
+      - 'persona.json'
+      - 'js/**'
   workflow_dispatch:
 
 permissions:
