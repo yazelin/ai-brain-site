@@ -1170,11 +1170,25 @@ function focus(w){w.style.zIndex=++z;}
 const mobileOS=matchMedia('(max-width:600px)');
 function syncMobileOSState(){desktop.classList.toggle('mobile-app-open',Object.values(wins).some(w=>w.classList.contains('open')));}
 function setChatNotification(show){document.querySelectorAll('[data-app="chat"]').forEach(el=>el.classList.toggle('has-notification',show));}
+// 重新整理／分頁還原時瀏覽器會把上一輪的 history.state 一起還原，殘留的 glosApp
+// 會讓開機那次誤判成「這格已經是我的」而只做 replaceState，app 層就沒有自己的
+// history entry，一按返回直接離站。開機先清乾淨。
+if(window.history.state?.glosApp)window.history.replaceState({...window.history.state,glosApp:null},'');
+let pendingGuard=null;
 function syncMobileAppHistory(app){
   if(!mobileOS.matches)return;
   const state={...(window.history.state||{}),glosApp:app};
-  if(window.history.state?.glosApp)window.history.replaceState(state,'');else window.history.pushState(state,'');
+  if(window.history.state?.glosApp){window.history.replaceState(state,'');return;}
+  // Chrome 會把「沒有使用者手勢就 pushState」推出來的 entry 標成可跳過，返回時直接略過它。
+  // 開機自動開的「關於我」正好踩到這條，所以沒手勢時先記著，等第一個觸控再補上那一格。
+  if(navigator.userActivation&&!navigator.userActivation.hasBeenActive){pendingGuard=app;return;}
+  window.history.pushState(state,'');pendingGuard=null;
 }
+addEventListener('pointerdown',()=>{
+  if(!pendingGuard)return;
+  const app=pendingGuard;pendingGuard=null;
+  if(wins[app]?.classList.contains('open'))syncMobileAppHistory(app);
+},{capture:true});
 function closeAppWindow(w){
   if(!w)return;
   const app=w.id.replace(/^w-/,'');
