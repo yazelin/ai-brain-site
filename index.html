@@ -769,13 +769,14 @@
   </div>
 
   <!-- window: 留言 -->
-  <div class="win" id="w-comic" style="left:14%;top:56px;width:680px">
+  <div class="win" id="w-comic" style="left:14%;top:52px;width:420px;height:82vh">
     <div class="tb"><span class="dot r" data-close title="關閉"></span><span class="dot y"></span><span class="dot g"></span>
       <span class="ttl">我的漫畫 · 格莉奇OS</span></div>
-    <div class="body" style="padding:0">
+    <!-- body 不捲,讓 iframe 自己捲,否則拉小視窗會出現雙層捲軸 -->
+    <div class="body" style="padding:0;overflow:hidden">
       <iframe id="comic-frame" title="格莉奇OS 漫畫"
               data-src="https://yazelin.github.io/ai-comic-starter/"
-              style="display:block;width:100%;height:70vh;border:0;background:#12141d"
+              style="display:block;width:100%;height:100%;border:0;background:#12141d"
               referrerpolicy="no-referrer-when-downgrade"></iframe>
     </div>
   </div>
@@ -1221,6 +1222,24 @@ function loadGiscus(){
   document.getElementById('giscus-here').appendChild(s);
 }
 document.querySelectorAll('[data-app]').forEach(b=>b.addEventListener('click',()=>toggle(b.dataset.app)));
+// 綠燈=最大化/還原。原本黃綠兩顆都是純裝飾,只有紅色有作用。
+// 記住原本的幾何再還原,不然關掉重開會停在最大化的尺寸。
+document.querySelectorAll('.win .tb .dot.g').forEach(d=>{
+  d.style.cursor='pointer'; d.title='最大化';
+  d.addEventListener('click',()=>{
+    const w=d.closest('.win'); if(!w)return;
+    if(w.dataset.prevGeom){
+      Object.assign(w.style,JSON.parse(w.dataset.prevGeom));
+      delete w.dataset.prevGeom;
+    }else{
+      w.dataset.prevGeom=JSON.stringify({left:w.style.left,top:w.style.top,
+        width:w.style.width,height:w.style.height,marginLeft:w.style.marginLeft});
+      Object.assign(w.style,{left:'2%',top:'52px',width:'96%',
+        height:'calc(100vh - 116px)',marginLeft:'0'});
+    }
+    focus(w);
+  });
+});
 document.querySelectorAll('[data-close]').forEach(x=>x.addEventListener('click',e=>{
   closeAppWindow(e.target.closest('.win'));}));
 mobileOS.addEventListener?.('change',syncMobileOSState);
