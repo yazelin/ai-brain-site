@@ -1174,21 +1174,11 @@ function setChatNotification(show){document.querySelectorAll('[data-app="chat"]'
 // 會讓開機那次誤判成「這格已經是我的」而只做 replaceState，app 層就沒有自己的
 // history entry，一按返回直接離站。開機先清乾淨。
 if(window.history.state?.glosApp)window.history.replaceState({...window.history.state,glosApp:null},'');
-let pendingGuard=null;
 function syncMobileAppHistory(app){
   if(!mobileOS.matches)return;
   const state={...(window.history.state||{}),glosApp:app};
-  if(window.history.state?.glosApp){window.history.replaceState(state,'');return;}
-  // Chrome 會把「沒有使用者手勢就 pushState」推出來的 entry 標成可跳過，返回時直接略過它。
-  // 開機自動開的「關於我」正好踩到這條，所以沒手勢時先記著，等第一個觸控再補上那一格。
-  if(navigator.userActivation&&!navigator.userActivation.hasBeenActive){pendingGuard=app;return;}
-  window.history.pushState(state,'');pendingGuard=null;
+  if(window.history.state?.glosApp)window.history.replaceState(state,'');else window.history.pushState(state,'');
 }
-addEventListener('pointerdown',()=>{
-  if(!pendingGuard)return;
-  const app=pendingGuard;pendingGuard=null;
-  if(wins[app]?.classList.contains('open'))syncMobileAppHistory(app);
-},{capture:true});
 function closeAppWindow(w){
   if(!w)return;
   const app=w.id.replace(/^w-/,'');
@@ -1286,7 +1276,14 @@ mobileOS.addEventListener?.('change',syncMobileOSState);
   function finish(){
     if(finished||!linesDone||!cacheDone)return;finished=true;clearTimeout(fallback);
     if(!cacheSeen)fill.style.width='100%';cap.textContent=cacheFailed?'逼——嗶！網路模式啟動':'逼——嗶！啟動完成';cap.classList.add('glitch');
-    setTimeout(()=>{boot.classList.add('hide');open('about');},520);
+    // 手機版開機直接進桌面。Chrome 不讓網頁攔截「使用者還沒碰過畫面」時的返回鍵
+    // （沒有手勢就 pushState 的 history entry 會被標成可跳過），開機自動開的視窗
+    // 第一次按返回一定關不掉、直接離站，所以改成用寵物泡泡引導點「關於我」。#8
+    setTimeout(()=>{
+      boot.classList.add('hide');
+      if(mobileOS.matches)bubbleSay('逼——嗶！我是格莉奇，點「關於我」認識我～');
+      else open('about');
+    },520);
   }
   window.addEventListener('glos-cache-progress',event=>applyCacheProgress(event.detail));
   if(window.__glosCacheProgress)applyCacheProgress(window.__glosCacheProgress);
