@@ -9,6 +9,7 @@
 圖像模型：GEMINI_IMAGE_MODEL（預設 gemini-3-pro-image-preview）。
 """
 import base64
+import io
 import json
 import mimetypes
 import os
@@ -349,7 +350,7 @@ def generate_image(prompt):
     # ponytail: 同一天重跑不蓋檔，依序 +1 直到空檔名，累積多篇。
     i = 1
     while True:
-        out = IMG_DIR / (f"{today}.png" if i == 1 else f"{today}-{i}.png")
+        out = IMG_DIR / (f"{today}.webp" if i == 1 else f"{today}-{i}.webp")
         if not out.exists():
             break
         i += 1
@@ -378,9 +379,22 @@ def generate_image(prompt):
         print("  回應裡沒有圖片。", flush=True)
         return None
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_bytes(raw)
+    # 服務端回的是 1.5MB 的 PNG,而這支腳本每天跑一次,直接落檔等於每年往 git
+    # 歷史塞 500MB — 歷史裡的 blob 事後刪不掉,只能在寫進去之前就轉小。
+    _save_webp(raw, out)
     print(f"  -> {out.name} ok {int(time.time()-t0)}s {out.stat().st_size/1e6:.2f}MB", flush=True)
     return f"images/posts/{out.name}"
+
+
+def _save_webp(raw, path):
+    """把生圖服務回的原始 bytes 轉成 WebP 落檔。Pillow 不在就原樣寫,寧可胖也不要沒圖。"""
+    try:
+        from PIL import Image
+    except ImportError:
+        print("  沒裝 Pillow,原樣落檔(檔案會很大)。", flush=True)
+        path.write_bytes(raw)
+        return
+    Image.open(io.BytesIO(raw)).convert("RGB").save(path, "WEBP", quality=88, method=6)
 
 
 def _image_bytes(payload):
@@ -415,7 +429,8 @@ def stamp_image(img_path, stickers):
         y = bh - sh - margin
         base.alpha_composite(st, (x_cursor - sw, y))
         x_cursor -= sw + 6
-    base.convert("RGB").save(abs_path, "PNG")
+    # 存回去要跟 _save_webp 用同一個格式,不然貼完章又變回 PNG。
+    base.convert("RGB").save(abs_path, "WEBP", quality=88, method=6)
     print(f"  貼上 {len(stickers)} 張貼圖簽名", flush=True)
 
 

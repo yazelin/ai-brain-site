@@ -9,7 +9,7 @@
   </p>
 </div>
 
-![格莉奇OS 桌面、角色與關於我視窗](images/glitch-os-preview.png)
+![格莉奇OS 桌面、角色與關於我視窗](images/glitch-os-preview.jpg)
 
 格莉奇OS 是「AI 腦 · 容量不足」LINE 貼圖角色格莉奇（Glitch）的互動式個人網站。它以 WebOS／桌面環境呈現角色設定、日記、貼圖、留言與 AI 聊天，前端不依賴框架或建置工具，直接由 GitHub Pages 發佈。
 

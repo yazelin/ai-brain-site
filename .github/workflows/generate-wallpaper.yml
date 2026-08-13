@@ -20,6 +20,9 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: 安裝相依
+        run: pip install --quiet Pillow
+
       - name: 確認金鑰
         env:
           CODEX_IMAGE_KEY: ${{ secrets.CODEX_IMAGE_KEY }}

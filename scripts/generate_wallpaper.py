@@ -6,6 +6,7 @@ AI 機器人女孩的桌面感。輸出 16:9 橫式，存 images/wallpaper.webp�
 相依：純 stdlib。金鑰：CODEX_IMAGE_KEY、CODEX_IMAGE_BASE_URL。
 """
 import base64
+import io
 import json
 import os
 import subprocess
@@ -82,10 +83,13 @@ def main():
     from datetime import datetime, timezone, timedelta
     TZ = timezone(timedelta(hours=8))
     ts = datetime.now(TZ)
-    fname = f"glitch_{ts.strftime('%Y%m%d_%H%M%S')}.png"
+    fname = f"glitch_{ts.strftime('%Y%m%d_%H%M%S')}.webp"
     out = WALLPAPER_DIR / fname
     with urllib.request.urlopen(url, timeout=300) as r:
-        out.write_bytes(r.read())
+        raw = r.read()
+    # 原始 PNG 一張 2MB,而桌布是會累積的(wallpapers.json 只 append 不刪)。
+    from PIL import Image
+    Image.open(io.BytesIO(raw)).convert("RGB").save(out, "WEBP", quality=88, method=6)
     print(f"-> {out} ok {int(time.time()-t0)}s {out.stat().st_size/1e6:.2f}MB", flush=True)
 
     # 累積桌布索引：append 到 wallpapers.json
@@ -95,7 +99,7 @@ def main():
             idx = json.loads(WALLPAPER_INDEX.read_text("utf-8"))
         except json.JSONDecodeError:
             idx = []
-    idx.append({"id": fname.removesuffix(".png"), "name": "格莉奇桌布 " + ts.strftime("%m/%d %H:%M"),
+    idx.append({"id": fname.removesuffix(".webp"), "name": "格莉奇桌布 " + ts.strftime("%m/%d %H:%M"),
                 "path": f"images/wallpapers/{fname}", "ts": ts.isoformat()})
     WALLPAPER_INDEX.write_text(json.dumps(idx, indent=2, ensure_ascii=False) + "\n", "utf-8")
 
