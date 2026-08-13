@@ -555,12 +555,14 @@
 
     #pet{right:-7%;bottom:calc(76px + env(safe-area-inset-bottom));height:min(34vh,285px);min-height:0;max-height:none;z-index:80;
       filter:drop-shadow(0 10px 18px rgba(0,0,0,.45));transition:opacity .18s,transform .18s}
-    #pet>img{height:100%;width:auto}
+    /* 圖刻意比容器高:下半身溢出到畫面外被切掉,看到的是腰部以上。
+       跟桌面版同一個原理(那邊圖是原始 1484px,切在胸口),只是切得低一點。
+       要調大小就改這個數字,不要改容器。 */
+    #pet>img,#pet2>img{height:min(62vh,520px);width:auto}
     #pet .bubble{left:auto;right:58%;top:4%;max-width:165px;font-size:.72rem;padding:7px 10px}
     #pet .bubble::after{left:100%;right:auto}
     #pet2{left:-7%;bottom:calc(76px + env(safe-area-inset-bottom));height:min(34vh,285px);min-height:0;max-height:none;
       filter:drop-shadow(0 10px 18px rgba(0,0,0,.45));transition:opacity .18s,transform .18s}
-    #pet2>img{height:100%;width:auto}
     #pet2 .bubble{display:none}
     /* 手機上桌寵一律不在最上層。滿版的視窗蓋不過它的話,連「關掉桌寵」的
        設定都點不到。這條要壓過 .on-top。 */
