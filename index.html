@@ -228,7 +228,9 @@
   #pet2{position:absolute;left:3%;bottom:64px;height:46vh;max-height:520px;min-height:260px;z-index:90;
     pointer-events:none;
     filter:drop-shadow(0 12px 24px rgba(0,0,0,.55)); transition:transform .15s}
-  #pet2 img{height:100%;width:auto;display:block}
+  /* 桌面版刻意不給 img 高度,跟 #pet 一樣讓它用原始尺寸(兩張都是 1484px 高)。
+     給了 height:100% 會被容器的 46vh 綁住,他就只有她的三分之一大。 */
+  #pet2 img{display:block}
   #pet2.bob{animation:petbob 3.6s ease-in-out infinite}
   #pet2[hidden]{display:none}
   #pet[hidden]{display:none}
