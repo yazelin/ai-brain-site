@@ -2,7 +2,7 @@
 """用 codex-image-service 生格莉奇的高品質方形大頭貼（LINE 聊天頭像 / PWA 圖示用）。
 
 日系動漫風、頭部特寫、置中、臉落在圓形安全區內（圓角裁切不切到五官）。
-輸出 images/avatar.png（正方 1024x1024）。金鑰：CODEX_IMAGE_KEY / CODEX_IMAGE_BASE_URL。
+輸出 images/avatar.webp（正方 1024x1024）。金鑰：CODEX_IMAGE_KEY / CODEX_IMAGE_BASE_URL。
 """
 import base64
 import json
@@ -15,7 +15,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 REF = ROOT / "images" / "sticker-01.png"
-OUT = ROOT / "images" / "avatar.png"
+OUT = ROOT / "images" / "avatar.webp"
 BASE_URL = os.environ.get("CODEX_IMAGE_BASE_URL", "").rstrip("/")
 KEY = os.environ.get("CODEX_IMAGE_KEY", "")
 UA = "glitch-blog/1.0"
@@ -61,7 +61,13 @@ def main():
         url = BASE_URL + url
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with urllib.request.urlopen(url, timeout=300) as r:
-        OUT.write_bytes(r.read())
+        raw = r.read()
+    # 服務端回的通常是 PNG。這個站的圖一律存 webp:全部圖檔都會進 PWA 的
+    # precache,同一張 png 2 MB、webp 0.13 MB,回訪讀者的差別是實質的。
+    # 直接 write_bytes 會產出一個「叫 .webp 的 PNG」,瀏覽器認得但完全沒省到。
+    import io
+    from PIL import Image
+    Image.open(io.BytesIO(raw)).convert("RGB").save(OUT, "WEBP", quality=88, method=6)
     print(f"-> {OUT} ok {int(time.time()-t0)}s {OUT.stat().st_size/1e6:.2f}MB", flush=True)
     subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
     subprocess.run(["git", "config", "user.email",

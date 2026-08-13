@@ -15,7 +15,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 REF = ROOT / "images" / "sticker-01.png"
-OUT = ROOT / "images" / "pet.png"
+OUT = ROOT / "images" / "pet.webp"
 BASE_URL = os.environ.get("CODEX_IMAGE_BASE_URL", "").rstrip("/")
 KEY = os.environ.get("CODEX_IMAGE_KEY", "")
 UA = "glitch-blog/1.0"
@@ -79,6 +79,10 @@ def main():
     else:
         trim_alpha_bbox(OUT)
     raw_path.unlink(missing_ok=True)
+    # 去背工具寫出來的是 PNG。這個站的圖一律存 webp:全部圖檔都會進 PWA 的
+    # precache,同一張 png 0.8 MB、webp 0.11 MB。桌寵要保留透明度,所以是 RGBA。
+    from PIL import Image as _Im
+    _Im.open(OUT).convert("RGBA").save(OUT, "WEBP", quality=88, method=6)
     print(f"-> {OUT} ok {int(time.time()-t0)}s {OUT.stat().st_size/1e6:.2f}MB", flush=True)
     subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
     subprocess.run(["git", "config", "user.email",
