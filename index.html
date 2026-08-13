@@ -221,13 +221,23 @@
   @media(max-width:560px){#icons{flex-direction:row;flex-wrap:wrap;max-width:90vw}.win{max-width:94vw!important}}
   /* desktop pet */
   /* 黑洞先生站左邊,格莉奇站右邊,水平對稱。共用同一組尺寸與動畫。 */
-  #pet2{position:absolute;left:3%;bottom:64px;height:46vh;max-height:520px;min-height:260px;z-index:9997;cursor:pointer;
+  /* 他是頭胸像(比例約 1.17),她是全身(約 0.39),不能共用同一個高度。
+     用比較小的高度讓頭的份量出來,而不是讓他變成一片很寬的東西。 */
+  #pet2{position:absolute;left:2%;bottom:64px;height:min(30vh,320px);z-index:150;cursor:default;
     filter:drop-shadow(0 12px 24px rgba(0,0,0,.55)); transition:transform .15s}
   #pet2 img{height:100%;width:auto;display:block}
   #pet2.bob{animation:petbob 3.6s ease-in-out infinite}
   #pet2[hidden]{display:none}
   #pet[hidden]{display:none}
-  #pet{position:absolute;right:3%;bottom:64px;height:46vh;max-height:520px;min-height:260px;z-index:9998;cursor:pointer;
+  .wall-opt{position:relative}
+  .wall-del{position:absolute;top:4px;right:4px;width:22px;height:22px;border:0;border-radius:50%;
+    background:rgba(8,20,26,.82);color:#e6f6fb;font:600 15px/1 system-ui;cursor:pointer;
+    display:grid;place-items:center;opacity:0;transition:opacity .15s}
+  .wall-opt:hover .wall-del,.wall-del:focus{opacity:1}
+  .wall-del:hover{background:rgba(180,60,60,.9)}
+  #pet.on-top{z-index:9998}
+  #pet2.on-top{z-index:9997}
+  #pet{position:absolute;right:3%;bottom:64px;height:46vh;max-height:520px;min-height:260px;z-index:150;cursor:pointer;
     filter:drop-shadow(0 12px 24px rgba(0,0,0,.55)); transition:transform .15s}
   #pet.bob{animation:petbob 3.2s ease-in-out infinite}
   @keyframes petbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
@@ -532,6 +542,12 @@
     #pet>img{height:100%;width:auto}
     #pet .bubble{left:auto;right:58%;top:4%;max-width:165px;font-size:.72rem;padding:7px 10px}
     #pet .bubble::after{left:100%;right:auto}
+    #pet2{left:-4%;bottom:calc(76px + env(safe-area-inset-bottom));height:min(20vh,170px);
+      filter:drop-shadow(0 10px 18px rgba(0,0,0,.45));transition:opacity .18s,transform .18s}
+    #pet2 .bubble{display:none}
+    /* 手機上桌寵一律不在最上層。滿版的視窗蓋不過它的話,連「關掉桌寵」的
+       設定都點不到。這條要壓過 .on-top。 */
+    #pet.on-top,#pet2.on-top{z-index:80}
 
     .win,#w-settings,#w-music{position:fixed!important;left:0!important;right:0!important;top:0!important;bottom:0!important;
       width:100vw!important;height:100vh!important;height:100dvh!important;
@@ -548,10 +564,10 @@
     .win .tb .ttl{position:absolute;left:50%;max-width:68%;transform:translateX(-50%);font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .win .resize{display:none!important}
     .win>.body{padding:16px 15px calc(28px + env(safe-area-inset-bottom))}
-    #desktop.mobile-app-open #icons,#desktop.mobile-app-open #dock,#desktop.mobile-app-open #pet{opacity:0;pointer-events:none}
+    #desktop.mobile-app-open #icons,#desktop.mobile-app-open #dock,#desktop.mobile-app-open #pet,#desktop.mobile-app-open #pet2{opacity:0;pointer-events:none}
     #desktop.mobile-app-open #icons{transform:scale(.96)}
     #desktop.mobile-app-open #dock{transform:translateY(18px)}
-    #desktop.mobile-app-open #pet{transform:translateY(15px)}
+    #desktop.mobile-app-open #pet,#desktop.mobile-app-open #pet2{transform:translateY(15px)}
     #desktop.mobile-app-open::after{opacity:0}
 
     #w-chat{background:#7da3b8!important;border:0!important;box-shadow:none!important;overflow:hidden!important}
@@ -904,7 +920,7 @@
               <input type="checkbox" id="pet2-show" checked> <span class="muted" style="margin:0">常駐顯示</span>
             </label>
             <label class="row" style="gap:8px;align-items:center;cursor:pointer">
-              <input type="checkbox" id="pet2-top" checked> <span class="muted" style="margin:0">永遠顯示在最上層</span>
+              <input type="checkbox" id="pet2-top"> <span class="muted" style="margin:0">永遠顯示在最上層</span>
             </label>
           </div>
         </section>
@@ -1151,7 +1167,10 @@ async function applyWall(){
   let url='images/wallpaper.webp',isUser=false;
   // 沒選過 = 跟著時間。舊使用者存的是 'wallpaper',一併當成跟著時間,
   // 不然他們永遠停在黃昏那張。
-  if(!choice||choice==='wallpaper'||choice==='auto'){url=wallForNow().path;}
+  // 舊使用者存的是 'wallpaper' 或 'images/wallpaper.png'。當時選單裡只有那一張,
+  // 點它代表「我要這個房間」,不是「我只要黃昏」,所以一併當成跟著時間。
+  if(!choice||choice==='wallpaper'||choice==='auto'||choice==='images/wallpaper.png'
+     ||choice==='images/wallpaper.webp'){url=wallForNow().path;}
   else if(choice==='default'){url=null;}
   else if(choice==='upload'){const blob=await dbGet('wallpaper-blob');if(blob){url=URL.createObjectURL(blob);isUser=true;}else{url=null;}}
   else if(typeof choice==='string'&&choice.startsWith('images/')){
@@ -1852,7 +1871,8 @@ async function openSettings(){
   setSettingsTab((await dbGet('settings-tab'))||'chat',false);
   for(const [el,key] of [[petTop,'pet-top'],[petShow,'pet-show'],
                          [pet2Top,'pet2-top'],[pet2Show,'pet2-show']]){
-    el.checked=(await dbGet(key))!==false;
+    const v=await dbGet(key);
+    el.checked = v===undefined||v===null ? el.defaultChecked : v!==false;
   }
   applyPetTop();applyPetShow();
   updateStorage();
@@ -1879,8 +1899,10 @@ const pet2=document.getElementById('pet2');
 const petTop=document.getElementById('pet-top'), petShow=document.getElementById('pet-show');
 const pet2Top=document.getElementById('pet2-top'), pet2Show=document.getElementById('pet2-show');
 function applyPetTop(){
-  pet.style.zIndex=petTop.checked?9998:150;
-  pet2.style.zIndex=pet2Top.checked?9997:149;
+  // 用 class 不用 inline style:inline 會蓋掉手機版 media query 裡的 z-index,
+  // 桌寵就會浮在滿版視窗上面,連設定都點不到。
+  pet.classList.toggle('on-top',petTop.checked);
+  pet2.classList.toggle('on-top',pet2Top.checked);
 }
 function applyPetShow(){
   pet.hidden=!petShow.checked;
@@ -1893,12 +1915,15 @@ for(const [el,key,fn] of [[petTop,'pet-top',applyPetTop],[petShow,'pet-show',app
 (async()=>{
   for(const [el,key] of [[petTop,'pet-top'],[petShow,'pet-show'],
                          [pet2Top,'pet2-top'],[pet2Show,'pet2-show']]){
-    if(await dbGet(key)===false)el.checked=false;
+    const v=await dbGet(key);
+    if(v===false)el.checked=false;
+    else if(v===true)el.checked=true;
   }
   applyPetTop();applyPetShow();
 })();
 async function renderWallGrid(){
-  const choice=(await dbGet('wallpaper'))||'auto';
+  let choice=(await dbGet('wallpaper'))||'auto';
+  if(choice==='wallpaper'||choice==='images/wallpaper.png'||choice==='images/wallpaper.webp')choice='auto';
   wallGrid.innerHTML='';
   // 跟著時間：同一個房間的三個時段,依系統時間自動換。放第一個當預設。
   const now=wallForNow();
@@ -1932,6 +1957,17 @@ async function renderWallGrid(){
     const u=URL.createObjectURL(blob);const im=document.createElement('img');im.src=u;up.appendChild(im);
     const c=document.createElement('div');c.className='cap';c.textContent='自訂上傳';up.appendChild(c);
     up.onclick=async()=>{await dbSet('wallpaper','upload');await applyWall();renderWallGrid();};
+    // 移除鈕。原本上傳過就拿不掉,只能換一張蓋過去。
+    const del=document.createElement('button');
+    del.type='button';del.className='wall-del';del.title='移除這張自訂桌布';
+    del.setAttribute('aria-label','移除自訂桌布');del.textContent='×';
+    del.onclick=async ev=>{
+      ev.stopPropagation();
+      await dbDel('wallpaper-blob');
+      if((await dbGet('wallpaper'))==='upload')await dbSet('wallpaper','auto');
+      await applyWall();renderWallGrid();
+    };
+    up.appendChild(del);
     wallGrid.appendChild(up);
   }
 }
