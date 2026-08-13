@@ -2,7 +2,7 @@
 """用 codex-image-service 生一張格莉奇OS 桌面桌布。手動 workflow 跑一次。
 
 桌布是她「房間／OS」的視覺門面：賽博粉綠＋霓虹紫、glitch 像素塊、
-AI 機器人女孩的桌面感。輸出 16:9 橫式，存 images/wallpaper.png。
+AI 機器人女孩的桌面感。輸出 16:9 橫式，存 images/wallpaper.webp。
 相依：純 stdlib。金鑰：CODEX_IMAGE_KEY、CODEX_IMAGE_BASE_URL。
 """
 import base64

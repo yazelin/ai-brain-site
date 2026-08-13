@@ -48,7 +48,7 @@
     background:#0d2b3a radial-gradient(1200px 700px at 70% 20%,#143a4d 0%,#07131a 60%);
     background-size:cover; background-position:center;
   }
-  #desktop.has-wall{ background-image:url('images/wallpaper.png'); }
+  #desktop.has-wall{ background-image:url('images/wallpaper.webp'); }
   #desktop::before{ /* 沒桌布時的 glitch 質感 */
     content:""; position:absolute; inset:0; pointer-events:none; opacity:.5;
     background:
@@ -220,6 +220,13 @@
   @keyframes btgl{0%{transform:translate(0,0)}50%{transform:translate(2px,-1px);color:#b78bff}100%{transform:translate(-1px,1px)}}
   @media(max-width:560px){#icons{flex-direction:row;flex-wrap:wrap;max-width:90vw}.win{max-width:94vw!important}}
   /* desktop pet */
+  /* 黑洞先生站左邊,格莉奇站右邊,水平對稱。共用同一組尺寸與動畫。 */
+  #pet2{position:absolute;left:3%;bottom:64px;height:46vh;max-height:520px;min-height:260px;z-index:9997;cursor:pointer;
+    filter:drop-shadow(0 12px 24px rgba(0,0,0,.55)); transition:transform .15s}
+  #pet2 img{height:100%;width:auto;display:block}
+  #pet2.bob{animation:petbob 3.6s ease-in-out infinite}
+  #pet2[hidden]{display:none}
+  #pet[hidden]{display:none}
   #pet{position:absolute;right:3%;bottom:64px;height:46vh;max-height:520px;min-height:260px;z-index:9998;cursor:pointer;
     filter:drop-shadow(0 12px 24px rgba(0,0,0,.55)); transition:transform .15s}
   #pet.bob{animation:petbob 3.2s ease-in-out infinite}
@@ -796,8 +803,13 @@
     </div>
   </div>
 
+  <div id="pet2" class="bob" title="黑洞先生">
+    <img src="images/pet-blackhole.webp" alt="黑洞先生">
+    <div class="bubble" id="pet2-bubble">……</div>
+  </div>
+
   <div id="pet" class="bob" title="跟格莉奇聊天">
-    <img src="images/pet.png" alt="格莉奇" onerror="this.onerror=null;this.src='images/sticker-01.png';this.style.height='40vh'">
+    <img src="images/pet.webp" alt="格莉奇" onerror="this.onerror=null;this.src='images/sticker-01.png';this.style.height='40vh'">
     <div class="bubble" id="pet-bubble">逼——嗶！點我聊天～</div>
   </div>
 
@@ -870,7 +882,7 @@
           <div class="settings-page-head"><h3>桌面外觀</h3><p class="muted">調整格莉奇OS 的桌布與桌寵顯示方式。</p></div>
           <div class="sec">
             <h3>桌布</h3>
-            <p class="muted">選一張桌布；上傳的圖只存在你的瀏覽器（IndexedDB），不會上傳伺服器。</p>
+            <p class="muted">預設是<b>跟著時間</b>：同一個房間的三個時段，白天（06-17）、黃昏（17-20）、深夜（20-06），依你裝置的時間自動換，開著不關也會在跨過時段時自己切。<br>選了固定的某一張、預設漸層或自訂上傳，就不會再自動換。上傳的圖只存在你的瀏覽器（IndexedDB），不會上傳伺服器。</p>
             <div class="wall-grid" id="wall-grid"></div>
             <div class="row" style="margin-top:10px">
               <label class="btn filepick" for="wall-upload"><svg class="ic" style="width:14px;height:14px;display:inline-block;vertical-align:-2px"><use href="#i-image"/></svg> 選擇圖片</label>
@@ -879,8 +891,20 @@
           </div>
           <div class="sec">
             <h3>桌寵</h3>
+            <p class="muted">兩隻各自獨立,關掉就完全不出現。</p>
+            <p class="muted" style="margin:.6em 0 .2em"><b>格莉奇</b>（站在右邊）</p>
             <label class="row" style="gap:8px;align-items:center;cursor:pointer">
-              <input type="checkbox" id="pet-top" checked> <span class="muted" style="margin:0">格莉奇永遠顯示在最上層</span>
+              <input type="checkbox" id="pet-show" checked> <span class="muted" style="margin:0">常駐顯示</span>
+            </label>
+            <label class="row" style="gap:8px;align-items:center;cursor:pointer">
+              <input type="checkbox" id="pet-top" checked> <span class="muted" style="margin:0">永遠顯示在最上層</span>
+            </label>
+            <p class="muted" style="margin:.9em 0 .2em"><b>黑洞先生</b>（站在左邊）</p>
+            <label class="row" style="gap:8px;align-items:center;cursor:pointer">
+              <input type="checkbox" id="pet2-show" checked> <span class="muted" style="margin:0">常駐顯示</span>
+            </label>
+            <label class="row" style="gap:8px;align-items:center;cursor:pointer">
+              <input type="checkbox" id="pet2-top" checked> <span class="muted" style="margin:0">永遠顯示在最上層</span>
             </label>
           </div>
         </section>
@@ -1105,19 +1129,49 @@ if('serviceWorker'in navigator){
   showButton();
 })();
 
-/* ===== 桌布：套用使用者選的（IndexedDB blob 或預設 images/wallpaper.png）===== */
+/* ===== 桌布：套用使用者選的（IndexedDB blob 或預設 images/wallpaper.webp）===== */
 const desktop=document.getElementById('desktop');
+/* 同一個房間的三個時段。窗外與打進來的光不一樣,家具一模一樣。
+   只有內建桌布吃這套:使用者自己上傳的是他的明確選擇,系統不該蓋過去。 */
+const TIMED_WALLS=[
+  {from:6, to:17, path:'images/wallpaper-day.webp',   name:'白天'},
+  {from:17,to:20, path:'images/wallpaper.webp',       name:'黃昏'},
+  {from:20,to:6,  path:'images/wallpaper-night.webp', name:'深夜'},
+];
+function wallForNow(d=new Date()){
+  const h=d.getHours();
+  for(const w of TIMED_WALLS){
+    const hit = w.from<w.to ? (h>=w.from&&h<w.to) : (h>=w.from||h<w.to);
+    if(hit)return w;
+  }
+  return TIMED_WALLS[1];
+}
 async function applyWall(){
   const choice=(await dbGet('wallpaper'));
-  let url='images/wallpaper.png',isUser=false;
-  if(!choice||choice==='wallpaper'){/* default */}
+  let url='images/wallpaper.webp',isUser=false;
+  // 沒選過 = 跟著時間。舊使用者存的是 'wallpaper',一併當成跟著時間,
+  // 不然他們永遠停在黃昏那張。
+  if(!choice||choice==='wallpaper'||choice==='auto'){url=wallForNow().path;}
   else if(choice==='default'){url=null;}
   else if(choice==='upload'){const blob=await dbGet('wallpaper-blob');if(blob){url=URL.createObjectURL(blob);isUser=true;}else{url=null;}}
-  else if(typeof choice==='string'&&choice.startsWith('images/')){url=choice;}
+  else if(typeof choice==='string'&&choice.startsWith('images/')){
+    // 舊使用者存的是 .png(2026-08-13 全部轉成 webp,省了 7.3 MB 的 precache)。
+    // 直接用會 404 變成沒有桌布,所以在這裡補一次轉換。
+    url=choice.replace(/\.png$/,'.webp');
+  }
   if(url){const im=new Image();im.onload=()=>{desktop.classList.add('has-wall');desktop.style.backgroundImage=`url("${url}")`};im.onerror=()=>{desktop.classList.remove('has-wall');};im.src=url;}
   else{desktop.classList.remove('has-wall');desktop.style.backgroundImage='';}
 }
 applyWall();
+/* 每十分鐘檢查一次時段有沒有換。開著不關的分頁(這是 OS,常態就是開著)
+   才會在跨過黃昏時自己換掉。只在「跟著時間」模式下動作。 */
+let _lastWall=wallForNow().path;
+setInterval(async()=>{
+  const c=await dbGet('wallpaper');
+  if(c&&c!=='wallpaper'&&c!=='auto')return;
+  const now=wallForNow().path;
+  if(now!==_lastWall){_lastWall=now;applyWall();}
+},600000);
 
 /* ===== 時鐘（menubar + 手機狀態列）===== */
 const clk=document.getElementById('clock'),phTime=document.getElementById('ph-time');
@@ -1796,7 +1850,11 @@ async function openSettings(){
   memEdit.value=memory||'';
   updateMemoryStatus();renderSettingsChatHistory();
   setSettingsTab((await dbGet('settings-tab'))||'chat',false);
-  const top=await dbGet('pet-top');petTop.checked=top!==false;applyPetTop();
+  for(const [el,key] of [[petTop,'pet-top'],[petShow,'pet-show'],
+                         [pet2Top,'pet2-top'],[pet2Show,'pet2-show']]){
+    el.checked=(await dbGet(key))!==false;
+  }
+  applyPetTop();applyPetShow();
   updateStorage();
   void maybeSummarize();
 }
@@ -1815,16 +1873,45 @@ async function calcUsage(){
   if(!navigator.storage?.estimate)return 0;
   try{const {usage=0,quota=0}=await navigator.storage.estimate();return quota?Math.min(100,(usage/quota*100).toFixed(2)):0;}catch(e){return 0;}
 }
-function applyPetTop(){pet.style.zIndex=petTop.checked?9998:150;}
-const petTop=document.getElementById('pet-top');
-petTop.addEventListener('change',async()=>{await dbSet('pet-top',petTop.checked);applyPetTop();});
-(async()=>{const t=await dbGet('pet-top');if(t===false){petTop.checked=false;applyPetTop();}})();
+/* 兩隻桌寵各自獨立:常駐顯示、永遠最上層。預設都開。
+   設定值存 IndexedDB,只有存進 false 才算關掉(沒存過 = 沒設定過 = 開著)。 */
+const pet2=document.getElementById('pet2');
+const petTop=document.getElementById('pet-top'), petShow=document.getElementById('pet-show');
+const pet2Top=document.getElementById('pet2-top'), pet2Show=document.getElementById('pet2-show');
+function applyPetTop(){
+  pet.style.zIndex=petTop.checked?9998:150;
+  pet2.style.zIndex=pet2Top.checked?9997:149;
+}
+function applyPetShow(){
+  pet.hidden=!petShow.checked;
+  pet2.hidden=!pet2Show.checked;
+}
+for(const [el,key,fn] of [[petTop,'pet-top',applyPetTop],[petShow,'pet-show',applyPetShow],
+                          [pet2Top,'pet2-top',applyPetTop],[pet2Show,'pet2-show',applyPetShow]]){
+  el.addEventListener('change',async()=>{await dbSet(key,el.checked);fn();});
+}
+(async()=>{
+  for(const [el,key] of [[petTop,'pet-top'],[petShow,'pet-show'],
+                         [pet2Top,'pet2-top'],[pet2Show,'pet2-show']]){
+    if(await dbGet(key)===false)el.checked=false;
+  }
+  applyPetTop();applyPetShow();
+})();
 async function renderWallGrid(){
-  const choice=(await dbGet('wallpaper'))||'wallpaper';
+  const choice=(await dbGet('wallpaper'))||'auto';
   wallGrid.innerHTML='';
+  // 跟著時間：同一個房間的三個時段,依系統時間自動換。放第一個當預設。
+  const now=wallForNow();
+  const auto=document.createElement('div');
+  auto.className='wall-opt'+((choice==='auto'||choice==='wallpaper')?' sel':'');
+  const ai=document.createElement('img');ai.src=now.path;auto.appendChild(ai);
+  const ac=document.createElement('div');ac.className='cap';
+  ac.textContent='跟著時間（現在：'+now.name+'）';auto.appendChild(ac);
+  auto.onclick=async()=>{await dbSet('wallpaper','auto');await applyWall();renderWallGrid();};
+  wallGrid.appendChild(auto);
   // 累積桌布：從 wallpapers.json 載入
   let walls=[];
-  try{const r=await fetch('wallpapers.json',{cache:'no-store'});walls=await r.json();}catch(e){walls=[{id:'glitch_default',name:'格莉奇OS 桌布',path:'images/wallpaper.png'}];}
+  try{const r=await fetch('wallpapers.json',{cache:'no-store'});walls=await r.json();}catch(e){walls=[{id:'glitch_default',name:'格莉奇OS 桌布',path:'images/wallpaper.webp'}];}
   for(const w of walls){
     const d=document.createElement('div');d.className='wall-opt'+(choice===w.path?' sel':'');
     const im=document.createElement('img');im.src=w.path;im.onerror=()=>{d.querySelector('img')?.replaceWith(Object.assign(document.createElement('div'),{className:'ph'}));};d.appendChild(im);

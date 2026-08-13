@@ -5,8 +5,8 @@
    聊天歷史與使用者資料在 IndexedDB；跨域 AI / Giscus 請求不快取。 */
 
 /* cache:start — scripts/update_sw_hashes.py 產生，勿手改 */
-const SHELL_CACHE = 'glos-shell-a8385faa0fc3';
-const ASSET_CACHE = 'glos-assets-c8e24465c666';
+const SHELL_CACHE = 'glos-shell-ec42eb7cabf6';
+const ASSET_CACHE = 'glos-assets-1d32ab1d2f60';
 /* cache:end */
 const KEEP = [SHELL_CACHE, ASSET_CACHE];
 const MATCH = { ignoreSearch: true, ignoreVary: true };
@@ -25,7 +25,8 @@ const PRIORITY_ASSETS = [
 ];
 const WARM_ASSETS = [
 /* warm:start */
-  './images/wallpaper.png', './images/pet.png',
+  './images/wallpaper.webp', './images/wallpaper-day.webp', './images/wallpaper-night.webp',
+  './images/pet.webp', './images/pet-blackhole.webp',
   './images/sticker-01.png', './images/sticker-02.png', './images/sticker-03.png',
   './images/sticker-04.png', './images/sticker-05.png', './images/sticker-06.png',
   './images/sticker-07.png', './images/sticker-08.png', './images/sticker-09.png',

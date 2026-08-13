@@ -1,8 +1,20 @@
 [
   {
+    "id": "glitch_room_day",
+    "name": "她的房間．白天",
+    "path": "images/wallpaper-day.webp",
+    "ts": "2026-08-13T09:00:00+08:00"
+  },
+  {
     "id": "glitch_default",
-    "name": "格莉奇OS 桌布（初始）",
-    "path": "images/wallpaper.png",
+    "name": "她的房間．黃昏",
+    "path": "images/wallpaper.webp",
     "ts": "2026-08-04T22:00:00+08:00"
+  },
+  {
+    "id": "glitch_room_night",
+    "name": "她的房間．深夜",
+    "path": "images/wallpaper-night.webp",
+    "ts": "2026-08-13T09:00:00+08:00"
   }
 ]

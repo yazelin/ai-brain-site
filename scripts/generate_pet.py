@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """用 codex-image-service 生格莉奇全身桌面寵物 sprite。透明背景、站姿。
 
-放在桌面右側當 desktop pet。輸出 images/pet.png（直式 1024x1536）。
+放在桌面右側當 desktop pet。輸出 images/pet.webp（直式 1024x1536）。
 參考圖用 sticker-01 鎖角色外觀。金鑰：CODEX_IMAGE_KEY / CODEX_IMAGE_BASE_URL。
 """
 import base64
