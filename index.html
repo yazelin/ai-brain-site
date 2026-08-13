@@ -238,6 +238,11 @@
     display:grid;place-items:center;opacity:0;transition:opacity .15s}
   .wall-opt:hover .wall-del,.wall-del:focus{opacity:1}
   .wall-del:hover{background:rgba(180,60,60,.9)}
+  /* 圖片的命中區是整個矩形,透明處照樣吃掉點擊(pointer-events 不做 alpha 判定,
+     那是 SVG 才有的)。所以容器與圖都不吃事件,只有蓋在她身上的這塊吃。 */
+  #pet,#pet>img,#pet .bubble{pointer-events:none}
+  #pet .pet-hit{position:absolute;left:22%;right:22%;top:30%;bottom:2%;
+    pointer-events:auto;cursor:pointer;border:0;background:transparent;padding:0}
   #pet.on-top{z-index:9998}
   #pet2.on-top{z-index:9997}   /* 仍然 pointer-events:none,不會擋住圖示 */
   #pet{position:absolute;right:3%;bottom:64px;height:46vh;max-height:520px;min-height:260px;z-index:150;cursor:pointer;
@@ -831,6 +836,7 @@
   <div id="pet" class="bob" title="跟格莉奇聊天">
     <img src="images/pet.webp" alt="格莉奇" onerror="this.onerror=null;this.src='images/sticker-01.png';this.style.height='40vh'">
     <div class="bubble" id="pet-bubble">逼——嗶！點我聊天～</div>
+    <button class="pet-hit" type="button" aria-label="跟格莉奇聊天"></button>
   </div>
 
   <!-- window: 跟格莉奇聊天（手機框 + LINE） -->
@@ -1388,7 +1394,7 @@ mobileOS.addEventListener?.('change',syncMobileOSState);
 // 桌面寵物：點擊開聊天窗 + 偶爾冒泡
 const pet=document.getElementById('pet'),bubble=document.getElementById('pet-bubble');
 const petLines=['逼——嗶！點我聊天～','系統讀取中…（過久）','今天也超開心！','要吃好吃的喔','先去睡個覺...','這不是 Bug，是 Feature！'];
-pet.addEventListener('click',()=>open('chat'));
+pet.querySelector('.pet-hit').addEventListener('click',()=>open('chat'));
 function bubbleSay(t){bubble.textContent=t;bubble.classList.add('show');setTimeout(()=>bubble.classList.remove('show'),2600);}
 setTimeout(()=>bubbleSay('逼——嗶！點我聊天～'),1800);
 setInterval(()=>bubbleSay(petLines[Math.floor(Math.random()*petLines.length)]),12000);
