@@ -74,6 +74,12 @@
   #menubar .pill .g i{display:block;height:100%;width:0;background:#5a6a72;transition:width .4s ease}
   #clock{color:#dfe6ea; font-variant-numeric:tabular-nums}
   .ic{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;display:inline-block}
+  /* 視窗內文的連結。站上原本沒有一般的 a 規則,這種連結會變成瀏覽器預設的
+     紫色加底線,在深色底上幾乎看不清楚。只套段落裡的,不動 .links 那排圖示。 */
+  .win .body p a{color:var(--cy);text-decoration:none;border-bottom:1px solid rgba(37,194,232,.35);
+    transition:color .12s,border-color .12s}
+  .win .body p a:hover{color:var(--mint);border-bottom-color:var(--mint)}
+  .win .body p a:visited{color:var(--cy)}
   .links{display:flex;align-items:center;gap:10px}
   .links a{color:#9aa6ad;display:grid;place-items:center;width:18px;height:18px}
   .links a:hover{color:#e6f6fb}

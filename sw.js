@@ -5,7 +5,7 @@
    聊天歷史與使用者資料在 IndexedDB；跨域 AI / Giscus 請求不快取。 */
 
 /* cache:start — scripts/update_sw_hashes.py 產生，勿手改 */
-const SHELL_CACHE = 'glos-shell-38462841bac5';
+const SHELL_CACHE = 'glos-shell-87b5aa0e5947';
 const ASSET_CACHE = 'glos-assets-1d32ab1d2f60';
 /* cache:end */
 const KEEP = [SHELL_CACHE, ASSET_CACHE];
