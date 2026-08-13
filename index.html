@@ -221,9 +221,8 @@
   @media(max-width:560px){#icons{flex-direction:row;flex-wrap:wrap;max-width:90vw}.win{max-width:94vw!important}}
   /* desktop pet */
   /* 黑洞先生站左邊,格莉奇站右邊,水平對稱。共用同一組尺寸與動畫。 */
-  /* 他是頭胸像(比例約 1.17),她是全身(約 0.39),不能共用同一個高度。
-     用比較小的高度讓頭的份量出來,而不是讓他變成一片很寬的東西。 */
-  #pet2{position:absolute;left:2%;bottom:64px;height:min(30vh,320px);z-index:150;cursor:default;
+  /* 完全鏡像 #pet:同樣的高度、同樣的底邊,只有左右相反。 */
+  #pet2{position:absolute;left:3%;bottom:64px;height:46vh;max-height:520px;min-height:260px;z-index:150;cursor:default;
     filter:drop-shadow(0 12px 24px rgba(0,0,0,.55)); transition:transform .15s}
   #pet2 img{height:100%;width:auto;display:block}
   #pet2.bob{animation:petbob 3.6s ease-in-out infinite}
@@ -542,8 +541,9 @@
     #pet>img{height:100%;width:auto}
     #pet .bubble{left:auto;right:58%;top:4%;max-width:165px;font-size:.72rem;padding:7px 10px}
     #pet .bubble::after{left:100%;right:auto}
-    #pet2{left:-4%;bottom:calc(76px + env(safe-area-inset-bottom));height:min(20vh,170px);
+    #pet2{left:-7%;bottom:calc(76px + env(safe-area-inset-bottom));height:min(34vh,285px);min-height:0;max-height:none;
       filter:drop-shadow(0 10px 18px rgba(0,0,0,.45));transition:opacity .18s,transform .18s}
+    #pet2>img{height:100%;width:auto}
     #pet2 .bubble{display:none}
     /* 手機上桌寵一律不在最上層。滿版的視窗蓋不過它的話,連「關掉桌寵」的
        設定都點不到。這條要壓過 .on-top。 */
