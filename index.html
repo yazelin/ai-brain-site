@@ -221,8 +221,12 @@
   @media(max-width:560px){#icons{flex-direction:row;flex-wrap:wrap;max-width:90vw}.win{max-width:94vw!important}}
   /* desktop pet */
   /* 黑洞先生站左邊,格莉奇站右邊,水平對稱。共用同一組尺寸與動畫。 */
-  /* 完全鏡像 #pet:同樣的高度、同樣的底邊,只有左右相反。 */
-  #pet2{position:absolute;left:3%;bottom:64px;height:46vh;max-height:520px;min-height:260px;z-index:150;cursor:default;
+  /* 完全鏡像 #pet:同樣的高度、同樣的底邊,只有左右相反。
+     但左邊是 app 圖示那一排(#icons 是 z-index:100),所以他要壓在圖示底下,
+     而且 pointer-events:none 讓點擊穿過去——他本來就沒有點擊行為。
+     勾了「永遠最上層」也一樣穿得過去,不會擋住圖示。 */
+  #pet2{position:absolute;left:3%;bottom:64px;height:46vh;max-height:520px;min-height:260px;z-index:90;
+    pointer-events:none;
     filter:drop-shadow(0 12px 24px rgba(0,0,0,.55)); transition:transform .15s}
   #pet2 img{height:100%;width:auto;display:block}
   #pet2.bob{animation:petbob 3.6s ease-in-out infinite}
@@ -235,7 +239,7 @@
   .wall-opt:hover .wall-del,.wall-del:focus{opacity:1}
   .wall-del:hover{background:rgba(180,60,60,.9)}
   #pet.on-top{z-index:9998}
-  #pet2.on-top{z-index:9997}
+  #pet2.on-top{z-index:9997}   /* 仍然 pointer-events:none,不會擋住圖示 */
   #pet{position:absolute;right:3%;bottom:64px;height:46vh;max-height:520px;min-height:260px;z-index:150;cursor:pointer;
     filter:drop-shadow(0 12px 24px rgba(0,0,0,.55)); transition:transform .15s}
   #pet.bob{animation:petbob 3.2s ease-in-out infinite}
