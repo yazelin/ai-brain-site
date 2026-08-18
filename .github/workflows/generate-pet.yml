@@ -2,6 +2,12 @@ name: 生成桌面寵物
 
 on:
   workflow_dispatch:
+    inputs:
+      emote:
+        description: 表情差分（留空＝重生 idle 本體）
+        type: choice
+        default: ''
+        options: ['', happy, thinking, error, sleep]
 
 permissions:
   contents: write
@@ -31,6 +37,7 @@ jobs:
         env:
           CODEX_IMAGE_KEY: ${{ secrets.CODEX_IMAGE_KEY }}
           CODEX_IMAGE_BASE_URL: ${{ secrets.CODEX_IMAGE_BASE_URL }}
+          EMOTE: ${{ inputs.emote }}
         run: |
           pip install --quiet pillow
-          python scripts/generate_pet.py
+          python scripts/generate_pet.py ${EMOTE:+--emote "$EMOTE"}

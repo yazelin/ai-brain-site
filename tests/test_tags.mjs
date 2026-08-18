@@ -156,3 +156,49 @@ test("未閉合的畫圖標記不會借用後面無關的中括號當結尾", ()
 test("prompt 裡含中括號的畫圖標記整條作廢", () => {
   assert.equal(parseTags("[draw:glitch|a [weird] prompt]", VALID).draw, null);
 });
+
+const EMOTES = ["happy", "thinking", "error", "sleep"];
+
+test("解析表情標記並從文字中移除", () => {
+  const r = parseTags("今天超開心！\n[emote:happy]", VALID, EMOTES);
+  assert.equal(r.clean, "今天超開心！");
+  assert.equal(r.emote, "happy");
+});
+
+test("不在白名單的表情整條丟掉", () => {
+  const r = parseTags("嗨\n[emote:angry]", VALID, EMOTES);
+  assert.equal(r.emote, null);
+  assert.equal(r.clean, "嗨");
+});
+
+test("沒傳表情白名單時 emote 一律不生效但標記仍要移除", () => {
+  const r = parseTags("嗨 [emote:happy] 掰", VALID);
+  assert.equal(r.emote, null);
+  assert.ok(!r.clean.includes("["), `clean 不該含標記語法: ${r.clean}`);
+});
+
+test("行內表情標記也要吃掉", () => {
+  const r = parseTags("哈囉 [emote:sleep] 晚安", VALID, EMOTES);
+  assert.equal(r.emote, "sleep");
+  assert.ok(!r.clean.includes("["), `clean 不該含標記語法: ${r.clean}`);
+});
+
+test("多個表情標記時取最後一個", () => {
+  const r = parseTags("[emote:happy]\n[emote:error]", VALID, EMOTES);
+  assert.equal(r.emote, "error");
+});
+
+test("表情與貼圖畫圖可以同時出現", () => {
+  const r = parseTags("好喔\n[sticker:glitch-03]\n[emote:happy]\n[draw:glitch|waving]", VALID, EMOTES);
+  assert.equal(r.sticker, "glitch-03");
+  assert.equal(r.emote, "happy");
+  assert.equal(r.draw.prompt, "waving");
+  assert.equal(r.clean, "好喔");
+});
+
+test("語法沒收好的表情標記殘骸也要清掉", () => {
+  const r = parseTags("嗨\n[emote:壞掉了", VALID, EMOTES);
+  assert.equal(r.emote, null);
+  assert.equal(r.clean, "嗨");
+  assert.ok(!r.clean.includes("["));
+});

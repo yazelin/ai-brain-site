@@ -258,6 +258,7 @@
   /* 圖片的命中區是整個矩形,透明處照樣吃掉點擊(pointer-events 不做 alpha 判定,
      那是 SVG 才有的)。所以容器與圖都不吃事件,只有蓋在她身上的這塊吃。 */
   #pet,#pet>img,#pet .bubble{pointer-events:none}
+  #pet>img{transition:opacity .16s ease}
   #pet .pet-hit{position:absolute;left:22%;right:22%;top:30%;bottom:2%;
     pointer-events:auto;cursor:pointer;border:0;background:transparent;padding:0}
   #pet.on-top{z-index:9998}
@@ -1426,6 +1427,27 @@ function bubbleSay(t){bubble.textContent=t;bubble.classList.add('show');setTimeo
 setTimeout(()=>bubbleSay('逼——嗶！點我聊天～'),1800);
 setInterval(()=>bubbleSay(petLines[Math.floor(Math.random()*petLines.length)]),12000);
 
+// 表情差分：聊天回覆的 [emote:] 標記與閒置隨機切換共用這一支。
+// 表情清單的單一事實來源是 persona.json（window.EMOTE_IDS），這裡不重複列；
+// 先 preload 成功才換圖，圖缺或載不到時 onload 不會發生，桌寵維持現狀。
+const petImg=pet.querySelector('img');
+let petTimer=0;
+function petEmote(id,hold){
+  clearTimeout(petTimer);
+  const img=new Image();
+  img.onload=()=>{
+    petImg.style.opacity=.25;
+    setTimeout(()=>{petImg.src=img.src;petImg.style.opacity=1;},160);
+    if(id)petTimer=setTimeout(()=>petEmote(null),hold||6000);
+  };
+  img.src=id?`images/pet-${id}.webp`:'images/pet.webp';
+}
+// 閒置時偶爾換個表情，沒人聊天也看得出她活著
+setInterval(()=>{
+  const ids=window.EMOTE_IDS||[];
+  if(ids.length&&Math.random()<0.35)petEmote(ids[Math.floor(Math.random()*ids.length)],3000);
+},26000);
+
 /* ===== 音樂播放器（Web Audio 即時視覺化）===== */
 const musicPlayer=document.getElementById('music-player'),musicAudio=document.getElementById('music-audio');
 const musicVisual=document.getElementById('music-visual'),musicCanvas=document.getElementById('music-canvas');
@@ -1660,7 +1682,8 @@ async function sendChat(text){
     const d=await r.json();
     if(!d.reply)throw new Error(d.error||'逼——嗶？');
     await window.PERSONA_READY;
-    const {clean,sticker,draw}=window.parseTags(d.reply,window.STICKER_IDS||[]);
+    const {clean,sticker,draw,emote}=window.parseTags(d.reply,window.STICKER_IDS||[],window.EMOTE_IDS||[]);
+    if(emote)petEmote(emote,6000);
     tm.classList.remove('thinking');
     const bub=tm.querySelector('.bub');
     if(sticker){
@@ -2086,10 +2109,12 @@ document.getElementById('chat-clear').addEventListener('click',async()=>{
     .then((p) => {
       window.PERSONA = p;
       window.STICKER_IDS = Object.keys(p.stickers);
+      window.EMOTE_IDS = Object.keys(p.emotes || {});
     })
     .catch((e) => {
       console.warn('persona.json 載入失敗，貼圖清單停用：', e);
       window.STICKER_IDS = [];
+      window.EMOTE_IDS = [];
     });
 </script>
 <script>

@@ -4,6 +4,7 @@
    語法：
      [sticker:glitch-02]
      [draw:glitch|english prompt|sticker=hole-04@br]
+     [emote:happy]
 
    注意：draw 的 prompt 裡不要放 "|"、"["、"]"。prompt 用 "|" 分隔欄位、
    用 "]" 收尾，"[" 則會被當成標記還沒收尾；prompt 本身含這些字元會被
@@ -43,6 +44,7 @@ const REF = new Set(["glitch", "none"]);
 //   也湊不出合法收尾，整條標記在這一關直接匹配失敗，掉進下面的殘骸清掃
 //   被整段丟棄——這才是「語法沒收好就整條作廢」該有的行為。
 const STICKER_RE = /\[sticker:([a-z]+-\d{2})\]/g;
+const EMOTE_RE = /\[emote:([a-z]+)\]/g;
 const DRAW_RE = /\[draw:([a-z]+)\|([^|\n[\]]*?)(?:\|sticker=([a-z]+-\d{2})@([a-z]{2}))?\]/g;
 // sticker= 之後的 id／pos 用的是固定字元類別（[a-z]、\d），不是排除式的
 // 萬用字元類別，不會有同樣「借用不相關 [ / ] 收尾」的問題，不用改。
@@ -50,12 +52,14 @@ const DRAW_RE = /\[draw:([a-z]+)\|([^|\n[\]]*?)(?:\|sticker=([a-z]+-\d{2})@([a-z
 // 殘骸清掃：抓「看起來像標記開頭，但語法沒收好」的片段。[\s\S] 讓它可以
 // 跨行吃到最近的 `]`；如果從頭到尾都沒有 `]`，就吃到字串結尾——寧可多吃
 // 字，也不要讓半截標記語法漏出去給使用者看。
-const RESIDUE_RE = /\[(?:sticker|draw):[\s\S]*?(?:\]|$)/g;
+const RESIDUE_RE = /\[(?:sticker|draw|emote):[\s\S]*?(?:\]|$)/g;
 
-export function parseTags(text, validStickers) {
+export function parseTags(text, validStickers, validEmotes) {
   const valid = new Set(validStickers || []);
+  const validEmo = new Set(validEmotes || []);
   let sticker = null;
   let draw = null;
+  let emote = null;
 
   let clean = String(text || "");
 
@@ -63,6 +67,13 @@ export function parseTags(text, validStickers) {
     // 多個 sticker 標記時取最後一個：replace 依出現順序呼叫 callback，
     // 後面的呼叫覆蓋前面的，天然就是「最後一個生效」。
     if (valid.has(id)) sticker = id;
+    return "";
+  });
+
+  clean = clean.replace(EMOTE_RE, (_match, id) => {
+    // 同 sticker：後面的呼叫覆蓋前面的，最後一個生效；白名單只影響回傳，
+    // 不影響「這段文字要不要消失」。
+    if (validEmo.has(id)) emote = id;
     return "";
   });
 
@@ -89,5 +100,5 @@ export function parseTags(text, validStickers) {
   // 行內移除標記會在原位置留下雙空格（例如「哈囉  掰掰」），收乾淨再 trim。
   clean = clean.replace(/ {2,}/g, " ").trim();
 
-  return { clean, sticker, draw };
+  return { clean, sticker, draw, emote };
 }

@@ -18,7 +18,7 @@
 | 功能 | 現況 |
 | --- | --- |
 | 桌面／手機 OS 體驗 | 桌面版提供可拖曳、縮放與切換層級的視窗；手機版改為四欄 App 主畫面、狀態列、Dock 與全螢幕 App |
-| 格莉奇桌寵 | 角色常駐桌面、隨機對話泡泡；點擊即可開啟聊天 |
+| 格莉奇桌寵 | 角色常駐桌面、隨機對話泡泡；點擊即可開啟聊天。表情差分（開心／發呆／當機／睡眠）：聊天回覆夾 `[emote:...]` 標記時切換，閒置時也會偶爾自己換 |
 | AI 聊天 | LINE 風格介面，由 Cloudflare Worker 注入格莉奇人設，再轉送自架 `gemini-web` |
 | 長期記憶 | 聊天歷史與摘要進度存在本機 IndexedDB；每累積 10 則新訊息會自動更新可編輯的記憶摘要 |
 | AI 畫圖 | 前端不再用關鍵字判斷；由格莉奇自己決定要不要畫，回覆中夾帶標記即觸發生圖；成品自動存進虛擬 `~/下載/` |
@@ -152,7 +152,7 @@ npx wrangler deploy
 手動素材 workflows：
 
 - `generate-avatar.yml`：重建 `images/avatar.png`。
-- `generate-pet.yml`：生成桌寵、去除 chroma key 背景並裁切透明邊界。
+- `generate-pet.yml`：生成桌寵、去除 chroma key 背景並裁切透明邊界；`emote` 輸入可只重生單一表情差分（happy／thinking／error／sleep）。
 - `generate-wallpaper.yml`：生成新桌布，附加到 `wallpapers.json`。
 - `pwa-cache-hash.yml`：檢查或自動同步 shell／asset 內容 hash。
 
@@ -180,7 +180,7 @@ npx wrangler deploy
 ├── audio/                      # 格莉奇專屬音樂
 ├── images/                     # 角色、貼圖、桌布、PWA 圖示與文章圖片
 ├── js/
-│   └── tags.js                 # 解析聊天回覆裡的 [sticker:...] / [draw:...] 標記
+│   └── tags.js                 # 解析聊天回覆裡的 [sticker:...] / [draw:...] / [emote:...] 標記
 ├── worker/
 │   ├── worker.js               # Cloudflare Worker：chat / summarize / img
 │   └── wrangler.toml           # Worker 部署設定
