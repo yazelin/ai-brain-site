@@ -22,7 +22,7 @@
 | AI 聊天 | LINE 風格介面，由 Cloudflare Worker 注入格莉奇人設，再轉送自架 `gemini-web` |
 | 長期記憶 | 聊天歷史與摘要進度存在本機 IndexedDB；每累積 10 則新訊息會自動更新可編輯的記憶摘要 |
 | AI 畫圖 | 前端不再用關鍵字判斷；由格莉奇自己決定要不要畫，回覆中夾帶標記即觸發生圖；成品自動存進虛擬 `~/下載/` |
-| 專屬音樂 | 內建單曲〈格莉奇 4KB〉、完整歌詞、背景播放、Media Session 控制，以及由真實音訊頻譜驅動的環形頻譜／波形／光暈／粒子視覺 |
+| 專屬音樂 | 「音樂」App 以 iframe 內嵌獨立站 [glitch-music](https://github.com/yazelin/glitch-music)（開窗才載）；獨立站是可安裝的音樂播放器 PWA，支援離線與鎖屏控制 |
 | 看圖與檔案 | 圖片可縮放、拖曳、全螢幕與下載；虛擬檔案系統保存在目前瀏覽器 |
 | 心情日記 | 依月份與文字／插畫篩選；GitHub Actions 每天從世界新聞與 Giscus 留言取得靈感，自動累積新文章 |
 | 角色內容 | 完整角色設定、18 張 LINE 貼圖（格莉奇與黑洞先生各 9 張）、4KB 記憶體狀態與 Giscus 討論區 |
@@ -61,7 +61,7 @@ flowchart LR
 - `index.html` 包含完整桌面 UI、視窗管理、聊天、日記、設定、檔案與看圖功能。
 - `manifest.webmanifest` 提供 PWA 名稱、主題色與應用程式圖示。
 - `index.html` 提供 SEO description、canonical、Open Graph／Twitter Card，以及 Android／iOS PWA 安裝入口。
-- `sw.js` 分離短生命週期 shell 與長生命週期 asset cache：先優先快取開機頭像與 app shell，再背景暖載入角色圖片及音樂；HTML network-first、動態 JSON stale-while-revalidate、資產 cache-first，音檔支援離線 Range 回應。
+- `sw.js` 分離短生命週期 shell 與長生命週期 asset cache：先優先快取開機頭像與 app shell，再背景暖載入角色圖片；HTML network-first、動態 JSON stale-while-revalidate、資產 cache-first。
 - `scripts/update_sw_hashes.py` 依 shell／asset 真實檔案內容產生兩組 cache hash，不需手動調整 `vN` 版號。
 - `posts.json` 與 `wallpapers.json` 是可累積的內容索引。
 
@@ -113,7 +113,7 @@ python3 -m http.server 8000
 
 推送到 `main` 後，GitHub Pages 會自動重建網站。
 
-修改 `index.html`、manifest、JSON、圖片或音樂後，執行 `python scripts/update_sw_hashes.py`。現有內容生成腳本會自動執行它；PR workflow 會檢查 hash，直接推送到 `main` 時也會自動補正並寫回。
+修改 `index.html`、manifest、JSON 或圖片後，執行 `python scripts/update_sw_hashes.py`。現有內容生成腳本會自動執行它；PR workflow 會檢查 hash，直接推送到 `main` 時也會自動補正並寫回。
 
 > 改了 `persona.json`（人設、角色表或貼圖清單）之後，除了重跑 `scripts/update_sw_hashes.py`，還必須重新部署 Cloudflare Worker。Worker 是在 build time 用 `import PERSONA from "../persona.json"` 打包進去的，前端則是 runtime `fetch`；只改一邊會讓兩邊的貼圖清單不同步，結果是格莉奇講出來的貼圖編號前端不認得，標記會被靜默丟掉。
 
@@ -177,7 +177,6 @@ npx wrangler deploy
 ├── sitemap.xml                 # 正式站 sitemap
 ├── posts.json                  # 日記內容索引
 ├── wallpapers.json             # 桌布索引
-├── audio/                      # 格莉奇專屬音樂
 ├── images/                     # 角色、貼圖、桌布、PWA 圖示與文章圖片
 ├── js/
 │   └── tags.js                 # 解析聊天回覆裡的 [sticker:...] / [draw:...] / [emote:...] 標記
