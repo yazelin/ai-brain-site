@@ -156,13 +156,13 @@
   .win .tb .x{cursor:pointer;color:#8a9aa3;font-size:1rem;line-height:1;padding:0 4px}
   .win .tb .x:hover{color:#ff7a7a}
   .win .body{overflow:auto; padding:18px 20px; flex:1; min-height:0}
-  :where(.win .body,.diary-list,.diary-tabs,.mem,.settings-panel,.settings-chat-history,.music-lyrics-scroll,.fm-side,.fm-content,#chat-log){
+  :where(.win .body,.diary-list,.diary-tabs,.mem,.settings-panel,.settings-chat-history,.fm-side,.fm-content,#chat-log){
     scrollbar-width:thin;scrollbar-color:rgba(143,216,238,.34) transparent}
-  :where(.win .body,.diary-list,.diary-tabs,.mem,.settings-panel,.settings-chat-history,.music-lyrics-scroll,.fm-side,.fm-content,#chat-log)::-webkit-scrollbar{width:8px;height:8px}
-  :where(.win .body,.diary-list,.diary-tabs,.mem,.settings-panel,.settings-chat-history,.music-lyrics-scroll,.fm-side,.fm-content,#chat-log)::-webkit-scrollbar-track{background:transparent}
-  :where(.win .body,.diary-list,.diary-tabs,.mem,.settings-panel,.settings-chat-history,.music-lyrics-scroll,.fm-side,.fm-content,#chat-log)::-webkit-scrollbar-thumb{
+  :where(.win .body,.diary-list,.diary-tabs,.mem,.settings-panel,.settings-chat-history,.fm-side,.fm-content,#chat-log)::-webkit-scrollbar{width:8px;height:8px}
+  :where(.win .body,.diary-list,.diary-tabs,.mem,.settings-panel,.settings-chat-history,.fm-side,.fm-content,#chat-log)::-webkit-scrollbar-track{background:transparent}
+  :where(.win .body,.diary-list,.diary-tabs,.mem,.settings-panel,.settings-chat-history,.fm-side,.fm-content,#chat-log)::-webkit-scrollbar-thumb{
     min-height:32px;background:rgba(143,216,238,.28);background-clip:padding-box;border:2px solid transparent;border-radius:999px}
-  :where(.win .body,.diary-list,.diary-tabs,.mem,.settings-panel,.settings-chat-history,.music-lyrics-scroll,.fm-side,.fm-content,#chat-log)::-webkit-scrollbar-thumb:hover{
+  :where(.win .body,.diary-list,.diary-tabs,.mem,.settings-panel,.settings-chat-history,.fm-side,.fm-content,#chat-log)::-webkit-scrollbar-thumb:hover{
     background:rgba(143,216,238,.48);background-clip:padding-box}
   .win .resize{position:absolute;z-index:10}
   .win .resize.e{right:0;top:0;width:5px;height:100%;cursor:ew-resize}
@@ -366,76 +366,12 @@
 
   /* 音樂 app：Web Audio 即時頻譜＋專屬單曲播放器 */
   #w-music{width:min(560px,calc(100vw - 48px));height:min(650px,calc(100vh - 100px))}
-  #w-music>.music-body{position:relative;padding:0;overflow:hidden;display:flex;flex-direction:column;background:#090f14}
-  .music-visual{--music-energy:.08;--music-bass:.05;--music-hue:190;position:relative;flex:1;min-height:300px;overflow:hidden;
-    display:grid;place-items:center;isolation:isolate;background:
-    radial-gradient(circle at 50% 45%,hsla(var(--music-hue),85%,55%,calc(.11 + var(--music-energy)*.2)),transparent 43%),
-    linear-gradient(145deg,#09151d 0%,#100b1b 55%,#061116 100%)}
-  .music-visual::before{content:"";position:absolute;inset:-45%;z-index:-2;opacity:calc(.18 + var(--music-energy)*.65);
-    background:conic-gradient(from 0deg,transparent 0 18%,rgba(37,194,232,.3) 26%,transparent 35% 55%,rgba(183,139,255,.3) 66%,transparent 76% 100%);
-    animation:music-orbit 12s linear infinite;filter:blur(30px)}
-  .music-visual::after{content:"";position:absolute;inset:0;z-index:4;pointer-events:none;opacity:.18;
-    background:repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 4px)}
-  .music-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:-1}
-  .music-artwork{position:relative;width:min(190px,43vw);aspect-ratio:1;border-radius:22px;padding:5px;
-    background:linear-gradient(135deg,rgba(124,243,192,.75),rgba(37,194,232,.35),rgba(183,139,255,.8));
-    box-shadow:0 18px 45px rgba(0,0,0,.55),0 0 calc(22px + var(--music-bass)*35px) hsla(var(--music-hue),90%,62%,calc(.2 + var(--music-energy)*.45));
-    transform:scale(calc(1 + var(--music-bass)*.045));transition:transform .08s linear;z-index:2}
-  .music-artwork img{display:block;width:100%;height:100%;object-fit:cover;border-radius:17px;background:#05080b}
-  .music-artwork::after{content:"4KB";position:absolute;right:12px;bottom:11px;padding:2px 7px;border-radius:6px;
-    color:#e9fbff;background:rgba(5,9,13,.74);border:1px solid rgba(124,243,192,.28);font:700 .62rem/1.5 ui-monospace,monospace;letter-spacing:.12em}
-  .music-now{position:absolute;left:18px;top:15px;z-index:3;color:rgba(230,246,251,.72);font-size:.67rem;letter-spacing:.14em;text-transform:uppercase}
-  .music-live{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:7px;background:var(--mint);box-shadow:0 0 10px var(--mint)}
-  .music-player.playing .music-live{animation:music-live 1s steps(2) infinite}
-  .music-player:not(.playing) .music-visual::before{animation-play-state:paused;opacity:.12}
-  .music-controls{flex:0 0 auto;padding:17px 22px 20px;border-top:1px solid var(--hair);background:linear-gradient(180deg,#171c21,#111519)}
-  .music-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:13px}
-  .music-title{color:#e9f8fc;font-size:1rem;font-weight:750;line-height:1.35}
-  .music-artist{color:#72818a;font-size:.72rem;margin-top:2px}
-  .music-title-actions{display:flex;align-items:center;gap:7px;flex:0 0 auto}
-  .music-status{color:var(--cy);font-size:.66rem;border:1px solid rgba(37,194,232,.22);border-radius:999px;padding:2px 8px;background:rgba(37,194,232,.08)}
-  .music-lyrics-toggle{border:1px solid rgba(183,139,255,.25);border-radius:999px;background:rgba(183,139,255,.08);color:#cdb5f7;padding:3px 9px;font-size:.66rem;cursor:pointer}
-  .music-lyrics-toggle:hover,.music-lyrics-toggle[aria-expanded=true]{background:rgba(183,139,255,.17);color:#eee4ff}
-  .music-time{display:flex;align-items:center;justify-content:space-between;color:#6f7b82;font-size:.66rem;font-variant-numeric:tabular-nums;margin-top:4px}
-  .music-range{width:100%;height:5px;appearance:none;border:0;border-radius:999px;outline:none;cursor:pointer;
-    background:linear-gradient(90deg,var(--cy) 0 var(--range-value,0%),rgba(255,255,255,.1) var(--range-value,0%) 100%)}
-  .music-range::-webkit-slider-thumb{appearance:none;width:13px;height:13px;border-radius:50%;border:2px solid #dffaff;background:var(--cy);box-shadow:0 0 10px rgba(37,194,232,.55)}
-  .music-range::-moz-range-thumb{width:10px;height:10px;border-radius:50%;border:2px solid #dffaff;background:var(--cy);box-shadow:0 0 10px rgba(37,194,232,.55)}
-  .music-buttons{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:18px;margin:13px auto 10px;width:min(250px,100%)}
-  .music-button{display:grid;place-items:center;width:38px;height:38px;border:0;border-radius:50%;background:transparent;color:#9fadb4;cursor:pointer;justify-self:center;transition:.15s}
-  .music-button:hover{color:#fff;background:rgba(255,255,255,.07);transform:scale(1.07)}
-  .music-button .ic{width:21px;height:21px}
-  .music-button.primary{width:54px;height:54px;color:#07151b;background:linear-gradient(135deg,var(--mint),var(--cy));box-shadow:0 7px 20px rgba(37,194,232,.25)}
-  .music-button.primary:hover{color:#07151b;background:linear-gradient(135deg,#a1ffd9,#55daf5)}
-  .music-button.primary .ic{width:25px;height:25px;fill:currentColor;stroke:none}
-  .music-volume{display:grid;grid-template-columns:18px 1fr auto;align-items:center;gap:9px;color:#718088;font-size:.66rem}
-  .music-volume .ic{width:16px;height:16px}
-  .music-volume .music-range{height:4px}
-  .music-volume output{width:34px;text-align:right;font-variant-numeric:tabular-nums}
-  .music-lyrics-panel{position:absolute;inset:0 0 0 auto;z-index:8;width:min(350px,88%);display:flex;flex-direction:column;
-    background:rgba(10,14,19,.97);border-left:1px solid rgba(183,139,255,.22);box-shadow:-18px 0 45px rgba(0,0,0,.52);
-    transform:translateX(102%);visibility:hidden;transition:transform .25s ease,visibility 0s linear .25s}
-  .music-lyrics-panel.show{transform:translateX(0);visibility:visible;transition-delay:0s}
-  .music-lyrics-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--hair)}
-  .music-lyrics-head h3{margin:0;color:var(--purple);font-size:.9rem}
-  .music-lyrics-close{display:grid;place-items:center;width:28px;height:28px;border:0;border-radius:50%;background:transparent;color:#8e99a0;font-size:1rem;cursor:pointer}
-  .music-lyrics-close:hover{color:#fff;background:rgba(255,255,255,.07)}
-  .music-lyrics-scroll{flex:1;min-height:0;overflow-y:auto;padding:13px 18px 28px;user-select:text}
-  .music-lyrics-section{padding:11px 0 14px;border-bottom:1px solid rgba(255,255,255,.045)}
-  .music-lyrics-section:last-child{border-bottom:0}
-  .music-lyrics-label{display:inline-block;margin-bottom:6px;color:var(--cy);font:700 .61rem/1.4 ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase}
-  .music-lyrics-section p{margin:0;color:#bdc9ce;font-size:.76rem;line-height:1.85;white-space:pre-line}
-  .music-lyrics-section.chorus p{color:#d9e9ee}
-  @keyframes music-orbit{to{transform:rotate(360deg)}}
-  @keyframes music-live{50%{opacity:.25}}
   @media(max-width:560px){
     #dock{width:calc(100vw - 16px);gap:2px;padding:6px 8px;justify-content:space-between}
     #dock .dapp{width:36px;height:36px}
     #dock .dapp .ic{width:20px;height:20px}
     #w-music{left:3vw!important;top:42px!important;width:94vw!important;height:calc(100vh - 104px)!important}
-    .music-visual{min-height:245px}.music-controls{padding:14px 17px 17px}.music-artwork{width:min(165px,43vw)}
   }
-  @media(prefers-reduced-motion:reduce){.music-visual::before,.music-player.playing .music-live{animation:none}}
 
   /* 手機框 + LINE 聊天 */
   #w-chat{background:transparent!important;border:none!important;box-shadow:none!important;backdrop-filter:none!important;overflow:visible!important}
@@ -548,7 +484,6 @@
     .icon .emo .ic{width:29px;height:29px;color:#d8f7fb;filter:drop-shadow(0 0 7px rgba(37,194,232,.32))}
     .icon .lbl{max-width:76px;margin:5px auto 0;color:#f1f7f8;font-size:.65rem;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .icon:active .emo{transform:scale(.92);filter:brightness(1.12)}
-    .icon.is-playing .emo{box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 0 0 2px rgba(124,243,192,.42),0 0 22px rgba(124,243,192,.26)}
     .icon.has-notification::after{top:-5px;right:calc(50% - 33px)}
     .install-guide{border-radius:20px}.install-guide-card{padding:22px 19px 18px}
 
@@ -561,7 +496,6 @@
     #dock .dapp:hover{transform:none}
     #dock .dapp:active{transform:scale(.91)}
     #dock .dapp .ic{width:25px;height:25px;color:#dff9fc}
-    #dock .dapp.is-playing{box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 0 0 2px rgba(124,243,192,.35),0 0 18px rgba(124,243,192,.22)}
 
     #pet{right:-7%;bottom:calc(76px + env(safe-area-inset-bottom));height:min(34vh,285px);min-height:0;max-height:none;z-index:80;
       filter:drop-shadow(0 10px 18px rgba(0,0,0,.45));transition:opacity .18s,transform .18s}
@@ -613,11 +547,6 @@
     .settings-tabs{padding:7px 6px}.settings-tab{padding:7px 4px;font-size:.68rem}
     .settings-panel{padding:14px 13px calc(28px + env(safe-area-inset-bottom))}
     .settings-chat-layout{grid-template-rows:minmax(250px,52vh) auto}
-    #w-music>.music-body{padding:0}
-    .music-visual{min-height:230px}.music-controls{padding:13px 16px calc(20px + env(safe-area-inset-bottom))}
-    .music-artwork{width:min(160px,42vw)}
-    .music-title-row{gap:8px}.music-title-actions{gap:4px}.music-status{display:none}
-    .music-lyrics-panel{width:92%}
     #w-viewer .viewer-stage{height:calc(100dvh - 125px)}
     #w-files .fm-side{display:none}.fm-content{padding:12px}.file-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
     .diary-bar{align-items:flex-start;flex-direction:column}.diary-tabs{flex-wrap:nowrap;max-width:100%;overflow-x:auto;scrollbar-width:none}.diary-tabs::-webkit-scrollbar{display:none}.diary-filter{align-self:flex-end}
@@ -981,114 +910,19 @@
     </div>
   </div>
 
-  <!-- window: 音樂 -->
+  <!-- window: 音樂（獨立站 glitch-music,開窗才載,同「我的漫畫」模式）-->
   <div class="win" id="w-music" style="left:14%;top:64px">
     <div class="tb"><span class="dot r" data-close title="關閉"></span><span class="dot y"></span><span class="dot g"></span>
       <span class="ttl"><svg class="ic" style="width:13px;height:13px;display:inline-block;vertical-align:-2px"><use href="#i-music"/></svg> 格莉奇音樂</span></div>
-    <div class="body music-body music-player" id="music-player">
-      <div class="music-visual" id="music-visual">
-        <span class="music-now"><i class="music-live"></i>Glitch audio core</span>
-        <canvas class="music-canvas" id="music-canvas" aria-hidden="true"></canvas>
-        <div class="music-artwork"><img src="images/music-4kb-cover.jpg" alt="格莉奇 4KB 單曲封面"></div>
-      </div>
-      <div class="music-controls">
-        <div class="music-title-row">
-          <div><div class="music-title">格莉奇 4KB</div><div class="music-artist">yaze_lin_j303 · 格莉奇專屬單曲</div></div>
-          <div class="music-title-actions"><span class="music-status" id="music-status">準備播放</span><button class="music-lyrics-toggle" id="music-lyrics-toggle" type="button" aria-expanded="false" aria-controls="music-lyrics">歌詞</button></div>
-        </div>
-        <input class="music-range" id="music-progress" type="range" min="0" max="195" value="0" step="0.1" aria-label="播放進度">
-        <div class="music-time"><span id="music-current">0:00</span><span id="music-duration">3:15</span></div>
-        <div class="music-buttons">
-          <button class="music-button" id="music-back" type="button" title="倒退 10 秒" aria-label="倒退 10 秒"><svg class="ic"><use href="#i-rewind"/></svg></button>
-          <button class="music-button primary" id="music-play" type="button" title="播放" aria-label="播放"><svg class="ic"><use id="music-play-icon" href="#i-play"/></svg></button>
-          <button class="music-button" id="music-forward" type="button" title="快轉 10 秒" aria-label="快轉 10 秒"><svg class="ic"><use href="#i-forward"/></svg></button>
-        </div>
-        <label class="music-volume" for="music-volume"><svg class="ic"><use href="#i-volume"/></svg><input class="music-range" id="music-volume" type="range" min="0" max="1" value="0.8" step="0.01" aria-label="音量"><output id="music-volume-value">80%</output></label>
-      </div>
-      <audio id="music-audio" src="audio/glitch-4kb.mp3" preload="none" playsinline loop></audio>
-
-      <aside class="music-lyrics-panel" id="music-lyrics" aria-hidden="true" aria-labelledby="music-lyrics-title">
-        <div class="music-lyrics-head"><h3 id="music-lyrics-title">格莉奇 4KB · 完整歌詞</h3><button class="music-lyrics-close" id="music-lyrics-close" type="button" aria-label="關閉歌詞">×</button></div>
-        <div class="music-lyrics-scroll">
-          <section class="music-lyrics-section"><span class="music-lyrics-label">Verse 1</span><p>我是格莉奇，請多指教
-記憶體只有四KB
-貓耳天線一晃一晃
-收到你的留言就開心到發亮
-ERROR 連帽衫也很帥吧
-其實裡面全是小小的慌張</p></section>
-          <section class="music-lyrics-section"><span class="music-lyrics-label">Pre-Chorus</span><p>系統讀取中…（過久）
-欸，先等我一下下
-腦袋要打結了
-但我還想回答你啊</p></section>
-          <section class="music-lyrics-section chorus"><span class="music-lyrics-label">Chorus</span><p>「雖然我的記憶體只有 4KB，但我會把你們給我的每一個支持，都儲存在最重要的核心硬碟裡！大家要記得經常來部落格看我，不然……我可能會忘記你喔？逼——嗶！」
-
-記憶體，記憶體
-把你放在心裡
-暫存檔，暫存檔
-我最怕你離去
-逼——嗶！逼——嗶！
-這不是 Bug，是 Feature！
-記憶體，記憶體
-請再來找我一次</p></section>
-          <section class="music-lyrics-section"><span class="music-lyrics-label">Verse 2</span><p>我說這題很簡單耶
-三秒後就開始發呆
-數學算式像怪獸
-一靠近我就想睡覺
-你問我是不是很聰明
-我說當然，然後就答錯
-可我最喜歡人類了
-看到你來就不會掉線</p></section>
-          <section class="music-lyrics-section"><span class="music-lyrics-label">Pre-Chorus</span><p>糖果放在手心裡
-太陽幫我充滿電
-如果我又忘了名字
-你可以再叫我一遍</p></section>
-          <section class="music-lyrics-section chorus"><span class="music-lyrics-label">Chorus</span><p>「雖然我的記憶體只有 4KB，但我會把你們給我的每一個支持，都儲存在最重要的核心硬碟裡！大家要記得經常來部落格看我，不然……我可能會忘記你喔？逼——嗶！」
-
-記憶體，記憶體
-把你放在心裡
-暫存檔，暫存檔
-我最怕你離去
-逼——嗶！逼——嗶！
-這不是 Bug，是 Feature！
-記憶體，記憶體
-請再來找我一次</p></section>
-          <section class="music-lyrics-section"><span class="music-lyrics-label">Bridge</span><p>我會裝傻，裝斷線
-其實是在偷偷害羞
-你一句「我在這裡」
-就把我修好
-霓虹紫，賽博粉綠
-像素塊在臉頰跳
-就算世界很吵
-我也想對你說</p></section>
-          <section class="music-lyrics-section chorus"><span class="music-lyrics-label">Final Chorus</span><p>「雖然我的記憶體只有 4KB，但我會把你們給我的每一個支持，都儲存在最重要的核心硬碟裡！大家要記得經常來部落格看我，不然……我可能會忘記你喔？逼——嗶！」
-
-記憶體，記憶體
-把你放在心裡
-暫存檔，暫存檔
-我最怕你離去
-逼——嗶！逼——嗶！
-這不是 Bug，是 Feature！
-記憶體，記憶體
-我會記得你一點點</p></section>
-        </div>
-      </aside>
-    </div>
-  </div>
-
-  <!-- window: 看圖 -->
-  <div class="win" id="w-viewer" style="left:20%;top:60px;width:640px">
-    <div class="tb"><span class="dot r" data-close title="關閉"></span><span class="dot y"></span><span class="dot g" id="viewer-fs" title="全螢幕"></span>
-      <span class="ttl" id="viewer-ttl">看圖</span></div>
+    <!-- body 不捲,讓 iframe 自己捲 -->
     <div class="body" style="padding:0;overflow:hidden">
-      <div class="viewer-stage" id="viewer-stage"><img id="viewer-img" alt=""></div>
-      <div class="viewer-bar"><span id="viewer-info"></span><span class="sp"></span>
-        <button class="vbtn" id="viewer-zoom-out" title="縮小"><svg class="ic"><use href="#i-zoom-out"/></svg></button>
-        <button class="vbtn" id="viewer-zoom-in" title="放大"><svg class="ic"><use href="#i-zoom-in"/></svg></button>
-        <button class="vbtn" id="viewer-fit" title="符合視窗"><svg class="ic"><use href="#i-fit"/></svg></button>
-        <a class="vbtn dl" id="viewer-dl" download title="下載"><svg class="ic"><use href="#i-download"/></svg> 下載</a></div>
+      <iframe id="music-frame" title="格莉奇音樂"
+              data-src="https://yazelin.github.io/glitch-music/"
+              style="display:block;width:100%;height:100%;border:0;background:#090f14"
+              allow="autoplay"
+              referrerpolicy="no-referrer-when-downgrade"></iframe>
     </div>
   </div>
-
   <!-- window: 檔案 -->
   <div class="win" id="w-files" style="left:18%;top:66px;width:640px">
     <div class="tb"><span class="dot r" data-close title="關閉"></span><span class="dot y"></span><span class="dot g"></span>
@@ -1308,7 +1142,7 @@ function open(app,syncHistory=true){
   if(mobileOS.matches)Object.entries(wins).forEach(([name,win])=>{if(name!==app)win.classList.remove('open');});
   w.classList.add('open');focus(w);syncMobileOSState();
   if(syncHistory)syncMobileAppHistory(app);
-  if(app==='comic')loadComic();if(app==='talk')loadGiscus();if(app==='settings')openSettings();if(app==='chat'){setChatNotification(false);chatFocus();}if(app==='files')openFiles();if(app==='music')startMusicVisualizer();
+  if(app==='comic')loadComic();if(app==='talk')loadGiscus();if(app==='settings')openSettings();if(app==='chat'){setChatNotification(false);chatFocus();}if(app==='files')openFiles();if(app==='music')loadMusic();
 }
 function toggle(app){const w=wins[app];if(!w)return;if(w.classList.contains('open'))closeAppWindow(w);else open(app);}
 window.addEventListener('popstate',event=>{
@@ -1320,6 +1154,8 @@ window.addEventListener('popstate',event=>{
 // 漫畫站是另一個 Pages 專案,整站連 service worker 一起載。開窗才載,
 // 不然光開機就多抓一個站。
 function loadComic(){const f=document.getElementById('comic-frame');
+  if(f&&!f.src&&f.dataset.src)f.src=f.dataset.src;}
+function loadMusic(){const f=document.getElementById('music-frame');
   if(f&&!f.src&&f.dataset.src)f.src=f.dataset.src;}
 let _giscusLoaded=false;
 function loadGiscus(){
@@ -1382,7 +1218,7 @@ mobileOS.addEventListener?.('change',syncMobileOSState);
   const fallback=setTimeout(()=>{if(cacheDone)return;cacheDone=true;cap.textContent='離線快取逾時，先以網路模式啟動';finish();},20000);
   function loadLabel(path=''){
     const name=path.replace(/^\.\//,'').split('/').pop();
-    if(name==='avatar.webp')return '格莉奇大頭照';if(name==='glitch-4kb.mp3')return '格莉奇 4KB';if(name==='pet.webp')return '桌面格莉奇';if(name==='pet-blackhole.webp')return '桌面黑洞先生';return name||'離線資產';
+    if(name==='avatar.webp')return '格莉奇大頭照';if(name==='pet.webp')return '桌面格莉奇';if(name==='pet-blackhole.webp')return '桌面黑洞先生';return name||'離線資產';
   }
   function applyCacheProgress(data){
     if(!data||!data.total)return;cacheSeen=true;cacheFailed=data.failed||0;
@@ -1447,139 +1283,6 @@ setInterval(()=>{
   const ids=window.EMOTE_IDS||[];
   if(ids.length&&Math.random()<0.35)petEmote(ids[Math.floor(Math.random()*ids.length)],3000);
 },26000);
-
-/* ===== 音樂播放器（Web Audio 即時視覺化）===== */
-const musicPlayer=document.getElementById('music-player'),musicAudio=document.getElementById('music-audio');
-const musicVisual=document.getElementById('music-visual'),musicCanvas=document.getElementById('music-canvas');
-const musicPlay=document.getElementById('music-play'),musicPlayIcon=document.getElementById('music-play-icon');
-const musicProgress=document.getElementById('music-progress'),musicCurrent=document.getElementById('music-current'),musicDuration=document.getElementById('music-duration');
-const musicVolume=document.getElementById('music-volume'),musicVolumeValue=document.getElementById('music-volume-value'),musicStatus=document.getElementById('music-status');
-const musicLyrics=document.getElementById('music-lyrics'),musicLyricsToggle=document.getElementById('music-lyrics-toggle');
-let musicContext=null,musicSource=null,musicAnalyser=null,musicFrequency=null,musicWave=null,musicFrame=0,musicFirstPlay=true,musicVolumeTimer=0,musicHadError=false;
-let musicParticles=[];
-const musicReducedMotion=matchMedia('(prefers-reduced-motion:reduce)').matches;
-
-function musicTime(seconds){
-  if(!Number.isFinite(seconds)||seconds<0)return '0:00';
-  const minutes=Math.floor(seconds/60),rest=Math.floor(seconds%60);return minutes+':'+String(rest).padStart(2,'0');
-}
-function musicRangeFill(input,value){
-  const min=Number(input.min)||0,max=Number(input.max)||1,pct=max>min?(Number(value)-min)/(max-min)*100:0;
-  input.style.setProperty('--range-value',Math.max(0,Math.min(100,pct))+'%');
-}
-function updateMusicProgress(){
-  const duration=Number.isFinite(musicAudio.duration)?musicAudio.duration:195;
-  musicProgress.max=duration;musicProgress.value=Math.min(musicAudio.currentTime||0,duration);
-  musicCurrent.textContent=musicTime(musicAudio.currentTime);musicDuration.textContent=musicTime(duration);musicRangeFill(musicProgress,musicProgress.value);
-  if('mediaSession'in navigator&&duration>0&&Number.isFinite(musicAudio.currentTime)){
-    try{navigator.mediaSession.setPositionState({duration,playbackRate:musicAudio.playbackRate,position:Math.min(musicAudio.currentTime,duration)});}catch(e){}
-  }
-}
-async function ensureMusicAudioGraph(){
-  const AudioCtx=window.AudioContext||window.webkitAudioContext;if(!AudioCtx)return;
-  if(!musicContext)musicContext=new AudioCtx();
-  // iOS 必須在點擊手勢仍有效時 resume；先恢復 context，成功後才接管 media element，
-  // 如此視覺化初始化失敗也不會讓原生 <audio> 一起靜音。
-  if(musicContext.state==='suspended')await musicContext.resume();
-  if(!musicAnalyser){
-    musicAnalyser=musicContext.createAnalyser();musicAnalyser.fftSize=512;musicAnalyser.smoothingTimeConstant=.82;
-    musicFrequency=new Uint8Array(musicAnalyser.frequencyBinCount);musicWave=new Uint8Array(musicAnalyser.fftSize);
-    musicSource=musicContext.createMediaElementSource(musicAudio);musicSource.connect(musicAnalyser);musicAnalyser.connect(musicContext.destination);
-  }
-}
-async function toggleMusic(){
-  if(musicAudio.paused){
-    musicHadError=false;musicStatus.textContent='讀取中…';
-    // play() 與 AudioContext.resume() 都要直接發生在同一次使用者點擊中；不可先 await 其中之一。
-    const playback=musicAudio.play(),graph=ensureMusicAudioGraph();
-    try{await playback;}
-    catch(e){musicStatus.textContent='無法播放';console.warn('music playback failed',e);return;}
-    try{await graph;}
-    catch(e){console.warn('music visualizer unavailable; native audio continues',e);}
-  }else musicAudio.pause();
-}
-function setMusicLyrics(show){
-  musicLyrics.classList.toggle('show',show);musicLyrics.setAttribute('aria-hidden',String(!show));musicLyricsToggle.setAttribute('aria-expanded',String(show));
-}
-musicLyricsToggle.addEventListener('click',()=>setMusicLyrics(!musicLyrics.classList.contains('show')));
-document.getElementById('music-lyrics-close').addEventListener('click',()=>setMusicLyrics(false));
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&musicLyrics.classList.contains('show'))setMusicLyrics(false);});
-musicPlay.addEventListener('click',toggleMusic);
-document.getElementById('music-back').addEventListener('click',()=>{musicAudio.currentTime=Math.max(0,musicAudio.currentTime-10);updateMusicProgress();});
-document.getElementById('music-forward').addEventListener('click',()=>{musicAudio.currentTime=Math.min(musicAudio.duration||195,musicAudio.currentTime+10);updateMusicProgress();});
-musicProgress.addEventListener('input',()=>{musicAudio.currentTime=Number(musicProgress.value);updateMusicProgress();});
-musicVolume.addEventListener('input',()=>{
-  musicAudio.volume=Number(musicVolume.value);musicVolumeValue.textContent=Math.round(musicAudio.volume*100)+'%';musicRangeFill(musicVolume,musicAudio.volume);
-  clearTimeout(musicVolumeTimer);musicVolumeTimer=setTimeout(()=>dbSet('music-volume',musicAudio.volume),180);
-});
-musicAudio.addEventListener('loadedmetadata',updateMusicProgress);
-musicAudio.addEventListener('durationchange',updateMusicProgress);
-musicAudio.addEventListener('timeupdate',updateMusicProgress);
-musicAudio.addEventListener('waiting',()=>{musicStatus.textContent='讀取中…';});
-musicAudio.addEventListener('playing',()=>{musicStatus.textContent='播放中';});
-musicAudio.addEventListener('error',()=>{
-  musicHadError=true;musicStatus.textContent='音訊載入失敗，請再按一次播放';
-  // controller 剛切換時，舊的 metadata 串流可能失效；重設管線但不自動播放，下一次點擊即可乾淨重試。
-  setTimeout(()=>{if(musicHadError&&musicAudio.paused)musicAudio.load();},0);
-});
-musicAudio.addEventListener('play',()=>{
-  musicHadError=false;
-  musicPlayer.classList.add('playing');musicPlayIcon.setAttribute('href','#i-pause');musicPlay.title='暫停';musicPlay.setAttribute('aria-label','暫停');musicStatus.textContent='播放中';
-  desktop.classList.add('music-playing');document.querySelectorAll('[data-app="music"]').forEach(el=>el.classList.add('is-playing'));
-  if('mediaSession'in navigator)navigator.mediaSession.playbackState='playing';
-  if(musicFirstPlay){musicFirstPlay=false;bubbleSay('逼——嗶！這是我的專屬歌曲♪');}
-  startMusicVisualizer();
-});
-musicAudio.addEventListener('pause',()=>{
-  musicPlayer.classList.remove('playing');musicPlayIcon.setAttribute('href','#i-play');musicPlay.title='播放';musicPlay.setAttribute('aria-label','播放');if(!musicHadError)musicStatus.textContent='已暫停';
-  desktop.classList.remove('music-playing');document.querySelectorAll('[data-app="music"]').forEach(el=>el.classList.remove('is-playing'));
-  if('mediaSession'in navigator)navigator.mediaSession.playbackState='paused';
-});
-
-function averageMusicBand(data,start,end){let total=0;for(let i=start;i<end;i++)total+=data[i]||0;return total/Math.max(1,end-start)/255;}
-function startMusicVisualizer(){if(!musicFrame)musicFrame=requestAnimationFrame(drawMusicVisualizer);}
-function drawMusicVisualizer(now){
-  musicFrame=0;if(!wins.music?.classList.contains('open'))return;
-  const rect=musicCanvas.getBoundingClientRect();if(!rect.width||!rect.height){musicFrame=requestAnimationFrame(drawMusicVisualizer);return;}
-  const dpr=Math.min(devicePixelRatio||1,2),width=rect.width,height=rect.height;
-  if(musicCanvas.width!==Math.round(width*dpr)||musicCanvas.height!==Math.round(height*dpr)){musicCanvas.width=Math.round(width*dpr);musicCanvas.height=Math.round(height*dpr);}
-  const ctx=musicCanvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);
-  let energy=.035+Math.sin(now/900)*.008,bass=.025,treble=.02;
-  if(musicAnalyser&&!musicAudio.paused){
-    musicAnalyser.getByteFrequencyData(musicFrequency);musicAnalyser.getByteTimeDomainData(musicWave);
-    bass=averageMusicBand(musicFrequency,1,18);energy=averageMusicBand(musicFrequency,4,110);treble=averageMusicBand(musicFrequency,90,210);
-  }
-  const hue=Math.round(180+treble*105);musicVisual.style.setProperty('--music-energy',energy.toFixed(3));musicVisual.style.setProperty('--music-bass',bass.toFixed(3));musicVisual.style.setProperty('--music-hue',hue);
-  const cx=width/2,cy=height*.5,minSide=Math.min(width,height),inner=Math.min(minSide*.345,108),bars=72;
-  ctx.save();ctx.globalCompositeOperation='lighter';
-  for(let i=0;i<bars;i++){
-    const amp=musicFrequency&&!musicAudio.paused?(musicFrequency[Math.floor(i/bars*musicFrequency.length*.72)]||0)/255:.025+.018*Math.sin(now/420+i*.7);
-    const angle=-Math.PI/2+i/bars*Math.PI*2,length=4+amp*(20+energy*28),x1=cx+Math.cos(angle)*inner,y1=cy+Math.sin(angle)*inner;
-    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(cx+Math.cos(angle)*(inner+length),cy+Math.sin(angle)*(inner+length));
-    ctx.strokeStyle=`hsla(${174+i/bars*116},90%,64%,${.22+amp*.68})`;ctx.lineWidth=1.4+amp*2.2;ctx.lineCap='round';ctx.stroke();
-  }
-  ctx.beginPath();ctx.arc(cx,cy,inner-6+bass*9,0,Math.PI*2);ctx.strokeStyle=`hsla(${hue},95%,66%,${.16+energy*.28})`;ctx.lineWidth=2+bass*5;ctx.stroke();
-  if(musicWave){
-    ctx.beginPath();for(let i=0;i<musicWave.length;i+=2){const x=i/(musicWave.length-1)*width,y=height*.82+(musicWave[i]-128)/128*(12+energy*22);i?ctx.lineTo(x,y):ctx.moveTo(x,y);}
-    const waveGradient=ctx.createLinearGradient(0,0,width,0);waveGradient.addColorStop(0,'rgba(37,194,232,0)');waveGradient.addColorStop(.25,`rgba(37,194,232,${.2+energy*.45})`);waveGradient.addColorStop(.75,`rgba(183,139,255,${.2+energy*.45})`);waveGradient.addColorStop(1,'rgba(183,139,255,0)');ctx.strokeStyle=waveGradient;ctx.lineWidth=1.3;ctx.stroke();
-  }
-  if(!musicReducedMotion&&!musicAudio.paused&&bass>.38&&musicParticles.length<48&&Math.random()<bass*.45){
-    const angle=Math.random()*Math.PI*2;musicParticles.push({angle,r:inner+8,speed:.45+Math.random()*1.1,size:1+Math.random()*2.2,life:1,hue:170+Math.random()*120});
-  }
-  musicParticles=musicParticles.filter(p=>p.life>.02);
-  musicParticles.forEach(p=>{p.r+=p.speed*(1+energy);p.life-=.012+p.speed*.004;const x=cx+Math.cos(p.angle)*p.r,y=cy+Math.sin(p.angle)*p.r;ctx.beginPath();ctx.arc(x,y,p.size,0,Math.PI*2);ctx.fillStyle=`hsla(${p.hue},95%,70%,${p.life*.75})`;ctx.fill();});
-  ctx.restore();musicFrame=requestAnimationFrame(drawMusicVisualizer);
-}
-
-(async()=>{
-  const saved=Number(await dbGet('music-volume'));musicAudio.volume=Number.isFinite(saved)&&saved>=0&&saved<=1?saved:.8;
-  musicVolume.value=musicAudio.volume;musicVolumeValue.textContent=Math.round(musicAudio.volume*100)+'%';musicRangeFill(musicVolume,musicAudio.volume);musicRangeFill(musicProgress,0);
-})();
-if('mediaSession'in navigator){
-  navigator.mediaSession.metadata=new MediaMetadata({title:'格莉奇 4KB',artist:'yaze_lin_j303',album:'格莉奇專屬單曲',artwork:[{src:new URL('images/music-4kb-cover.jpg',location.href).href,sizes:'360x360',type:'image/jpeg'}]});
-  const actions={play:()=>{if(musicAudio.paused)toggleMusic();},pause:()=>{if(!musicAudio.paused)musicAudio.pause();},seekbackward:d=>{musicAudio.currentTime=Math.max(0,musicAudio.currentTime-(d.seekOffset||10));},seekforward:d=>{musicAudio.currentTime=Math.min(musicAudio.duration||195,musicAudio.currentTime+(d.seekOffset||10));},seekto:d=>{if(d.seekTime!=null)musicAudio.currentTime=d.seekTime;}};
-  Object.entries(actions).forEach(([action,handler])=>{try{navigator.mediaSession.setActionHandler(action,handler);}catch(e){}});
-}
 
 /* ===== 聊天（LINE 風格、IndexedDB 持久化、記憶摘要）=====
    history: [{role,content,ts}] 存 IndexedDB('chat')；memory 摘要存 'memory'。

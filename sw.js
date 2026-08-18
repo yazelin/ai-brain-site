@@ -1,12 +1,12 @@
 /* 格莉奇OS service worker：shell / asset 兩層快取。
    stage 1（install）：只安裝可開機的 app shell，小而快。
-   stage 2（activate / message）：背景暖載入角色圖片與專屬音樂到長效 asset cache。
+   stage 2（activate / message）：背景暖載入角色圖片到長效 asset cache。
    HTML 採 network-first、動態 JSON 採 stale-while-revalidate、資產採 cache-first。
    聊天歷史與使用者資料在 IndexedDB；跨域 AI / Giscus 請求不快取。 */
 
 /* cache:start — scripts/update_sw_hashes.py 產生，勿手改 */
-const SHELL_CACHE = 'glos-shell-28390cae6687';
-const ASSET_CACHE = 'glos-assets-b26e498dc844';
+const SHELL_CACHE = 'glos-shell-62701b3e058a';
+const ASSET_CACHE = 'glos-assets-78dd2ae2b8b5';
 /* cache:end */
 const KEEP = [SHELL_CACHE, ASSET_CACHE];
 const MATCH = { ignoreSearch: true, ignoreVary: true };
@@ -34,8 +34,7 @@ const WARM_ASSETS = [
   './images/sticker-07.png', './images/sticker-08.png', './images/sticker-09.png',
   './images/hole-01.png', './images/hole-02.png', './images/hole-03.png',
   './images/hole-04.png', './images/hole-05.png', './images/hole-06.png',
-  './images/hole-07.png', './images/hole-08.png', './images/hole-09.png',
-  './images/music-4kb-cover.jpg', './audio/glitch-4kb.mp3'
+  './images/hole-07.png', './images/hole-08.png', './images/hole-09.png'
 /* warm:end */
 ];
 
