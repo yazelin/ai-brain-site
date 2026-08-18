@@ -936,6 +936,20 @@
               referrerpolicy="no-referrer-when-downgrade"></iframe>
     </div>
   </div>
+  <!-- window: 看圖 -->
+  <div class="win" id="w-viewer" style="left:20%;top:60px;width:640px">
+    <div class="tb"><span class="dot r" data-close title="關閉"></span><span class="dot y"></span><span class="dot g" id="viewer-fs" title="全螢幕"></span>
+      <span class="ttl" id="viewer-ttl">看圖</span></div>
+    <div class="body" style="padding:0;overflow:hidden">
+      <div class="viewer-stage" id="viewer-stage"><img id="viewer-img" alt=""></div>
+      <div class="viewer-bar"><span id="viewer-info"></span><span class="sp"></span>
+        <button class="vbtn" id="viewer-zoom-out" title="縮小"><svg class="ic"><use href="#i-zoom-out"/></svg></button>
+        <button class="vbtn" id="viewer-zoom-in" title="放大"><svg class="ic"><use href="#i-zoom-in"/></svg></button>
+        <button class="vbtn" id="viewer-fit" title="符合視窗"><svg class="ic"><use href="#i-fit"/></svg></button>
+        <a class="vbtn dl" id="viewer-dl" download title="下載"><svg class="ic"><use href="#i-download"/></svg> 下載</a></div>
+    </div>
+  </div>
+
   <!-- window: 檔案 -->
   <div class="win" id="w-files" style="left:18%;top:66px;width:640px">
     <div class="tb"><span class="dot r" data-close title="關閉"></span><span class="dot y"></span><span class="dot g"></span>
