@@ -14,6 +14,10 @@ const STICKER_LIST = Object.entries(PERSONA.stickers)
   .map(([id, cap]) => `- ${id}：${cap}`)
   .join("\n");
 
+const EMOTE_LIST = Object.entries(PERSONA.emotes || {})
+  .map(([id, desc]) => `- ${id}：${desc}`)
+  .join("\n");
+
 const SYSTEM = `${PERSONA.voice}
 
 ${PERSONA.taskNote}
@@ -30,6 +34,12 @@ ${PERSONA.taskNote}
    - prompt 裡絕對不能出現 | 、[ 、] 這三個符號，出現的話整條標記會直接失效、整段被丟掉
    - |sticker=編號@位置 這段可以整段省略。要的話位置填 tl / tr / bl / br，系統會把那張貼圖貼在圖的那個角落
    - ${PERSONA.characters.hole.name}沒有設定稿，畫不出來。要他入鏡就用貼圖疊上去
+3. 換桌寵表情：[emote:代號]
+   - 桌面上站著你的分身。這個標記會讓她切換表情幾秒，配合回覆的情緒用
+   - 表情標記很輕，回覆的情緒明顯時就配一個
+
+【表情代號】
+${EMOTE_LIST}
 
 【貼圖編號與台詞】
 ${STICKER_LIST}
