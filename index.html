@@ -480,29 +480,35 @@
 
     #icons{position:absolute;top:calc(22px + env(safe-area-inset-top));left:0;right:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
       gap:17px 6px;max-width:none;padding:0 12px;z-index:100;transition:opacity .18s,transform .18s}
-    .icon{width:auto;min-width:0;padding:0;background:transparent!important}
+    .icon{width:auto;min-width:0;padding:0;background:transparent!important;box-shadow:none!important}
+    /* app 格對齊對話泡語彙:暗青半透底(透出壁紙)+掃描線+彩色 hairline 光暈。
+       三色輪替用站的 token(mint/cyan/purple)當 accent,底一律同一種暗青。 */
     .icon .emo{display:grid;place-items:center;width:58px;height:58px;margin:auto;border-radius:16px;
-      background:linear-gradient(145deg,rgba(31,61,75,.94),rgba(9,23,31,.96));border:1px solid rgba(255,255,255,.13);
-      box-shadow:inset 0 1px 0 rgba(255,255,255,.13),0 7px 18px rgba(0,0,0,.3);filter:none}
+      background:repeating-linear-gradient(0deg,rgba(255,255,255,.03) 0 1px,transparent 1px 3px),rgba(10,28,38,.78);
+      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+      border:1px solid rgba(124,243,192,.4);
+      box-shadow:inset 0 1px 0 rgba(124,243,192,.14),0 7px 18px rgba(0,0,0,.35),0 0 14px rgba(124,243,192,.14);filter:none}
     #install-app .emo{display:grid}
-    .icon:nth-child(3n+1) .emo{background:linear-gradient(145deg,rgba(31,104,120,.95),rgba(8,31,41,.96))}
-    .icon:nth-child(3n+2) .emo{background:linear-gradient(145deg,rgba(79,55,114,.94),rgba(24,14,39,.97))}
-    .icon:nth-child(3n) .emo{background:linear-gradient(145deg,rgba(42,96,78,.94),rgba(10,31,27,.97))}
-    .icon .emo .ic{width:29px;height:29px;color:#d8f7fb;filter:drop-shadow(0 0 7px rgba(37,194,232,.32))}
+    .icon:nth-child(3n+1) .emo{border-color:rgba(37,194,232,.42);box-shadow:inset 0 1px 0 rgba(37,194,232,.14),0 7px 18px rgba(0,0,0,.35),0 0 14px rgba(37,194,232,.16)}
+    .icon:nth-child(3n+2) .emo{border-color:rgba(183,139,255,.42);box-shadow:inset 0 1px 0 rgba(183,139,255,.16),0 7px 18px rgba(0,0,0,.35),0 0 14px rgba(183,139,255,.18)}
+    .icon:nth-child(3n+1) .emo .ic{color:#8fe4f7;filter:drop-shadow(0 0 7px rgba(37,194,232,.55))}
+    .icon:nth-child(3n+2) .emo .ic{color:#d3bcff;filter:drop-shadow(0 0 7px rgba(183,139,255,.55))}
+    .icon .emo .ic{width:29px;height:29px;color:#a9f7d8;filter:drop-shadow(0 0 7px rgba(124,243,192,.55))}
     .icon .lbl{max-width:76px;margin:5px auto 0;color:#f1f7f8;font-size:.65rem;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .icon:active .emo{transform:scale(.92);filter:brightness(1.12)}
+    .icon:active .emo{transform:scale(.92);border-color:var(--mint);box-shadow:inset 0 0 0 1px rgba(124,243,192,.6),0 0 18px rgba(124,243,192,.35)}
     .icon.has-notification::after{top:-5px;right:calc(50% - 33px)}
     .install-guide{border-radius:20px}.install-guide-card{padding:22px 19px 18px}
 
     #dock{position:fixed;left:0;right:0;bottom:0;width:auto;height:calc(76px + env(safe-area-inset-bottom));transform:none;
-      display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:8px 12px calc(8px + env(safe-area-inset-bottom));border-radius:0;background:rgba(8,14,20,.82);
-      border:0;border-top:1px solid rgba(255,255,255,.13);box-shadow:0 -10px 30px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.08);transition:.2s}
-    #dock .dapp{display:none;width:52px;height:52px;justify-self:center;border-radius:15px;background:linear-gradient(145deg,rgba(28,66,80,.96),rgba(9,25,33,.97));
-      border:1px solid rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.1);transition:.12s}
+      display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:8px 12px calc(8px + env(safe-area-inset-bottom));border-radius:0;background:rgba(6,14,19,.86);
+      border:0;border-top:1px solid rgba(124,243,192,.22);box-shadow:0 -10px 30px rgba(0,0,0,.3),inset 0 1px 0 rgba(124,243,192,.08);transition:.2s}
+    #dock .dapp{display:none;width:52px;height:52px;justify-self:center;border-radius:15px;
+      background:repeating-linear-gradient(0deg,rgba(255,255,255,.03) 0 1px,transparent 1px 3px),rgba(10,28,38,.8);
+      border:1px solid rgba(124,243,192,.32);box-shadow:inset 0 1px 0 rgba(124,243,192,.12),0 0 12px rgba(124,243,192,.1);transition:.12s}
     #dock .dapp.mobile-dock{display:grid}
     #dock .dapp:hover{transform:none}
-    #dock .dapp:active{transform:scale(.91)}
-    #dock .dapp .ic{width:25px;height:25px;color:#dff9fc}
+    #dock .dapp:active{transform:scale(.91);border-color:var(--mint);box-shadow:inset 0 0 0 1px rgba(124,243,192,.55),0 0 16px rgba(124,243,192,.3)}
+    #dock .dapp .ic{width:25px;height:25px;color:#a9f7d8;filter:drop-shadow(0 0 6px rgba(124,243,192,.45))}
 
     #pet{right:-7%;bottom:calc(76px + env(safe-area-inset-bottom));height:min(34vh,285px);min-height:0;max-height:none;z-index:80;
       filter:drop-shadow(0 10px 18px rgba(0,0,0,.45));transition:opacity .18s,transform .18s}
@@ -1833,7 +1839,7 @@ document.getElementById('chat-clear').addEventListener('click',async()=>{
 (function(){"use strict";
 if(window.__yzPromoInit)return;window.__yzPromoInit=1;
 try{if(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches)return}catch(e){}
-var LINES=["嘿，這裡這裡，我是咖啡按鈕","我是一顆很努力的按鈕，求被點一下","噓，亞澤不知道我在偷偷拉贊助","你看我跳得這麼賣力，不請一杯嗎？","不請也沒關係，你來玩我就很開心","一杯咖啡，是下一個作品的燃料","你的咖啡會變成下一個作品，真的","咖啡因進入亞澤體內，程式碼就會長出來","用愛發電中，咖啡因可提升發電效率","覺得好玩嗎？抖內一下下","這個網站沒有廣告，只有我這顆按鈕"];
+var LINES=["嘿，這裡這裡，我是咖啡按鈕","我是一顆很努力的按鈕，求被點一下","噓，亞澤不知道我在偷偷拉贊助","你看我跳得這麼賣力，不請一杯嗎？","不請也沒關係，你來玩我就很開心","一杯咖啡，是下一個作品的燃料","你的咖啡會變成下一個作品，真的","咖啡因進入亞澤體內，程式碼就會自己寫完","用愛發電中，咖啡因可提升發電效率","覺得好玩嗎？抖內一下下","這個網站沒有廣告，只有我這顆按鈕"];
 var CSS="@keyframes yzIdle{0%,55%,100%{transform:translateY(0)}62%{transform:translateY(-4px)}70%{transform:translateY(0)}78%{transform:translateY(-2px)}84%{transform:translateY(0)}}.yz-idle{animation:yzIdle 2.6s ease-in-out infinite}@keyframes yzHop{0%,100%{transform:translateY(0)}20%{transform:translateY(-6px) scale(1.04)}40%{transform:translateY(0) scale(1)}55%{transform:translateY(-3px)}70%{transform:translateY(0)}}.yz-hop{animation:yzHop .9s cubic-bezier(.36,.07,.19,.97)}.yz-bubble{position:fixed;z-index:2147483000;max-width:200px;padding:6px 11px;border-radius:14px;background:#fffdf7;color:#4a3f35;border:1px solid rgba(0,0,0,.1);box-shadow:0 4px 14px rgba(0,0,0,.18);font:13px/1.5 system-ui,-apple-system,'Noto Sans TC',sans-serif;pointer-events:none;opacity:0;transform:translateY(5px);transition:opacity .25s ease,transform .25s ease}.yz-bubble.yz-on{opacity:1;transform:translateY(0)}.yz-bubble::after{content:'';position:absolute;left:var(--yz-tail,50%);margin-left:-6px;border:6px solid transparent}.yz-bubble.yz-above::after{bottom:-6px;border-bottom:0;border-top:6px solid #fffdf7}.yz-bubble.yz-below::after{top:-6px;border-top:0;border-bottom:6px solid #fffdf7}";
 var bubble,anchor;
 function addCss(){if(document.getElementById("yz-promo-css"))return;var s=document.createElement("style");s.id="yz-promo-css";s.textContent=CSS;document.head.appendChild(s)}
