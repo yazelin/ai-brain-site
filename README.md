@@ -126,7 +126,15 @@ python3 -m http.server 8000
 | `outfits.A` | 三視圖 `images/glitch-ref.webp` 那套：長版帽 T、彩虹垂環、裸腿、無包。日記配圖與漫畫都用這套 |
 | `outfits.B` | 桌寵立繪那套（裙、斜背包、單邊過膝襪）。正典是 `images/pet*.webp` 那組立繪本身，**沒有三視圖**——產過三次，每次都在某一項跟立繪對不上，所以改用立繪當準 |
 
-正典是圖：Outfit A 看 `images/glitch-ref.webp`，Outfit B 看 `images/pet*.webp`。這段文字只是把圖上的東西寫下來。要改造型，改 `persona.json` 就好，`generate_*.py`
+正典是圖：Outfit A 看 `images/glitch-ref.webp`，Outfit B 看 `images/pet*.webp`。這段文字只是把圖上的東西寫下來。
+
+黑洞先生另外有兩張狀態立繪：`images/pet-blackhole-hungry.webp`（六隻腳、西裝鬆垮）與
+`images/pet-blackhole-full.webp`（十隻腳、西裝撐滿），由 `scripts/generate_blackhole_states.py`
+產生，給《格莉奇與黑洞先生》那款視覺小說用，網站本身沒有用到，也不在 sw.js 的預快取清單裡。
+
+> 產他的圖時 chroma key 要用洋紅 `#ff00ff`。桌寵那支用的黃色 `#ffff00` 會把他的卡其色禮帽
+> 一起去掉，成品的帽子會整片變透明，貼在白底上看起來像「模型把帽子畫成灰色」——生了四輪
+> 都以為是生圖不聽話，其實問題在去背。驗法：把去背結果貼到洋紅底上，透明的地方會現形。要改造型，改 `persona.json` 就好，`generate_*.py`
 一律透過 `scripts/persona.py` 的 `sheet(outfit)` 取用——各寫一份是造型漂掉的原因。
 改完跑 `python3 scripts/check_character_sync.py` 跟漫畫 repo 對一次。
 
