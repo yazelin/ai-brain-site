@@ -128,6 +128,12 @@ python3 -m http.server 8000
 
 正典是圖：Outfit A 看 `images/glitch-ref.webp`，Outfit B 看 `images/pet*.webp`。這段文字只是把圖上的東西寫下來。
 
+格莉奇多一張 `images/pet-plain.webp`（清醒、看著鏡頭、平常說話的臉），由
+`scripts/generate_pet.py --emote plain` 產生。原本的 `pet.webp` 眼神飄開、嘴微張、
+另一隻手垂著，讀起來是「人在這裡但還沒開機完成」——當角色第一印象很準，當不了
+正常講話的臉。視覺小說那邊 66 張對話卡有一半掛在它身上，整個遊戲看起來像她八成五
+時間半夢半醒，所以補了這張。桌寵本身還是用 `pet.webp`，沒有改。
+
 黑洞先生另外有兩張狀態立繪：`images/pet-blackhole-hungry.webp`（六隻腳、西裝鬆垮）與
 `images/pet-blackhole-full.webp`（十隻腳、西裝撐滿），由 `scripts/generate_blackhole_states.py`
 產生，給《格莉奇與黑洞先生》那款視覺小說用，網站本身沒有用到，也不在 sw.js 的預快取清單裡。

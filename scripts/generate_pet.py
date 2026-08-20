@@ -34,6 +34,11 @@ UA = "glitch-blog/1.0"
 # 表情差分：key = [emote:xxx] 標記代號（persona.json 的 emotes 要同步）。
 # 值是換掉基準 prompt 裡表情句的那一行。
 EMOTES = {
+    # 原本的 idle（pet.webp）眼神飄開、嘴微張、另一隻手垂著，讀起來是「人在這裡
+    # 但還沒開機完成」。當角色的第一印象很準，但當不了「正常講話的臉」——實際
+    # 用起來 66 張對話卡有一半掛在它身上，整個遊戲看起來像她八成五時間半夢半醒。
+    # 這張補的就是那個洞：清醒、看著你、平常說話。
+    "plain": "Expression: awake and present — eyes fully open and clearly focused ON THE VIEWER, not drifting off to the side. Relaxed level eyebrows. Mouth closed in a small soft natural line, no smile, no open mouth. Calm and ordinary, the face she wears while simply talking to you. Both antenna devices stay EXACTLY as in the reference image — angled outward from the sides of her head at the same tilt, not straightened up. Keep the same amount of floating pixel blocks around her hair as the reference.",
     "happy": "Expression: overjoyed — eyes closed in a big beaming smile, open mouth, cheeks glowing, both antenna devices perked UP and glowing brightly, tiny sparkles around her head.",
     "thinking": "Expression: spaced-out loading — blank half-lidded eyes looking up and to the side, small open mouth, a faint floating '…' glitch pixel cluster beside her head. BOTH antenna devices stay on her head like the reference, tilted slightly outward, both clearly visible.",
     "error": "Expression: crashed ERROR state — swirly @ spiral eyes, wobbly open mouth, both antennas bent down and flickering, red glitch pixel blocks and a small red 'ERROR' glitch fragment near her head.",
