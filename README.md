@@ -124,9 +124,9 @@ python3 -m http.server 8000
 |---|---|
 | `identity` | 不隨服裝變的特徵（髮型、天線裝置、ERROR 牌、choker、手環…）。跟 [ai-comic-starter](https://github.com/yazelin/ai-comic-starter) 的 `story/cast.json` **逐字相同** |
 | `outfits.A` | 三視圖 `images/glitch-ref.webp` 那套：長版帽 T、彩虹垂環、裸腿、無包。日記配圖與漫畫都用這套 |
-| `outfits.B` | 桌寵立繪那套（裙、斜背包、單邊過膝襪）。**目前沒有三視圖，是暫定的** |
+| `outfits.B` | 桌寵立繪那套（裙、斜背包、單邊過膝襪）。正典是 `images/pet*.webp` 那組立繪本身，**沒有三視圖**——產過三次，每次都在某一項跟立繪對不上，所以改用立繪當準 |
 
-正典是三視圖本身，不是這段文字。要改造型，改 `persona.json` 就好，`generate_*.py`
+正典是圖：Outfit A 看 `images/glitch-ref.webp`，Outfit B 看 `images/pet*.webp`。這段文字只是把圖上的東西寫下來。要改造型，改 `persona.json` 就好，`generate_*.py`
 一律透過 `scripts/persona.py` 的 `sheet(outfit)` 取用——各寫一份是造型漂掉的原因。
 改完跑 `python3 scripts/check_character_sync.py` 跟漫畫 repo 對一次。
 
