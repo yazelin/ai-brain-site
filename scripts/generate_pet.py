@@ -22,10 +22,10 @@ from pathlib import Path
 import persona
 
 ROOT = Path(__file__).resolve().parent.parent
-# 立繪穿 Outfit B,參考圖必須是 Outfit B 的三視圖。舊版用 sticker-01.png(只有
-# 上半身),下半身既沒參考圖也沒寫進 prompt,模型就自由發揮出裙子、斜背包、
-# 過膝襪、腿套——那是六張立繪彼此對不上的根因。
-REF = ROOT / "images" / "glitch-ref-b.webp"
+# Outfit B 的正典就是現有的 idle 立繪本身(persona.json 的 refB)。舊版用
+# sticker-01.png 當參考圖,那張只有上半身,下半身既沒參考也沒寫進 prompt,
+# 模型就自由發揮。重生 idle 時拿現有 idle 當參考,服裝才不會漂掉。
+REF = ROOT / "images" / "pet.webp"
 OUT = ROOT / "images" / "pet.webp"
 BASE_URL = os.environ.get("CODEX_IMAGE_BASE_URL", "").rstrip("/")
 KEY = os.environ.get("CODEX_IMAGE_KEY", "")
