@@ -13,6 +13,8 @@ import time
 import urllib.request
 from pathlib import Path
 
+import persona
+
 ROOT = Path(__file__).resolve().parent.parent
 REF = ROOT / "images" / "sticker-01.png"
 OUT = ROOT / "images" / "avatar.webp"
@@ -20,8 +22,8 @@ BASE_URL = os.environ.get("CODEX_IMAGE_BASE_URL", "").rstrip("/")
 KEY = os.environ.get("CODEX_IMAGE_KEY", "")
 UA = "glitch-blog/1.0"
 
-PROMPT = """Same character as the reference image: a cute Japanese-anime-style AI robot-girl VTuber named Glitch, head-and-shoulders portrait, centered, looking at viewer.
-CHARACTER (copy every feature): short anime robot GIRL; two high-tech CAT-EAR ANTENNAS on her head (mechanical headpieces, NOT real cat ears) glowing softly; short hair with cyber-mint (#7cf3c0) and neon-purple (#b78bff) accents; subtle neon pixel-block GLITCH artifacts flickering around her cheeks; wearing the ERROR HOODIE collar visible. Humanoid robot girl, NOT a literal cat.
+PROMPT = f"""Same character as the reference image: a cute Japanese-anime-style AI robot-girl VTuber named Glitch, head-and-shoulders portrait, centered, looking at viewer.
+{persona.IDENTITY}
 STYLE: modern Japanese anime key-visual, clean cel shading, soft glow, high detail, friendly slightly sleepy expression. Plain soft dark teal-navy gradient background (#0b1a22) with faint neon-mint bokeh so it sits in a circle cleanly.
 COMPOSITION: face centered, head and antennas well inside the frame with margin (safe for circular crop), symmetrical, no text, no watermark, no signature. Square 1:1."""
 

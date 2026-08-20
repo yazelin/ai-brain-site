@@ -19,8 +19,13 @@ import time
 import urllib.request
 from pathlib import Path
 
+import persona
+
 ROOT = Path(__file__).resolve().parent.parent
-REF = ROOT / "images" / "sticker-01.png"
+# 立繪穿 Outfit B,參考圖必須是 Outfit B 的三視圖。舊版用 sticker-01.png(只有
+# 上半身),下半身既沒參考圖也沒寫進 prompt,模型就自由發揮出裙子、斜背包、
+# 過膝襪、腿套——那是六張立繪彼此對不上的根因。
+REF = ROOT / "images" / "glitch-ref-b.webp"
 OUT = ROOT / "images" / "pet.webp"
 BASE_URL = os.environ.get("CODEX_IMAGE_BASE_URL", "").rstrip("/")
 KEY = os.environ.get("CODEX_IMAGE_KEY", "")
@@ -29,13 +34,13 @@ UA = "glitch-blog/1.0"
 # 表情差分：key = [emote:xxx] 標記代號（persona.json 的 emotes 要同步）。
 # 值是換掉基準 prompt 裡表情句的那一行。
 EMOTES = {
-    "happy": "Expression: overjoyed — eyes closed in a big beaming smile, open mouth, cheeks glowing, both cat-ear antennas perked UP and glowing brightly, tiny sparkles around her head.",
-    "thinking": "Expression: spaced-out loading — blank half-lidded eyes looking up and to the side, small open mouth, a faint floating '…' glitch pixel cluster beside her head. BOTH cat-ear antennas stay on her head like the reference, tilted slightly outward, both clearly visible.",
+    "happy": "Expression: overjoyed — eyes closed in a big beaming smile, open mouth, cheeks glowing, both antenna devices perked UP and glowing brightly, tiny sparkles around her head.",
+    "thinking": "Expression: spaced-out loading — blank half-lidded eyes looking up and to the side, small open mouth, a faint floating '…' glitch pixel cluster beside her head. BOTH antenna devices stay on her head like the reference, tilted slightly outward, both clearly visible.",
     "error": "Expression: crashed ERROR state — swirly @ spiral eyes, wobbly open mouth, both antennas bent down and flickering, red glitch pixel blocks and a small red 'ERROR' glitch fragment near her head.",
     "sleep": "Expression: sleep mode — both eyes gently closed, calm sleeping face, BOTH antennas folded down and dimmed but still clearly present, a small floating 'Zzz' in soft mint pixels beside her head.",
 }
 
-CHARACTER = """CHARACTER (copy every feature): short anime robot GIRL, ~155cm; two high-tech CAT-EAR ANTENNAS on her head (mechanical headpieces, NOT real cat ears) glowing softly; short hair with cyber-mint (#7cf3c0) and neon-purple (#b78bff) accents; subtle neon pixel-block GLITCH artifacts flickering around her cheeks and shoulders; wearing an ERROR HOODIE with a pixel cat and a bright red "ERROR" wordmark on the chest; semi-transparent tactical shoulder strap with a rainbow buckle; a smart wristband. She is a humanoid robot girl, NOT a literal cat."""
+CHARACTER = persona.sheet("B")
 
 CHROMA = """BACKGROUND FOR CHROMA KEY: create the subject on a perfectly flat solid #ffff00 (bright pure yellow) chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Keep the subject fully separated from the background with crisp edges and generous padding. Do NOT use #ffff00 anywhere in the subject. No cast shadow, no contact shadow, no reflection, no watermark, no text. Vertical portrait 2:3."""
 
@@ -46,7 +51,7 @@ STYLE: soft cel shading, neon cyber palette, gentle glow, scanlines, pixel-noise
 
 
 def emote_prompt(emote):
-    return f"""Reference image 1 is the EXACT same character in her idle sprite. Redraw her IDENTICALLY — same standing pose, same body proportions, same outfit, same colours, same framing (full body, head to toe) — changing ONLY the facial expression and antenna pose as described below. This is an expression variant of the same sprite for cross-fading, so anything except the face/antennas must stay put. She always has exactly TWO cat-ear antennas; never remove or hide either of them.
+    return f"""Reference image 1 is the EXACT same character in her idle sprite. Redraw her IDENTICALLY — same standing pose, same body proportions, same outfit, same colours, same framing (full body, head to toe) — changing ONLY the facial expression and antenna pose as described below. This is an expression variant of the same sprite for cross-fading, so anything except the face/antennas must stay put. She always has exactly TWO antenna devices; never remove or hide either of them.
 {EMOTES[emote]}
 {CHARACTER}
 STYLE: soft cel shading, neon cyber palette, gentle glow, scanlines, pixel-noise glitch.
@@ -79,7 +84,9 @@ def main():
         out = OUT.with_name(f"pet-{args.emote}.webp")
     else:
         ref_path, prompt, out = REF, PROMPT, OUT
-    refs = [ref_b64(ref_path)] if ref_path.exists() else []
+    if not ref_path.exists():
+        _fail(f"缺參考圖 {ref_path}。沒有參考圖生出來的立繪一定會漂,先產 Outfit B 三視圖")
+    refs = [ref_b64(ref_path)]
     body = json.dumps({"prompt": prompt, "size": "1024x1536", "quality": "high",
                        "count": 1, "reference_images_base64": refs}).encode()
     req = urllib.request.Request(f"{BASE_URL}/v1/images/jobs", body,
