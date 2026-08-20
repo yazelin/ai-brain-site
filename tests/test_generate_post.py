@@ -131,11 +131,37 @@ class PersonaTests(unittest.TestCase):
         from scripts import persona
 
         self.assertEqual(persona.REF_IMAGE, "images/sticker-01.png")
-        self.assertIn("CAT-EAR ANTENNAS", persona.SHEET)
+        # 三視圖畫的是條狀天線裝置。舊斷言鎖的是 "CAT-EAR ANTENNAS",
+        # 那句跟設定稿對不上,等於用測試把錯誤釘住。
+        self.assertIn("ANTENNA DEVICES", persona.SHEET)
+        self.assertNotIn("CAT-EAR", persona.SHEET)
+        # SHEET 預設帶 Outfit A(三視圖那套):沒有裙子、沒有包。
+        self.assertIn("There is NO skirt", persona.SHEET)
         self.assertIn("NEVER Simplified Chinese", persona.RULES)
         self.assertIn("4KB", persona.VOICE)
         self.assertTrue(
             persona.BASE.startswith("Same art style as reference image 1"))
+
+
+class CharacterSyncTests(unittest.TestCase):
+    """identity 段必須跟 ai-comic-starter 的 cast.json 逐字相同。
+
+    兩個 repo 都在本機才驗得到；CI 上沒有另一個 repo，直接 skip。
+    """
+
+    def test_identity_跟漫畫_repo_一致(self):
+        import pathlib
+        import subprocess
+        import sys
+
+        root = pathlib.Path(__file__).resolve().parent.parent
+        comic = root.parent / "ai-comic-starter" / "story" / "cast.json"
+        if not comic.exists():
+            self.skipTest("本機沒有 ai-comic-starter，跳過跨 repo 比對")
+        r = subprocess.run(
+            [sys.executable, str(root / "scripts" / "check_character_sync.py")],
+            capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
 
 if __name__ == "__main__":

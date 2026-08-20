@@ -185,7 +185,8 @@ async function imgStart(env, body, cors, err) {
     const r = await fetch(REF_URL);
     if (!r.ok) return err(502, `ref image ${r.status}`);
     parts.push({ inlineData: { mimeType: "image/webp", data: toBase64(await r.arrayBuffer()) } });
-    sheet = `\n\n${PERSONA.characters.glitch.sheet}`;
+    const g = PERSONA.characters.glitch;
+    sheet = `\n\n${g.identity}\n\n${g.outfits[g.defaultOutfit]}`;
   }
   parts.push({ text: `${prompt}${sheet}\n\n${PERSONA.imageRules}` });
 

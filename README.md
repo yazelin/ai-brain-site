@@ -115,6 +115,21 @@ python3 -m http.server 8000
 
 修改 `index.html`、manifest、JSON 或圖片後，執行 `python scripts/update_sw_hashes.py`。現有內容生成腳本會自動執行它；PR workflow 會檢查 hash，直接推送到 `main` 時也會自動補正並寫回。
 
+
+### 格莉奇的造型描述
+
+`persona.json` 的 `characters.glitch` 拆成三段：
+
+| 欄位 | 內容 |
+|---|---|
+| `identity` | 不隨服裝變的特徵（髮型、天線裝置、ERROR 牌、choker、手環…）。跟 [ai-comic-starter](https://github.com/yazelin/ai-comic-starter) 的 `story/cast.json` **逐字相同** |
+| `outfits.A` | 三視圖 `images/glitch-ref.webp` 那套：長版帽 T、彩虹垂環、裸腿、無包。日記配圖與漫畫都用這套 |
+| `outfits.B` | 桌寵立繪那套（裙、斜背包、單邊過膝襪）。**目前沒有三視圖，是暫定的** |
+
+正典是三視圖本身，不是這段文字。要改造型，改 `persona.json` 就好，`generate_*.py`
+一律透過 `scripts/persona.py` 的 `sheet(outfit)` 取用——各寫一份是造型漂掉的原因。
+改完跑 `python3 scripts/check_character_sync.py` 跟漫畫 repo 對一次。
+
 > 改了 `persona.json`（人設、角色表或貼圖清單）之後，除了重跑 `scripts/update_sw_hashes.py`，還必須重新部署 Cloudflare Worker。Worker 是在 build time 用 `import PERSONA from "../persona.json"` 打包進去的，前端則是 runtime `fetch`；只改一邊會讓兩邊的貼圖清單不同步，結果是格莉奇講出來的貼圖編號前端不認得，標記會被靜默丟掉。
 
 ### Cloudflare Worker
@@ -172,7 +187,7 @@ npx wrangler deploy
 ├── index.html                  # WebOS UI 與前端邏輯
 ├── manifest.webmanifest        # PWA manifest
 ├── sw.js                       # Service Worker
-├── persona.json                # 格莉奇（與黑洞先生）人設單一來源
+├── persona.json                # 格莉奇（與黑洞先生）人設單一來源：語氣、造型、貼圖清單
 ├── robots.txt                  # 搜尋引擎爬取規則
 ├── sitemap.xml                 # 正式站 sitemap
 ├── posts.json                  # 日記內容索引
@@ -190,6 +205,7 @@ npx wrangler deploy
 │   ├── generate_wallpaper.py   # 桌布生成與索引累積
 │   ├── update_sw_hashes.py     # 依內容產生 PWA cache hash
 │   ├── persona.py              # 讀取 persona.json 的共用角色設定
+│   ├── check_character_sync.py # 比對 ai-comic-starter 的角色造型有沒有漂掉
 │   └── remove_chroma_key.py    # 去背工具
 ├── tests/
 │   ├── test_generate_post.py   # 日記產線與人設載入的單元測試
