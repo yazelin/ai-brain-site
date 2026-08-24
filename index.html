@@ -572,7 +572,7 @@
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-bot" viewBox="0 0 24 24"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></symbol>
-  <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></symbol>
+  <symbol id="i-novel" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 7h7"/><path d="M9 11h5"/></symbol><symbol id="i-book" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></symbol>
   <symbol id="i-comic" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 10h9M12 3v18M12 15h9"/></symbol>
   <symbol id="i-image" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></symbol>
   <symbol id="i-activity" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
@@ -618,6 +618,7 @@
     <div class="icon" data-app="diary"><div class="emo"><svg class="ic"><use href="#i-book"/></svg></div><div class="lbl">心情日記</div></div>
     <div class="icon" data-app="stickers"><div class="emo"><svg class="ic"><use href="#i-image"/></svg></div><div class="lbl">我的貼圖</div></div>
     <div class="icon" data-app="comic"><div class="emo"><svg class="ic"><use href="#i-comic"/></svg></div><div class="lbl">我的漫畫</div></div>
+    <div class="icon" data-app="novel"><div class="emo"><svg class="ic"><use href="#i-novel"/></svg></div><div class="lbl">我的小說</div></div>
     <div class="icon" data-app="status"><div class="emo"><svg class="ic"><use href="#i-activity"/></svg></div><div class="lbl">我的狀態</div></div>
     <div class="icon" data-app="chat"><div class="emo"><svg class="ic"><use href="#i-chat"/></svg></div><div class="lbl">聊天</div></div>
     <div class="icon" data-app="talk"><div class="emo"><svg class="ic"><use href="#i-message"/></svg></div><div class="lbl">留言</div></div>
@@ -632,6 +633,7 @@
     <div class="dapp mobile-dock" data-app="diary" title="心情日記"><svg class="ic"><use href="#i-book"/></svg></div>
     <div class="dapp" data-app="stickers" title="我的貼圖"><svg class="ic"><use href="#i-image"/></svg></div>
     <div class="dapp" data-app="comic" title="我的漫畫"><svg class="ic"><use href="#i-comic"/></svg></div>
+    <div class="dapp" data-app="novel" title="我的小說"><svg class="ic"><use href="#i-novel"/></svg></div>
     <div class="dapp" data-app="status" title="我的狀態"><svg class="ic"><use href="#i-activity"/></svg></div>
     <div class="dapp mobile-dock" data-app="chat" title="聊天"><svg class="ic"><use href="#i-chat"/></svg></div>
     <div class="dapp" data-app="talk" title="留言"><svg class="ic"><use href="#i-message"/></svg></div>
@@ -788,6 +790,18 @@
       <iframe id="comic-frame" title="格莉奇OS 漫畫"
               data-src="https://yazelin.github.io/ai-comic-starter/"
               style="display:block;width:100%;height:100%;border:0;background:#12141d"
+              referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </div>
+  </div>
+
+  <!-- window: 我的小說（另一個 Pages 專案，開窗才載，同「我的漫畫」模式）-->
+  <div class="win" id="w-novel" style="left:12%;top:48px;width:640px;height:84vh">
+    <div class="tb"><span class="dot r" data-close title="關閉"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="ttl">我的小說 · 格莉奇與黑洞先生</span></div>
+    <div class="body" style="padding:0;overflow:hidden">
+      <iframe id="novel-frame" title="格莉奇與黑洞先生"
+              data-src="https://yazelin.github.io/glitch-vn/"
+              style="display:block;width:100%;height:100%;border:0;background:#04080c"
               referrerpolicy="no-referrer-when-downgrade"></iframe>
     </div>
   </div>
@@ -1171,7 +1185,7 @@ function open(app,syncHistory=true){
   if(mobileOS.matches)Object.entries(wins).forEach(([name,win])=>{if(name!==app)win.classList.remove('open');});
   w.classList.add('open');focus(w);syncMobileOSState();
   if(syncHistory)syncMobileAppHistory(app);
-  if(app==='comic')loadComic();if(app==='talk')loadGiscus();if(app==='settings')openSettings();if(app==='chat'){setChatNotification(false);chatFocus();}if(app==='files')openFiles();if(app==='music')loadMusic();
+  if(app==='comic')loadComic();if(app==='talk')loadGiscus();if(app==='settings')openSettings();if(app==='chat'){setChatNotification(false);chatFocus();}if(app==='files')openFiles();if(app==='music')loadMusic();if(app==='novel')loadNovel();
 }
 function toggle(app){const w=wins[app];if(!w)return;if(w.classList.contains('open'))closeAppWindow(w);else open(app);}
 window.addEventListener('popstate',event=>{
@@ -1185,6 +1199,8 @@ window.addEventListener('popstate',event=>{
 function loadComic(){const f=document.getElementById('comic-frame');
   if(f&&!f.src&&f.dataset.src)f.src=f.dataset.src;}
 function loadMusic(){const f=document.getElementById('music-frame');
+  if(f&&!f.src&&f.dataset.src)f.src=f.dataset.src;}
+function loadNovel(){const f=document.getElementById('novel-frame');
   if(f&&!f.src&&f.dataset.src)f.src=f.dataset.src;}
 let _giscusLoaded=false;
 function loadGiscus(){
