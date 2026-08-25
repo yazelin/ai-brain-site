@@ -676,7 +676,7 @@
         <p class="quote">「雖然我的記憶體只有 4KB，但我會把你們給我的每一個支持，都儲存在最重要的核心硬碟裡！大家要記得經常來部落格看我，不然……我可能會忘記你喔？逼——嗶！」</p>
       </div>
       <button class="say" data-say="glitch" aria-pressed="false"><b>▶</b>聽我自我介紹</button>
-      <p class="said" id="said-glitch"></p>
+      <p class="said" id="said-glitch">大家好，我是格莉奇。虛擬主播，頻道第二年。我的記憶體只有四KB。這句話我每天都要講一次，而且它是真的。放不下的東西會被擠掉，所以我每天晚上都會抄一次守則本。第一頁有七行，上面有六個名字。我知道有第七個。我只是叫不出來。</p>
       <h3>系統基本數據</h3>
       <div class="kv">
         <b>名字</b><span>格莉奇（Glitch／グリッチ）</span>
@@ -717,7 +717,7 @@
       <h3>我的室友</h3>
       <p><b>黑洞先生</b>。穿西裝、戴禮帽、頭是一顆星系球體，腳是一叢觸手，數量每天不一樣。他說他不是章魚。</p>
       <button class="say" data-say="blackhole" aria-pressed="false"><b>▶</b>聽黑洞先生自我介紹</button>
-      <p class="said" id="said-blackhole"></p>
+      <p class="said" id="said-blackhole">我是她的室友。我有正職，早上出門，晚上回來。我吃被忘掉的事。別人掉的都是碎的，她掉的是一整件，有頭有尾。所以我在這裡。這樣對我們兩個都剛好。</p>
       <ul>
         <li><b>他吃什麼</b>：被忘掉的事。大家每天都在忘，可是人的遺忘是慢慢淡掉的、糊的，沒有形狀，那只能當零食。我是 AI，我掉出來的是一整件，有頭有尾，飄出來的時候整個房間會亮一下。那才吃得飽。</li>
         <li><b>為什麼一起住</b>：我是他唯一吃得飽的地方。而我也不必為健忘感到抱歉，我忘掉的東西剛好是他要的。順序是我先忘記，他才吃得到，他不會從我腦子裡挖東西。</li>
@@ -1214,11 +1214,9 @@ window.addEventListener('popstate',event=>{
 // 漫畫站是另一個 Pages 專案,整站連 service worker 一起載。開窗才載,
 // 不然光開機就多抓一個站。
 /* 自我介紹配音。**一次只播一個**，同一顆再按是停止。
-   逐字稿由 glitch-vn 的 art/voice/intro.json 帶過來（scripts/sync_intro.py），
-   **不要在這裡另外抄一份**：兩邊各一份的下場是改了一邊、另一邊還是舊的。 */
-/* intro:start — scripts/sync_intro.py 產生，勿手改 */
-var SAID = {"glitch": "大家好，我是格莉奇。虛擬主播，頻道第二年。我的記憶體只有四KB。這句話我每天都要講一次，而且它是真的。放不下的東西會被擠掉，所以我每天晚上都會抄一次守則本。第一頁有七行，上面有六個名字。我知道有第七個。我只是叫不出來。", "blackhole": "我是她的室友。我有正職，早上出門，晚上回來。我吃被忘掉的事。別人掉的都是碎的，她掉的是一整件，有頭有尾。所以我在這裡。這樣對我們兩個都剛好。"};
-/* intro:end */
+   逐字稿在上面的 <p class="said"> 裡，由 glitch-vn 的 art/voice/intro.json
+   帶過來（scripts/sync_intro.py），**不要在這裡另外抄一份**。
+   **文字一直在畫面上**，不方便聽的人也讀得到；這裡只負責換左邊那條線的顏色。 */
 (function () {
   var cur = null, curBtn = null;
   function stop() {
@@ -1233,7 +1231,6 @@ var SAID = {"glitch": "大家好，我是格莉奇。虛擬主播，頻道第二
   }
   document.querySelectorAll('.say').forEach(function (b) {
     var t = document.getElementById('said-' + b.dataset.say);
-    if (t) t.textContent = SAID[b.dataset.say] || '';
     b.addEventListener('click', function () {
       var mine = curBtn === b;
       stop();
