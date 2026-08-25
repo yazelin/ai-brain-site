@@ -837,7 +837,10 @@
   </div>
 
   <div id="pet" class="bob" title="跟格莉奇聊天">
-    <img src="images/pet.webp" alt="格莉奇" onerror="this.onerror=null;this.src='images/sticker-01.png';this.style.height='40vh'">
+    <!-- idle 用 pet-plain。原本的 pet.webp 眼神飄開、嘴微張，讀起來是「人在這裡
+         但還沒開機完成」，當第一印象很準，可是桌寵九成時間都是這張臉。
+         plain 是清醒、看著你、平常說話那張，小說站用的也是它。 -->
+    <img src="images/pet-plain.webp" alt="格莉奇" onerror="this.onerror=null;this.src='images/sticker-01.png';this.style.height='40vh'">
     <div class="bubble" id="pet-bubble">逼——嗶！點我聊天～</div>
     <button class="pet-hit" type="button" aria-label="跟格莉奇聊天"></button>
   </div>
@@ -1373,7 +1376,7 @@ function petEmote(id,hold){
     setTimeout(()=>{petImg.src=img.src;petImg.style.opacity=1;},160);
     if(id)petTimer=setTimeout(()=>petEmote(null),hold||6000);
   };
-  img.src=id?`images/pet-${id}.webp`:'images/pet.webp';
+  img.src=id?`images/pet-${id}.webp`:'images/pet-plain.webp';
 }
 // 閒置時偶爾換個表情，沒人聊天也看得出她活著
 setInterval(()=>{
