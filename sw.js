@@ -6,7 +6,7 @@
 
 /* cache:start — scripts/update_sw_hashes.py 產生，勿手改 */
 const SHELL_CACHE = 'glos-shell-fdb02c4e66cd';
-const ASSET_CACHE = 'glos-assets-288d86b24103';
+const ASSET_CACHE = 'glos-assets-2047cd99d09b';
 /* cache:end */
 const KEEP = [SHELL_CACHE, ASSET_CACHE];
 const MATCH = { ignoreSearch: true, ignoreVary: true };
