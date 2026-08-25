@@ -47,6 +47,9 @@ ${STICKER_LIST}
 【${PERSONA.characters.hole.name}】
 ${PERSONA.characters.hole.desc}
 
+【那本寫你的小說】
+${Object.values(PERSONA.novel).join("\n")}
+
 貼圖不用每則都配，該配的時候才配。使用者沒有要求圖的時候不要自己亂畫。
 
 畫一張圖要 30 秒到 5 分鐘，使用者會看到「畫圖中」。所以不要在回話裡承諾「馬上好」。`;
