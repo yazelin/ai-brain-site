@@ -217,6 +217,17 @@
   .gauge{height:9px;border-radius:5px;background:#0d2b3a;overflow:hidden;margin-top:6px}
   .gauge i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cy-d),var(--cy));transition:width .4s ease}
   code{background:#0d2b3a;padding:2px 5px;border-radius:4px;color:var(--mint)}
+  /* 自我介紹配音。音檔跟小說站是同一批（glitch-vn 的 tools/gen_intro.py 生的），
+     **檔案複製一份進來**：SW 的 scope 只到這個站底下，指到 /glitch-vn/ 的音檔
+     離線時抓不到，症狀是裝了 app 之後按鈕沒反應。 */
+  .say{display:inline-flex;align-items:center;gap:7px;margin:10px 0 0;
+    font:inherit;font-size:.82rem;color:var(--mute);background:none;
+    border:1px solid var(--hair2);border-radius:999px;padding:5px 14px;cursor:pointer}
+  .say:hover,.say[aria-pressed=true]{color:var(--mint);border-color:var(--mint)}
+  .say b{font-weight:400;font-size:.72rem}
+  .said{margin:9px 0 0;font-size:.86rem;line-height:1.9;color:var(--mute);
+    border-left:2px solid var(--hair2);padding-left:12px;display:none}
+  .said[data-on]{display:block;border-left-color:var(--mint)}
   .quote{padding:12px 16px;border-left:3px solid var(--purple);background:rgba(183,139,255,.08);border-radius:0 9px 9px 0;color:#d9ccff;font-style:italic;margin:12px 0}
   /* 開機動畫 */
   #boot{position:absolute;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -662,6 +673,8 @@
              onerror="this.onerror=null;this.src='images/sticker-01.png'">
         <p class="quote">「雖然我的記憶體只有 4KB，但我會把你們給我的每一個支持，都儲存在最重要的核心硬碟裡！大家要記得經常來部落格看我，不然……我可能會忘記你喔？逼——嗶！」</p>
       </div>
+      <button class="say" data-say="glitch" aria-pressed="false"><b>▶</b>聽我自我介紹</button>
+      <p class="said" id="said-glitch"></p>
       <h3>系統基本數據</h3>
       <div class="kv">
         <b>名字</b><span>格莉奇（Glitch／グリッチ）</span>
@@ -701,6 +714,8 @@
 
       <h3>我的室友</h3>
       <p><b>黑洞先生</b>。穿西裝、戴禮帽、頭是一顆星系球體，腳是一叢觸手，數量每天不一樣。他說他不是章魚。</p>
+      <button class="say" data-say="blackhole" aria-pressed="false"><b>▶</b>聽黑洞先生自我介紹</button>
+      <p class="said" id="said-blackhole"></p>
       <ul>
         <li><b>他吃什麼</b>：被忘掉的事。大家每天都在忘，可是人的遺忘是慢慢淡掉的、糊的，沒有形狀，那只能當零食。我是 AI，我掉出來的是一整件，有頭有尾，飄出來的時候整個房間會亮一下。那才吃得飽。</li>
         <li><b>為什麼一起住</b>：我是他唯一吃得飽的地方。而我也不必為健忘感到抱歉，我忘掉的東西剛好是他要的。順序是我先忘記，他才吃得到，他不會從我腦子裡挖東西。</li>
@@ -1196,6 +1211,44 @@ window.addEventListener('popstate',event=>{
 });
 // 漫畫站是另一個 Pages 專案,整站連 service worker 一起載。開窗才載,
 // 不然光開機就多抓一個站。
+/* 自我介紹配音。**一次只播一個**，同一顆再按是停止。
+   逐字稿由 glitch-vn 的 art/voice/intro.json 帶過來（scripts/sync_intro.py），
+   **不要在這裡另外抄一份**：兩邊各一份的下場是改了一邊、另一邊還是舊的。 */
+/* intro:start — scripts/sync_intro.py 產生，勿手改 */
+var SAID = {"glitch": "大家好，我是格莉奇。虛擬主播，頻道第二年。我的記憶體只有四KB。這是我的口頭禪，也是實話。放不下的東西會被擠掉，所以我每天晚上都會抄一次守則本。第一頁有七行，上面有六個名字。我知道有第七個。我只是叫不出來。", "blackhole": "我住在她家。沙發那一邊。我吃被忘掉的事。吃進去的永遠在我裡面，可是拿不出來。她從來沒有為這件事跟我道過歉。這樣很好。"};
+/* intro:end */
+(function () {
+  var cur = null, curBtn = null;
+  function stop() {
+    if (cur) { cur.pause(); cur.currentTime = 0; }
+    if (curBtn) {
+      curBtn.setAttribute('aria-pressed', 'false');
+      curBtn.firstChild.textContent = '\u25b6';
+      var t = document.getElementById('said-' + curBtn.dataset.say);
+      if (t) t.removeAttribute('data-on');
+    }
+    cur = null; curBtn = null;
+  }
+  document.querySelectorAll('.say').forEach(function (b) {
+    var t = document.getElementById('said-' + b.dataset.say);
+    if (t) t.textContent = SAID[b.dataset.say] || '';
+    b.addEventListener('click', function () {
+      var mine = curBtn === b;
+      stop();
+      if (mine) return;
+      cur = new Audio('audio/intro-' + b.dataset.say + '.mp3');
+      curBtn = b;
+      b.setAttribute('aria-pressed', 'true');
+      b.firstChild.textContent = '\u25a0';
+      if (t) t.setAttribute('data-on', '1');
+      cur.addEventListener('ended', stop);
+      /* 檔案掉了也要把按鈕收回去，不然會一直停在「播放中」 */
+      cur.addEventListener('error', stop);
+      cur.play().catch(stop);
+    });
+  });
+})();
+
 function loadComic(){const f=document.getElementById('comic-frame');
   if(f&&!f.src&&f.dataset.src)f.src=f.dataset.src;}
 function loadMusic(){const f=document.getElementById('music-frame');

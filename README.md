@@ -26,6 +26,7 @@
 | 看圖與檔案 | 圖片可縮放、拖曳、全螢幕與下載；虛擬檔案系統保存在目前瀏覽器 |
 | 心情日記 | 依月份與文字／插畫篩選；GitHub Actions 每天從世界新聞與 Giscus 留言取得靈感，自動累積新文章 |
 | 角色內容 | 完整角色設定、18 張 LINE 貼圖（格莉奇與黑洞先生各 9 張）、4KB 記憶體狀態與 Giscus 討論區 |
+| 自我介紹配音 | 「關於我」視窗裡格莉奇與黑洞先生各有一段自介，按一下就聽得到，逐字稿同時顯示。音檔與逐字稿的唯一事實來源在 [glitch-vn](https://github.com/yazelin/glitch-vn)（`tools/gen_intro.py`），用 `scripts/sync_intro.py` 同步過來，不在這裡另抄一份 |
 | 個人化 | 分頁設定中心可完整查看聊天紀錄與記憶摘要，並獨立管理桌布、桌寵與系統資訊 |
 | PWA／離線 | 桌面提供「安裝 App」入口；Android／桌面可叫出原生安裝提示，iOS 提供加入主畫面步驟。Service Worker 快取 app shell、專屬單曲與已載入資產，離線仍可開機、聽歌並查看本機聊天歷史 |
 
@@ -115,6 +116,19 @@ python3 -m http.server 8000
 
 修改 `index.html`、manifest、JSON 或圖片後，執行 `python scripts/update_sw_hashes.py`。現有內容生成腳本會自動執行它；PR workflow 會檢查 hash，直接推送到 `main` 時也會自動補正並寫回。
 
+
+### 角色自介配音
+
+音檔跟逐字稿都在 glitch-vn 那邊生（那裡才有配音管線），這裡只是消費端：
+
+```bash
+python3 scripts/sync_intro.py        # 複製音檔 + 回填 index.html 的 SAID
+python3 scripts/update_sw_hashes.py  # 音檔進 WARM_ASSETS，快取版號要跟著捲
+node tests/say_test.mjs              # 真的按下去驗，不是檢查 HTML 有沒有那顆鈕
+```
+
+**音檔一定要複製一份進來**，不可以直接指到 `/glitch-vn/` 底下：Service Worker 的
+scope 只到這個站，指過去的話離線抓不到，症狀是裝了 App 之後按鈕沒反應。
 
 ### 格莉奇的造型描述
 
