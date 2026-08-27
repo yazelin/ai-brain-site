@@ -511,9 +511,8 @@
   .mic-btn.muted{background:#f43f5e;border-color:#fda4af}
   .hangup-btn{background:#ef4444;box-shadow:0 4px 14px rgba(239,68,68,.4)}
   .hangup-btn:hover{background:#dc2626}
-  .call-chips{display:flex;gap:6px;overflow-x:auto;width:100%;padding:4px 2px;scrollbar-width:none}
-  .call-chips::-webkit-scrollbar{display:none}
-  .chip-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:14px;color:#e2e8f0;font-size:.7rem;padding:4px 10px;white-space:nowrap;cursor:pointer;transition:background .15s,transform .1s}
+  .call-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;width:100%;padding:4px 0;box-sizing:border-box}
+  .chip-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:14px;color:#e2e8f0;font-size:.7rem;padding:4px 9px;cursor:pointer;transition:background .15s,transform .1s}
   .chip-btn:hover{background:rgba(45,212,191,.2);border-color:#2dd4bf;color:#2dd4bf}
   .chip-btn:active{transform:scale(.95)}
   .call-in-wrap{display:flex;gap:6px;width:100%;margin-top:2px}
@@ -939,10 +938,12 @@
               <div class="settings-card-head">
                 <div><h3 style="color:#2dd4bf">🎙️ 格莉奇語音伺服器 (Glitch Voice Server)</h3><p class="muted">設定 glitch-server 的 Cloudflare Tunnel HTTPS 網址，打通全雙工語音通話與 F5-TTS 發音。</p></div>
               </div>
-              <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-                <input type="url" id="setting-voice-server-url" style="flex:1;min-width:200px;padding:8px 12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#f8fafc;font-size:.82rem" placeholder="https://xxxx.trycloudflare.com">
-                <button class="btn" id="btn-save-voice-url" type="button" style="background:#059669;color:#fff;border:none">儲存並測試連線</button>
-                <button class="btn" id="btn-test-voice-tone" type="button" style="background:#0284c7;color:#fff;border:none">🔊 播放測試音</button>
+              <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+                <input type="url" id="setting-voice-server-url" style="width:100%;box-sizing:border-box;padding:8px 12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#f8fafc;font-size:.82rem" placeholder="https://xxxx.trycloudflare.com">
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                  <button class="btn" id="btn-save-voice-url" type="button" style="background:#059669;color:#fff;border:none;padding:6px 14px">儲存並測試連線</button>
+                  <button class="btn" id="btn-test-voice-tone" type="button" style="background:#0284c7;color:#fff;border:none;padding:6px 14px">🔊 播放測試音</button>
+                </div>
               </div>
               <p id="voice-server-status" style="font-size:.76rem;margin-top:8px;color:#94a3b8">狀態：尚未檢測</p>
             </div>

@@ -359,11 +359,11 @@
           </div>
 
           <div class="call-chips" id="call-quick-chips">
+            <button class="chip-btn" id="call-test-tone-btn" style="background:rgba(56,189,248,.2);border-color:#38bdf8;color:#38bdf8;font-weight:600">🔊 測喇叭</button>
             <button class="chip-btn" data-say="你好呀格莉奇！">👋 打招呼</button>
             <button class="chip-btn" data-say="你今天有喝黑洞拿鐵嗎？">☕ 喝拿鐵</button>
             <button class="chip-btn" data-say="你的記憶體真的只有4KB嗎？">💾 4KB記憶體</button>
             <button class="chip-btn" data-say="自我介紹一下吧！">👧 自介</button>
-            <button class="chip-btn" id="call-test-tone-btn" style="border-color:#38bdf8;color:#38bdf8">🔊 測喇叭</button>
           </div>
 
           <div class="call-in-wrap">
