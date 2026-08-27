@@ -114,36 +114,14 @@
       console.debug('[GlitchVoice] AudioContext state ->', audioCtx.state);
       if (audioCtx.state !== 'running' && isCalling) audioCtx.resume().catch(() => {});
     });
-
-    silentLoop = new Audio(makeSilentWavUrl());
-    silentLoop.loop = true;
-    silentLoop.playsInline = true;
-    silentLoop.volume = 0.001;
   }
 
-  /**
-   * 解鎖並確保 AudioContext 真的在跑。
-   * 必須在使用者手勢的同一個 task 裡「先同步建立 context」，await 之後才 resume。
-   */
+  /** 解鎖並確保 AudioContext 真的在跑 */
   async function unlockAudio() {
     ensureAudioGraph();
-
-    // iOS：靜音實體開關會讓 Web Audio 完全沒聲音，先播一段無聲 <audio> 把 session 換成播放通道
-    if (silentLoop && silentLoop.paused) silentLoop.play().catch(() => {});
-
-    // 'suspended' 和 iOS 的 'interrupted' 都要救，所以不判斷狀態直接 resume
     if (audioCtx.state !== 'running') {
       try { await audioCtx.resume(); } catch (e) { console.warn('[GlitchVoice] resume 失敗:', e); }
     }
-
-    // 踢一顆無聲 buffer，確保 autoplay 政策確實放行
-    try {
-      const src = audioCtx.createBufferSource();
-      src.buffer = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
-      src.connect(masterGain);
-      src.start(0);
-    } catch (e) { /* 不影響後續播放 */ }
-
     return audioCtx.state === 'running';
   }
 
@@ -158,6 +136,17 @@
     for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
     const blob = new Blob([bytes], { type: 'audio/wav' });
     return URL.createObjectURL(blob);
+  }
+
+  function getVoicePlayer() {
+    let p = document.getElementById('glitch-voice-player');
+    if (!p) {
+      p = new Audio();
+      p.id = 'glitch-voice-player';
+      p.playsInline = true;
+      document.body.appendChild(p);
+    }
+    return p;
   }
 
   /** 停止目前播放 */
@@ -188,18 +177,17 @@
     let blobUrl = '';
     try {
       blobUrl = base64ToBlobUrl(audioUrl);
-      const audio = new Audio();
-      audio.playsInline = true;
-      audio.preload = 'auto';
-      audio.volume = 1.0;
-      audio.src = blobUrl;
-      fallbackAudio = audio;
+      const player = getVoicePlayer();
+      player.volume = 1.0;
+      player.src = blobUrl;
+      player.currentTime = 0;
+      fallbackAudio = player;
 
       isSpeaking = true;
       setAvatarEmotion('speaking');
 
-      audio.onended = () => {
-        if (fallbackAudio !== audio) return;
+      player.onended = () => {
+        if (fallbackAudio !== player) return;
         fallbackAudio = null;
         isSpeaking = false;
         setAvatarEmotion(null);
@@ -208,9 +196,9 @@
         if (isCalling && !isMuted) startRecognition();
       };
 
-      audio.onerror = (e) => {
-        console.error('[GlitchVoice] 音訊播放失敗：', e, audio.error);
-        if (fallbackAudio !== audio) return;
+      player.onerror = (e) => {
+        console.error('[GlitchVoice] 音訊播放失敗：', e, player.error);
+        if (fallbackAudio !== player) return;
         fallbackAudio = null;
         isSpeaking = false;
         setAvatarEmotion('sad');
@@ -218,7 +206,7 @@
         if (isCalling && !isMuted) startRecognition();
       };
 
-      const playPromise = audio.play();
+      const playPromise = player.play();
       if (playPromise !== undefined) {
         await playPromise;
       }
@@ -254,12 +242,15 @@
     }
     callBtn.onclick = startCall;
 
-    if (!document.getElementById('glitch-call-overlay')) {
-      const el = document.createElement('div');
+    let el = document.getElementById('glitch-call-overlay');
+    if (!el) {
+      el = document.createElement('div');
       el.id = 'glitch-call-overlay';
       el.className = 'call-overlay';
       el.hidden = true;
-      el.innerHTML = `
+      screen.appendChild(el);
+    }
+    el.innerHTML = `
         <div class="call-header">
           <div class="call-badge"><span class="pulse-dot"></span> <span id="call-status-text">連線中…</span></div>
           <div class="call-timer" id="call-timer-text">00:00</div>
@@ -301,9 +292,7 @@
             <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08a.996.996 0 0 1 0-1.41C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.39.39.39 1.02 0 1.41l-2.48 2.48c-.18.18-.43.29-.71.29s-.52-.11-.7-.28c-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
           </button>
         </div>
-      `;
-      screen.appendChild(el);
-    }
+    `;
 
     // 快取放在 if 外面：即使 overlay 已經存在（熱重載、init 跑兩次）也要拿得到
     callOverlay = document.getElementById('glitch-call-overlay');
@@ -754,39 +743,42 @@
 
   /** 直接播放格莉奇測試語音 (test_voice.wav)，確認喇叭與瀏覽器音訊通道 100% 暢通 */
   async function testTone() {
-    if (userSubtitle) userSubtitle.textContent = '🔊 正在播放測試語音 (test_voice.wav)...';
-    if (settingStatusText) settingStatusText.textContent = '🔊 正在播放測試語音 (test_voice.wav)...';
+    const updateMsg = (txt, isErr = false) => {
+      if (userSubtitle) userSubtitle.textContent = txt;
+      if (settingStatusText) {
+        settingStatusText.textContent = txt;
+        settingStatusText.style.color = isErr ? '#f43f5e' : '#38bdf8';
+      }
+    };
+
+    updateMsg('🔊 正在載入並播放測試語音...');
 
     try {
-      console.log('[GlitchVoice] 正在播放測試語音 (test_voice.wav)...');
-      const audio = new Audio('test_voice.wav');
-      audio.volume = 1.0;
-      audio.playsInline = true;
+      const player = getVoicePlayer();
+      player.volume = 1.0;
+      player.src = 'test_voice.wav';
+      player.currentTime = 0;
 
-      audio.onplay = () => {
-        if (userSubtitle) userSubtitle.textContent = '🔊 測試語音正在播放中...';
-        if (settingStatusText) settingStatusText.textContent = '🔊 測試語音正在播放中...';
+      player.onplay = () => {
+        updateMsg('🔊 測試語音正在播放中（若仍無聲，請檢查分頁或分頁標籤是否被靜音）');
       };
-      audio.onended = () => {
-        if (userSubtitle) userSubtitle.textContent = '✅ 測試語音播放完畢！';
-        if (settingStatusText) settingStatusText.textContent = '✅ 測試語音播放完畢！';
+      player.onended = () => {
+        updateMsg('✅ 測試語音已播放完畢！');
       };
-      audio.onerror = (e) => {
-        const msg = `❌ 音訊檔案載入失敗 (code: ${audio.error ? audio.error.code : 'unknown'})`;
-        console.error('[GlitchVoice] test_voice.wav onerror:', e, audio.error);
-        if (userSubtitle) userSubtitle.textContent = msg;
-        if (settingStatusText) settingStatusText.textContent = msg;
+      player.onerror = (e) => {
+        const code = player.error ? player.error.code : 'unknown';
+        updateMsg(`❌ WAV 載入失敗 (code: ${code})，改試 MP3...`, true);
+        player.src = 'audio/intro-glitch.mp3';
+        player.play().catch(() => {});
       };
 
-      await audio.play();
-      console.log('[GlitchVoice] 🔊 測試語音播放成功！');
-      return '測試語音播放成功';
+      await player.play();
+      console.log('[GlitchVoice] 🔊 測試語音已觸發播放');
+      return '測試語音播放中';
     } catch (e) {
       console.warn('[GlitchVoice] test_voice.wav 播放被阻擋:', e);
-      const errTxt = `❌ 瀏覽器阻擋播放: ${e.name} - ${e.message}`;
-      if (userSubtitle) userSubtitle.textContent = errTxt;
-      if (settingStatusText) settingStatusText.textContent = errTxt;
-      return errTxt;
+      updateMsg(`❌ 瀏覽器阻擋播放: ${e.name} - ${e.message}`, true);
+      return e.message;
     }
   }
 
