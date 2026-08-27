@@ -182,6 +182,9 @@
     stopSpeaking();
     if (turn !== turnSeq || !isCalling) return;
 
+    // 播放期間暫時停止麥克風辨識，徹底釋放音訊硬體通道並杜絕任何回音打斷
+    stopRecognition();
+
     let blobUrl = '';
     try {
       blobUrl = base64ToBlobUrl(audioUrl);
@@ -193,17 +196,16 @@
       fallbackAudio = audio;
 
       isSpeaking = true;
-      bargeReadyAt = performance.now() + BARGE_IN_GUARD_MS;
-      speechGateUntil = performance.now() + 30000;
       setAvatarEmotion('speaking');
 
       audio.onended = () => {
         if (fallbackAudio !== audio) return;
         fallbackAudio = null;
         isSpeaking = false;
-        speechGateUntil = performance.now() + ECHO_TAIL_MS;
         setAvatarEmotion(null);
         if (blobUrl.startsWith('blob:')) URL.revokeObjectURL(blobUrl);
+        // 播完後立即重新開啟收音
+        if (isCalling && !isMuted) startRecognition();
       };
 
       audio.onerror = (e) => {
@@ -211,9 +213,9 @@
         if (fallbackAudio !== audio) return;
         fallbackAudio = null;
         isSpeaking = false;
-        speechGateUntil = 0;
         setAvatarEmotion('sad');
         if (blobUrl.startsWith('blob:')) URL.revokeObjectURL(blobUrl);
+        if (isCalling && !isMuted) startRecognition();
       };
 
       const playPromise = audio.play();
@@ -224,10 +226,10 @@
     } catch (e) {
       console.error('[GlitchVoice] 播放呼叫異常：', e);
       isSpeaking = false;
-      speechGateUntil = 0;
       setAvatarEmotion('sad');
       if (blobUrl && blobUrl.startsWith('blob:')) URL.revokeObjectURL(blobUrl);
       if (glitchSubtitle) glitchSubtitle.textContent += `（播放被瀏覽器擋下：${e.message || e.name}）`;
+      if (isCalling && !isMuted) startRecognition();
     }
   }
 
@@ -750,23 +752,35 @@
     testTone: testTone
   };
 
-  /** 不經過後端，直接播一聲 523Hz (C5) 確認喇叭這條路通不通 */
+  /** 直接播放格莉奇測試語音 (test_voice.wav)，確認喇叭與瀏覽器音訊通道 100% 暢通 */
   async function testTone() {
-    await unlockAudio();
-    if (audioCtx && audioCtx.state !== 'running') { try { await audioCtx.resume(); } catch (e) {} }
-    const osc = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    g.gain.value = 0.35;
-    osc.frequency.value = 523.25; // C5 音符
-    osc.connect(g);
-    g.connect(masterGain);
-    const t0 = audioCtx.currentTime;
-    osc.start(t0);
-    g.gain.setValueAtTime(0.35, t0);
-    g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.6);
-    osc.stop(t0 + 0.65);
-    console.log('[GlitchVoice] 🔊 測試音已播放 (ctx state:', audioCtx ? audioCtx.state : 'null', ')');
-    return `ctx=${audioCtx ? audioCtx.state : 'null'}, 應該聽到 0.6 秒嗶聲`;
+    try {
+      console.log('[GlitchVoice] 正在播放測試語音 (test_voice.wav)...');
+      const audio = new Audio('test_voice.wav');
+      audio.volume = 1.0;
+      audio.playsInline = true;
+      await audio.play();
+      console.log('[GlitchVoice] 🔊 測試語音播放成功！');
+      return '測試語音播放成功';
+    } catch (e) {
+      console.warn('[GlitchVoice] test_voice.wav 播放被阻擋，嘗試 Oscillator 嗶聲:', e);
+      try {
+        await unlockAudio();
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        g.gain.value = 0.5;
+        osc.frequency.value = 523.25;
+        osc.connect(g);
+        g.connect(audioCtx.destination);
+        const t0 = audioCtx.currentTime;
+        osc.start(t0);
+        osc.stop(t0 + 0.6);
+        return '嗶聲已發出';
+      } catch (err) {
+        console.error('[GlitchVoice] 全部音訊通道皆失敗：', err);
+        return '音訊被瀏覽器阻擋';
+      }
+    }
   }
 
 })();
