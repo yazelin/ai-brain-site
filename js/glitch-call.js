@@ -1,14 +1,14 @@
 /**
  * 格莉奇全雙工語音通話模組 (Glitch Voice Call & Barge-In Engine)
- * 支援：WebSpeech 多層收音、F5-TTS 聲學連動、Barge-In 即時插話打斷、表情切換
+ * 支援：WebSpeech 多層收音、F5-TTS 聲學連動、Barge-In 即時插話打斷、表情切換、設定介面連動
  */
 
 (function () {
   'use strict';
 
-  // 預設後端伺服器端點 (可透過 localStorage 或 UI 自訂)
-  const DEFAULT_SERVER_URL = 'http://127.0.0.1:8000';
-  let serverUrl = localStorage.getItem('glitch_server_url') || DEFAULT_SERVER_URL;
+  // 預設後端伺服器端點 (優先讀取 localStorage，次選 Cloudflare Tunnel，備選 Localhost)
+  const FALLBACK_TUNNEL_URL = 'https://preserve-collective-reproduced-florist.trycloudflare.com';
+  let serverUrl = localStorage.getItem('glitch_server_url') || FALLBACK_TUNNEL_URL;
 
   // 狀態變數
   let isCalling = false;
@@ -24,6 +24,7 @@
   // DOM 元素快取
   let callOverlay, callAvatar, callStatus, callTimer, userSubtitle, glitchSubtitle;
   let waveCanvas, waveCtx, micBtn, hangupBtn, configBtn;
+  let settingInput, settingSaveBtn, settingStatusText;
 
   // 表情對應
   const EMOTIONS = {
@@ -41,9 +42,10 @@
     const header = document.querySelector('.phone .lh');
     if (!screen || !header) return;
 
-    // 1. 在手機聊天列上方新增 📞 通話按鈕
-    if (!document.getElementById('btn-call-glitch')) {
-      const callBtn = document.createElement('button');
+    // 1. 綁定聊天視窗頂部的 📞 通話按鈕
+    let callBtn = document.getElementById('btn-call-glitch');
+    if (!callBtn) {
+      callBtn = document.createElement('button');
       callBtn.id = 'btn-call-glitch';
       callBtn.className = 'ph-call-btn';
       callBtn.title = '與格莉奇語音通話';
@@ -52,10 +54,9 @@
           <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 0 0-1.01.24l-2.2 2.2a15.053 15.053 0 0 1-6.59-6.59l2.2-2.21a.96.96 0 0 0 .25-1.01A11.36 11.36 0 0 1 8.57 3.9c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1 0 9.39 7.61 17 17 17 .55 0 1-.45 1-1v-3.52c0-.55-.45-1-.99-1z"/>
         </svg>
       `;
-      callBtn.addEventListener('click', startCall);
-      // 插入在標題右側
       header.insertBefore(callBtn, header.querySelector('.mi'));
     }
+    callBtn.onclick = startCall;
 
     // 2. 建立通話全螢幕 Overlay (覆蓋在手機容器內部)
     if (!document.getElementById('glitch-call-overlay')) {
@@ -112,16 +113,56 @@
       micBtn.addEventListener('click', toggleMute);
       configBtn.addEventListener('click', promptServerUrl);
     }
+
+    // 3. 綁定「設定」視窗內的語音伺服器設定卡片
+    settingInput = document.getElementById('setting-voice-server-url');
+    settingSaveBtn = document.getElementById('btn-save-voice-url');
+    settingStatusText = document.getElementById('voice-server-status');
+
+    if (settingInput && settingSaveBtn) {
+      settingInput.value = serverUrl;
+      settingSaveBtn.addEventListener('click', async () => {
+        const val = settingInput.value.trim().replace(/\/+$/, '');
+        if (val) {
+          serverUrl = val;
+          localStorage.setItem('glitch_server_url', serverUrl);
+          await testServerHealth(serverUrl);
+        }
+      });
+      // 頁面載入時自動做一次健康檢查
+      testServerHealth(serverUrl);
+    }
   }
 
   /**
-   * 設定伺服器端點 (Cloudflare Tunnel 或 Localhost)
+   * 測試語音伺服器健康狀態
+   */
+  async function testServerHealth(url) {
+    if (!settingStatusText) return;
+    settingStatusText.innerHTML = '⏳ 正在連線檢測伺服器…';
+    settingStatusText.style.color = '#38bdf8';
+    try {
+      const res = await fetch(`${url}/health`, { signal: AbortSignal.timeout(5000) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const d = await res.json();
+      settingStatusText.innerHTML = `✅ <b>連線成功！</b> 引擎：${d.tts_engine || 'F5-TTS'} ｜ 角色：${d.character || '格莉奇'} ｜ 記憶體：${d.memory || '4KB'}`;
+      settingStatusText.style.color = '#2dd4bf';
+    } catch (err) {
+      settingStatusText.innerHTML = `❌ <b>連線失敗：</b>${err.message}（請確認 glitch-server 與 Cloudflare Tunnel 是否啟動）`;
+      settingStatusText.style.color = '#f43f5e';
+    }
+  }
+
+  /**
+   * 快速設定伺服器端點
    */
   function promptServerUrl() {
     const input = prompt('請輸入 glitch-server 伺服器網址（例如 Cloudflare Tunnel 的 https://*.trycloudflare.com）：', serverUrl);
     if (input && input.trim()) {
       serverUrl = input.trim().replace(/\/+$/, '');
       localStorage.setItem('glitch_server_url', serverUrl);
+      if (settingInput) settingInput.value = serverUrl;
+      testServerHealth(serverUrl);
       alert(`伺服器網址已更新為：\n${serverUrl}`);
     }
   }
@@ -155,8 +196,8 @@
       callStatus.textContent = '通話中 · 4KB 連線';
       glitchSubtitle.textContent = '好耶！連線成功！想和我聊什麼呢？';
     } catch (err) {
-      callStatus.textContent = '離線通話 (本地模式)';
-      glitchSubtitle.textContent = '無法連線到 glitch-server，請點 ⚙️ 確認 Cloudflare Tunnel 網址。';
+      callStatus.textContent = '離線通話 (請檢查端點)';
+      glitchSubtitle.textContent = `無法連線到伺服器 (${err.message})，請點 ⚙️ 確認 Tunnel 網址。`;
     }
 
     // 啟動語音辨識 (全雙工收音)
@@ -445,9 +486,11 @@
   window.GlitchCall = {
     start: startCall,
     end: endCall,
+    testHealth: testServerHealth,
     setServerUrl: (url) => {
       serverUrl = url;
       localStorage.setItem('glitch_server_url', url);
+      testServerHealth(url);
     }
   };
 

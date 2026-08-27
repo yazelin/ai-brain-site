@@ -888,6 +888,7 @@
           <span class="back" data-close title="關閉聊天">‹</span>
           <span class="av"><img src="images/avatar.webp" alt="格莉奇" onerror="this.onerror=null;this.src='images/sticker-01.png'"></span>
           <span class="nm">格莉奇<small>線上 · 4KB 記憶體</small></span>
+          <button class="ph-call-btn" id="btn-call-glitch" title="與格莉奇語音通話" aria-label="語音通話">📞</button>
           <span class="sp"></span><span class="mi">⋯</span>
         </div>
         <div class="body" id="chat-log"></div>
@@ -920,6 +921,17 @@
       <div class="settings-panels">
         <section class="settings-panel settings-chat-panel active" id="settings-panel-chat" role="tabpanel" aria-labelledby="settings-tab-chat" data-settings-panel="chat">
           <div class="settings-chat-layout">
+            <div class="settings-card settings-voice-card" style="grid-column:1/-1;background:rgba(45,212,191,.06);border:1px solid rgba(45,212,191,.25)">
+              <div class="settings-card-head">
+                <div><h3 style="color:#2dd4bf">🎙️ 格莉奇語音伺服器 (Glitch Voice Server)</h3><p class="muted">設定 glitch-server 的 Cloudflare Tunnel HTTPS 網址，打通全雙工語音通話與 F5-TTS 發音。</p></div>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:10px">
+                <input type="url" id="setting-voice-server-url" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#f8fafc;font-size:.82rem" placeholder="https://xxxx.trycloudflare.com">
+                <button class="btn" id="btn-save-voice-url" type="button" style="background:#059669;color:#fff;border:none">儲存並測試連線</button>
+              </div>
+              <p id="voice-server-status" style="font-size:.76rem;margin-top:8px;color:#94a3b8">狀態：尚未檢測</p>
+            </div>
+
             <div class="settings-card settings-history-card">
               <div class="settings-card-head">
                 <div><h3>聊天紀錄</h3><p class="muted">完整紀錄只保存在這個瀏覽器。</p></div>
