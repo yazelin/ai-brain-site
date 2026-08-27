@@ -435,6 +435,9 @@
     settingInput = document.getElementById('setting-voice-server-url');
     settingSaveBtn = document.getElementById('btn-save-voice-url');
     settingStatusText = document.getElementById('voice-server-status');
+    const settingTestToneBtn = document.getElementById('btn-test-voice-tone');
+
+    if (settingTestToneBtn) settingTestToneBtn.onclick = testTone;
 
     if (settingInput && settingSaveBtn) {
       settingInput.value = serverUrl;
@@ -825,17 +828,26 @@
       console.table(info);
       return info;
     },
-    /** 不經過後端，直接播一聲 440Hz 確認喇叭這條路通不通 */
-    testTone: async () => {
-      await unlockAudio();
-      const osc = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
-      g.gain.value = 0.2;
-      osc.frequency.value = 440;
-      osc.connect(g); g.connect(masterGain);
-      osc.start(); osc.stop(audioCtx.currentTime + 0.6);
-      return `ctx=${audioCtx.state}, 應該聽到 0.6 秒嗶聲`;
-    }
+    testTone: testTone
   };
+
+  /** 不經過後端，直接播一聲 523Hz (C5) 確認喇叭這條路通不通 */
+  async function testTone() {
+    await unlockAudio();
+    if (audioCtx && audioCtx.state !== 'running') { try { await audioCtx.resume(); } catch (e) {} }
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    g.gain.value = 0.35;
+    osc.frequency.value = 523.25; // C5 音符
+    osc.connect(g);
+    g.connect(masterGain);
+    const t0 = audioCtx.currentTime;
+    osc.start(t0);
+    g.gain.setValueAtTime(0.35, t0);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.6);
+    osc.stop(t0 + 0.65);
+    console.log('[GlitchVoice] 🔊 測試音已播放 (ctx state:', audioCtx ? audioCtx.state : 'null', ')');
+    return `ctx=${audioCtx ? audioCtx.state : 'null'}, 應該聽到 0.6 秒嗶聲`;
+  }
 
 })();
