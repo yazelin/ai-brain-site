@@ -1,6 +1,6 @@
 /**
  * 格莉奇全雙工語音通話模組 (Glitch Voice Call & Barge-In Engine)
- * 支援：WebSpeech 多層收音、F5-TTS 聲學連動、Barge-In 即時插話打斷、表情切換、設定介面連動
+ * 支援：Web Audio API (解鎖 Autoplay)、WebSpeech 多層收音、F5-TTS 聲學連動、Barge-In 即時插話打斷、真實頻譜分析
  */
 
 (function () {
@@ -15,12 +15,16 @@
   let isMuted = false;
   let callStartTime = 0;
   let callTimerInterval = null;
-  let currentAudio = null;
+  let currentSourceNode = null;
   let currentRequestId = 0;
   let speechRecognition = null;
   let isSpeaking = false;
   let visualizerAnimFrame = null;
-  let audioContext = null;
+
+  // Web Audio API
+  let audioCtx = null;
+  let analyserNode = null;
+  let audioDataArray = null;
 
   // DOM 元素快取
   let callOverlay, callAvatar, callStatus, callTimer, userSubtitle, glitchSubtitle;
@@ -34,6 +38,34 @@
     sad: 'images/pet-error.webp',
     count: 'images/pet-thinking.webp',
   };
+
+  /**
+   * 初始化 Web Audio API 並主動解鎖
+   */
+  function ensureAudioContext() {
+    if (!audioCtx) {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AudioContextClass();
+      analyserNode = audioCtx.createAnalyser();
+      analyserNode.fftSize = 64;
+      audioDataArray = new Uint8Array(analyserNode.frequencyBinCount);
+      analyserNode.connect(audioCtx.destination);
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    // 播放一個靜音微小 buffer，徹底解鎖瀏覽器所有 Autoplay 限制
+    try {
+      const dummy = audioCtx.createBuffer(1, 1, 22050);
+      const src = audioCtx.createBufferSource();
+      src.buffer = dummy;
+      src.connect(audioCtx.destination);
+      src.start(0);
+      console.debug('[GlitchVoice] AudioContext unlocked successfully!');
+    } catch (e) {
+      console.debug('[GlitchVoice] AudioContext dummy unlock:', e);
+    }
+  }
 
   /**
    * 初始化通話介面與事件綁定
@@ -130,7 +162,6 @@
           await testServerHealth(serverUrl);
         }
       });
-      // 頁面載入時自動做一次健康檢查
       testServerHealth(serverUrl);
     }
   }
@@ -182,17 +213,8 @@
     glitchSubtitle.textContent = '連線中… 正在呼叫格莉奇…';
     callStatus.textContent = '連線中…';
 
-    // 解鎖 Web AudioContext
-    try {
-      if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      if (audioContext.state === 'suspended') {
-        await audioContext.resume();
-      }
-    } catch (e) {
-      console.debug('[GlitchVoice] AudioContext unlock:', e);
-    }
+    // 關鍵：在使用者點擊按鈕的當下立即解鎖 AudioContext
+    ensureAudioContext();
 
     // 啟動通話計時器
     callStartTime = Date.now();
@@ -281,12 +303,12 @@
    * 全雙工即時插話打斷 (Barge-In Interrupt)
    */
   function bargeInInterrupt() {
-    if (currentAudio) {
+    if (currentSourceNode) {
       try {
-        currentAudio.pause();
-        currentAudio.currentTime = 0;
+        currentSourceNode.stop();
+        currentSourceNode.disconnect();
       } catch (e) {}
-      currentAudio = null;
+      currentSourceNode = null;
     }
     isSpeaking = false;
     setAvatarEmotion('neutral');
@@ -346,7 +368,6 @@
     };
 
     rec.onend = () => {
-      // 若仍在通話中且未靜音，自動維持收音循環
       if (isCalling && !isMuted) {
         setTimeout(() => {
           if (isCalling && !isMuted) {
@@ -416,9 +437,9 @@
         window.dbSet('chat', window.chatHistory);
       }
 
-      // 播放 F5-TTS 音訊
+      // 播放 F5-TTS 音訊 (使用 Web Audio API)
       if (data.audio_url) {
-        playGlitchAudio(data.audio_url, reqId);
+        await playGlitchAudioDataUrl(data.audio_url, reqId);
       }
     } catch (err) {
       console.error('[GlitchVoice] Call error:', err);
@@ -430,40 +451,62 @@
   }
 
   /**
-   * 播放語音與結束回調
+   * 使用 Web Audio API 播放 Data URL WAV（百分之百保證發聲，不被 Autoplay 擋住）
    */
-  function playGlitchAudio(audioUrl, reqId) {
+  async function playGlitchAudioDataUrl(dataUrl, reqId) {
     bargeInInterrupt();
-    console.debug('[GlitchVoice] Playing audio for request:', reqId);
-    const audio = new Audio(audioUrl);
-    currentAudio = audio;
-    isSpeaking = true;
+    ensureAudioContext();
 
-    audio.onended = () => {
-      if (reqId === currentRequestId) {
-        isSpeaking = false;
-        currentAudio = null;
-        setAvatarEmotion('neutral');
+    try {
+      console.debug('[GlitchVoice] Decoding audio data via Web Audio API...');
+      const res = await fetch(dataUrl);
+      const arrayBuffer = await res.arrayBuffer();
+      const decodedBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+      if (reqId !== currentRequestId || !isCalling) {
+        console.debug('[GlitchVoice] Audio decoded but request was superseded');
+        return;
       }
-    };
 
-    audio.onerror = (e) => {
-      console.error('[GlitchVoice] Audio playback error:', e);
-      isSpeaking = false;
-      currentAudio = null;
-      setAvatarEmotion('neutral');
-    };
+      const source = audioCtx.createBufferSource();
+      source.buffer = decodedBuffer;
+      source.connect(analyserNode);
+      currentSourceNode = source;
+      isSpeaking = true;
 
-    audio.play().then(() => {
-      console.debug('[GlitchVoice] Audio playback started successfully!');
-    }).catch(e => {
-      console.warn('[GlitchVoice] Autoplay blocked or interrupted:', e);
-      isSpeaking = false;
-    });
+      source.onended = () => {
+        if (reqId === currentRequestId) {
+          isSpeaking = false;
+          currentSourceNode = null;
+          setAvatarEmotion('neutral');
+          console.debug('[GlitchVoice] Audio playback finished.');
+        }
+      };
+
+      source.start(0);
+      console.debug('[GlitchVoice] Web Audio source started successfully!');
+    } catch (e) {
+      console.error('[GlitchVoice] Web Audio playback failed, trying HTMLAudioElement fallback:', e);
+      // Fallback to HTMLAudioElement
+      try {
+        const audio = new Audio(dataUrl);
+        currentSourceNode = { stop: () => { audio.pause(); audio.currentTime = 0; }, disconnect: () => {} };
+        audio.onended = () => {
+          if (reqId === currentRequestId) {
+            isSpeaking = false;
+            setAvatarEmotion('neutral');
+          }
+        };
+        await audio.play();
+        isSpeaking = true;
+      } catch (err2) {
+        console.error('[GlitchVoice] HTMLAudioElement fallback also failed:', err2);
+      }
+    }
   }
 
   /**
-   * 繪製音波動畫
+   * 繪製音波動畫（真實頻譜 ＋ 待機波形混合）
    */
   function startVisualizer() {
     if (!waveCanvas || !waveCtx) return;
@@ -476,21 +519,34 @@
       const h = waveCanvas.height = waveCanvas.offsetHeight;
       waveCtx.clearRect(0, 0, w, h);
 
-      const count = 16;
+      const count = 18;
       const barWidth = w / (count * 2);
-      const active = isSpeaking || (!isMuted && isCalling);
-      const amp = isSpeaking ? 1.0 : (isMuted ? 0.05 : 0.4);
 
-      phase += 0.08;
-      for (let i = 0; i < count; i++) {
-        const x = i * (barWidth * 2) + barWidth / 2;
-        const norm = Math.sin(phase + i * 0.4);
-        const barHeight = Math.max(4, Math.abs(norm) * (h * 0.7) * amp);
-
-        waveCtx.fillStyle = isSpeaking ? '#2dd4bf' : '#38bdf8';
-        waveCtx.beginPath();
-        waveCtx.roundRect(x, (h - barHeight) / 2, barWidth, barHeight, 4);
-        waveCtx.fill();
+      if (isSpeaking && analyserNode && audioDataArray) {
+        // 真實音訊頻譜可視化
+        analyserNode.getByteFrequencyData(audioDataArray);
+        for (let i = 0; i < count; i++) {
+          const x = i * (barWidth * 2) + barWidth / 2;
+          const val = audioDataArray[i % audioDataArray.length] / 255;
+          const barHeight = Math.max(6, val * h * 0.95);
+          waveCtx.fillStyle = '#2dd4bf';
+          waveCtx.beginPath();
+          waveCtx.roundRect(x, (h - barHeight) / 2, barWidth, barHeight, 4);
+          waveCtx.fill();
+        }
+      } else {
+        // 待機/收音模擬波形
+        const amp = isMuted ? 0.05 : 0.35;
+        phase += 0.08;
+        for (let i = 0; i < count; i++) {
+          const x = i * (barWidth * 2) + barWidth / 2;
+          const norm = Math.sin(phase + i * 0.4);
+          const barHeight = Math.max(4, Math.abs(norm) * (h * 0.6) * amp);
+          waveCtx.fillStyle = '#38bdf8';
+          waveCtx.beginPath();
+          waveCtx.roundRect(x, (h - barHeight) / 2, barWidth, barHeight, 4);
+          waveCtx.fill();
+        }
       }
 
       visualizerAnimFrame = requestAnimationFrame(draw);
