@@ -636,7 +636,7 @@
           message: userText,
           history: historyPayload,
           request_id: String(turn),
-          speed: 0.92,
+          speed: 1.0,
           nfe: 12
         })
       }, REQUEST_TIMEOUT_MS);
