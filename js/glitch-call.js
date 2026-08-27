@@ -355,7 +355,20 @@
 
           <div class="call-subtitles">
             <div class="sub user-sub" id="call-user-sub"></div>
-            <div class="sub glitch-sub" id="call-glitch-sub">4KB 記憶體準備就緒，隨時可以開口。</div>
+            <div class="sub glitch-sub" id="call-glitch-sub">4KB 記憶體準備就緒，隨時可以開口或點擊快捷發話。</div>
+          </div>
+
+          <div class="call-chips" id="call-quick-chips">
+            <button class="chip-btn" data-say="你好呀格莉奇！">👋 打招呼</button>
+            <button class="chip-btn" data-say="你今天有喝黑洞拿鐵嗎？">☕ 喝拿鐵</button>
+            <button class="chip-btn" data-say="你的記憶體真的只有4KB嗎？">💾 4KB記憶體</button>
+            <button class="chip-btn" data-say="自我介紹一下吧！">👧 自介</button>
+            <button class="chip-btn" id="call-test-tone-btn" style="border-color:#38bdf8;color:#38bdf8">🔊 測喇叭</button>
+          </div>
+
+          <div class="call-in-wrap">
+            <input type="text" id="call-input-txt" class="call-in-txt" placeholder="文字亦可通話…" autocomplete="off">
+            <button id="call-input-send" class="call-in-btn">送出</button>
           </div>
         </div>
 
@@ -387,6 +400,37 @@
     hangupBtn.onclick = endCall;
     micBtn.onclick = toggleMute;
     configBtn.onclick = promptServerUrl;
+
+    // 綁定快捷字卡與文字輸入送出
+    const quickChips = document.getElementById('call-quick-chips');
+    if (quickChips) {
+      quickChips.querySelectorAll('.chip-btn[data-say]').forEach((btn) => {
+        btn.onclick = () => {
+          const txt = btn.getAttribute('data-say');
+          if (txt) {
+            userSubtitle.textContent = `你：「${txt}」`;
+            sendToGlitch(txt);
+          }
+        };
+      });
+      const toneBtn = document.getElementById('call-test-tone-btn');
+      if (toneBtn) toneBtn.onclick = testTone;
+    }
+
+    const inTxt = document.getElementById('call-input-txt');
+    const inSend = document.getElementById('call-input-send');
+    if (inTxt && inSend) {
+      const doSend = () => {
+        const val = inTxt.value.trim();
+        if (val) {
+          userSubtitle.textContent = `你：「${val}」`;
+          inTxt.value = '';
+          sendToGlitch(val);
+        }
+      };
+      inSend.onclick = doSend;
+      inTxt.onkeydown = (e) => { if (e.key === 'Enter') doSend(); };
+    }
 
     settingInput = document.getElementById('setting-voice-server-url');
     settingSaveBtn = document.getElementById('btn-save-voice-url');
@@ -595,6 +639,8 @@
         isMuted = true;
         micBtn.classList.add('muted');
         stopRecognition();
+      } else if (e.error === 'network') {
+        userSubtitle.textContent = '（💡 提示：開源 Chromium 缺少 Google 語音辨識服務，請使用 Google Chrome / Edge，或使用下方輸入框／快捷發話！）';
       }
     };
 
