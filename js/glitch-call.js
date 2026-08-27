@@ -468,9 +468,14 @@
         return;
       }
 
+      if (audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+      }
+
       const source = audioCtx.createBufferSource();
       source.buffer = decodedBuffer;
       source.connect(analyserNode);
+      source.connect(audioCtx.destination);
       currentSourceNode = source;
       isSpeaking = true;
 
@@ -484,7 +489,7 @@
       };
 
       source.start(0);
-      console.debug('[GlitchVoice] Web Audio source started successfully!');
+      console.debug('[GlitchVoice] Web Audio source connected to destination and started!');
     } catch (e) {
       console.error('[GlitchVoice] Web Audio playback failed, trying HTMLAudioElement fallback:', e);
       // Fallback to HTMLAudioElement
