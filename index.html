@@ -1468,6 +1468,7 @@ const chatLog=document.getElementById('chat-log'),chatIn=document.getElementById
 // 退化成沒有貼圖，不該連文字聊天一起鎖住，細節見 module script 裡的註解。
 chatBtn.disabled=true;
 let history=[],memory='',chatReady=false,chatOpened=false;
+window.chatHistory=history;
 
 function lastDay(ts){return new Date(ts).toLocaleDateString('zh-TW',{month:'long',day:'numeric',weekday:'short'});}
 function hm(ts){return new Date(ts).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});}
@@ -1496,7 +1497,7 @@ function renderMsg(m,showAvatar,showTime){
 }
 async function loadChat(){
   if(chatReady)return;chatReady=true;
-  const h=await dbGet('chat'),hasSavedChat=Array.isArray(h);history=hasSavedChat?h:[];
+  const h=await dbGet('chat'),hasSavedChat=Array.isArray(h);history=hasSavedChat?h:[];window.chatHistory=history;
   memory=(await dbGet('memory'))||'';
   if(!hasSavedChat){
     history.push({role:'assistant',content:'逼——嗶！你好呀，我是格莉奇。想聊什麼呢？（我的記憶體只有 4KB，講太快我會當機喔～）',ts:Date.now()});

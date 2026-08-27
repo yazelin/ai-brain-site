@@ -20,6 +20,7 @@
   let speechRecognition = null;
   let isSpeaking = false;
   let visualizerAnimFrame = null;
+  let audioContext = null;
 
   // DOM 元素快取
   let callOverlay, callAvatar, callStatus, callTimer, userSubtitle, glitchSubtitle;
@@ -181,6 +182,18 @@
     glitchSubtitle.textContent = '連線中… 正在呼叫格莉奇…';
     callStatus.textContent = '連線中…';
 
+    // 解鎖 Web AudioContext
+    try {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
+    } catch (e) {
+      console.debug('[GlitchVoice] AudioContext unlock:', e);
+    }
+
     // 啟動通話計時器
     callStartTime = Date.now();
     updateTimer();
@@ -196,7 +209,7 @@
       callStatus.textContent = '通話中 · 4KB 連線';
       glitchSubtitle.textContent = '好耶！連線成功！想和我聊什麼呢？';
     } catch (err) {
-      callStatus.textContent = '離線通話 (請檢查端點)';
+      callStatus.textContent = '連線異常';
       glitchSubtitle.textContent = `無法連線到伺服器 (${err.message})，請點 ⚙️ 確認 Tunnel 網址。`;
     }
 
@@ -322,6 +335,7 @@
       // 一旦收到完整最終斷句，發送給格莉奇後端
       if (finalTranscript.trim()) {
         const textToSend = finalTranscript.trim();
+        console.debug('[GlitchVoice] Final speech transcript:', textToSend);
         userSubtitle.textContent = `👤 你：「${textToSend}」`;
         sendToGlitch(textToSend);
       }
@@ -345,6 +359,7 @@
     try {
       rec.start();
       speechRecognition = rec;
+      console.debug('[GlitchVoice] Speech recognition listening...');
     } catch (e) {
       console.debug('[GlitchVoice] Start recognition failed:', e);
     }
@@ -358,11 +373,14 @@
     setAvatarEmotion('count');
     glitchSubtitle.textContent = '思考中（4KB 記憶體運算中…）';
 
-    // 取得最近 6 輪聊天紀錄
-    const history = (window.history || []).slice(-6).map(m => ({
-      role: m.role || 'user',
+    // 安全取得最近 6 輪聊天紀錄
+    const chatHist = Array.isArray(window.chatHistory) ? window.chatHistory : [];
+    const historyPayload = chatHist.slice(-6).map(m => ({
+      role: m.role === 'assistant' ? 'assistant' : 'user',
       content: m.content || ''
     }));
+
+    console.debug('[GlitchVoice] Sending prompt to glitch-server:', { userText, historyPayload, serverUrl });
 
     try {
       const res = await fetch(`${serverUrl}/api/glitch-call`, {
@@ -370,7 +388,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: userText,
-          history: history,
+          history: historyPayload,
           request_id: String(reqId),
           speed: 1.05,
           nfe: 16
@@ -379,6 +397,7 @@
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+      console.debug('[GlitchVoice] Received server response:', data);
 
       // 如果在此期間使用者又插話了（RequestId 已過期），直接捨棄此回應
       if (reqId !== currentRequestId || !isCalling) {
@@ -391,10 +410,10 @@
       setAvatarEmotion(data.emotion || 'laugh');
 
       // 同步寫入全域聊天歷史
-      if (window.history && typeof window.dbSet === 'function') {
-        window.history.push({ role: 'user', content: userText, ts: Date.now() });
-        window.history.push({ role: 'assistant', content: data.reply_text, ts: Date.now() });
-        window.dbSet('chat', window.history);
+      if (Array.isArray(window.chatHistory) && typeof window.dbSet === 'function') {
+        window.chatHistory.push({ role: 'user', content: userText, ts: Date.now() });
+        window.chatHistory.push({ role: 'assistant', content: data.reply_text, ts: Date.now() });
+        window.dbSet('chat', window.chatHistory);
       }
 
       // 播放 F5-TTS 音訊
@@ -415,6 +434,7 @@
    */
   function playGlitchAudio(audioUrl, reqId) {
     bargeInInterrupt();
+    console.debug('[GlitchVoice] Playing audio for request:', reqId);
     const audio = new Audio(audioUrl);
     currentAudio = audio;
     isSpeaking = true;
@@ -427,14 +447,17 @@
       }
     };
 
-    audio.onerror = () => {
+    audio.onerror = (e) => {
+      console.error('[GlitchVoice] Audio playback error:', e);
       isSpeaking = false;
       currentAudio = null;
       setAvatarEmotion('neutral');
     };
 
-    audio.play().catch(e => {
-      console.debug('[GlitchVoice] Autoplay blocked or interrupted:', e);
+    audio.play().then(() => {
+      console.debug('[GlitchVoice] Audio playback started successfully!');
+    }).catch(e => {
+      console.warn('[GlitchVoice] Autoplay blocked or interrupted:', e);
       isSpeaking = false;
     });
   }
