@@ -491,10 +491,14 @@
   .call-timer{font-size:.85rem;font-variant-numeric:tabular-nums;color:#94a3b8}
   .call-cfg-btn{background:rgba(255,255,255,.08);border:none;border-radius:50%;width:26px;height:26px;color:#cbd5e1;cursor:pointer;display:grid;place-items:center;font-size:.8rem}
   .call-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:10px 0}
-  .call-avatar-wrap{position:relative;width:120px;height:120px;border-radius:50%;display:grid;place-items:center}
+  .call-avatar-wrap{position:relative;width:124px;height:124px;border-radius:50%;display:grid;place-items:center}
   .call-avatar-glow{position:absolute;inset:-6px;border-radius:50%;background:conic-gradient(from 0deg,#2dd4bf,#38bdf8,#a855f7,#2dd4bf);filter:blur(10px);opacity:.7;animation:spinGlow 8s linear infinite}
   @keyframes spinGlow{to{transform:rotate(360deg)}}
-  .call-avatar-img{position:relative;width:116px;height:116px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.8);background:#0f172a;z-index:2;transition:transform .2s}
+  .call-avatar-img{position:relative;width:120px;height:120px;border-radius:50%;object-fit:cover;object-position:center;border:3px solid rgba(255,255,255,.9);background:#0f172a;z-index:2;transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .25s,filter .25s;box-shadow:0 8px 24px rgba(0,0,0,.45)}
+  .call-avatar-img.speaking{transform:scale(1.06);box-shadow:0 0 24px rgba(45,212,191,.8)}
+  .call-avatar-img.happy{transform:scale(1.08) rotate(3deg);box-shadow:0 0 28px rgba(251,191,36,.85)}
+  .call-avatar-img.count,.call-avatar-img.thinking{transform:scale(0.96);filter:brightness(0.88);box-shadow:0 0 16px rgba(168,85,247,.6)}
+  .call-avatar-img.sad{transform:scale(0.95) rotate(-2deg);filter:grayscale(0.3);box-shadow:0 0 16px rgba(244,63,94,.6)}
   .call-wave-canvas{width:100%;height:32px;border-radius:8px}
   .call-subtitles{width:100%;min-height:75px;max-height:110px;overflow-y:auto;background:rgba(0,0,0,.35);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:8px 10px;font-size:.78rem;line-height:1.45;display:flex;flex-direction:column;gap:4px}
   .user-sub{color:#38bdf8;font-size:.74rem}

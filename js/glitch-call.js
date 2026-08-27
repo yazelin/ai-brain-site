@@ -107,7 +107,7 @@
         <div class="call-body">
           <div class="call-avatar-wrap">
             <div class="call-avatar-glow"></div>
-            <img id="call-avatar-img" class="call-avatar-img" src="images/pet-plain.webp" alt="格莉奇">
+            <img id="call-avatar-img" class="call-avatar-img" src="images/avatar.webp" alt="格莉奇" onerror="this.onerror=null;this.src='images/sticker-01.png'">
           </div>
 
           <canvas id="call-wave-canvas" class="call-wave-canvas"></canvas>
@@ -292,11 +292,11 @@
   }
 
   /**
-   * 切換格莉奇立繪表情
+   * 切換格莉奇立繪/頭像動態表情效果
    */
   function setAvatarEmotion(emotion) {
-    const src = EMOTIONS[emotion] || EMOTIONS.neutral;
-    callAvatar.src = src;
+    if (!callAvatar) return;
+    callAvatar.className = 'call-avatar-img ' + (emotion || 'neutral');
   }
 
   /**

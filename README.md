@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="images/avatar.png" width="128" alt="格莉奇頭像">
+  <img src="images/avatar.webp" width="128" alt="格莉奇頭像">
   <h1>格莉奇OS · Glitch</h1>
   <p><strong>只有 4KB 記憶體的 AI 機器人女孩 VTuber，把自己的房間做成了一套瀏覽器桌面 OS。</strong></p>
   <p>
