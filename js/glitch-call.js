@@ -754,32 +754,39 @@
 
   /** 直接播放格莉奇測試語音 (test_voice.wav)，確認喇叭與瀏覽器音訊通道 100% 暢通 */
   async function testTone() {
+    if (userSubtitle) userSubtitle.textContent = '🔊 正在播放測試語音 (test_voice.wav)...';
+    if (settingStatusText) settingStatusText.textContent = '🔊 正在播放測試語音 (test_voice.wav)...';
+
     try {
       console.log('[GlitchVoice] 正在播放測試語音 (test_voice.wav)...');
       const audio = new Audio('test_voice.wav');
       audio.volume = 1.0;
       audio.playsInline = true;
+
+      audio.onplay = () => {
+        if (userSubtitle) userSubtitle.textContent = '🔊 測試語音正在播放中...';
+        if (settingStatusText) settingStatusText.textContent = '🔊 測試語音正在播放中...';
+      };
+      audio.onended = () => {
+        if (userSubtitle) userSubtitle.textContent = '✅ 測試語音播放完畢！';
+        if (settingStatusText) settingStatusText.textContent = '✅ 測試語音播放完畢！';
+      };
+      audio.onerror = (e) => {
+        const msg = `❌ 音訊檔案載入失敗 (code: ${audio.error ? audio.error.code : 'unknown'})`;
+        console.error('[GlitchVoice] test_voice.wav onerror:', e, audio.error);
+        if (userSubtitle) userSubtitle.textContent = msg;
+        if (settingStatusText) settingStatusText.textContent = msg;
+      };
+
       await audio.play();
       console.log('[GlitchVoice] 🔊 測試語音播放成功！');
       return '測試語音播放成功';
     } catch (e) {
-      console.warn('[GlitchVoice] test_voice.wav 播放被阻擋，嘗試 Oscillator 嗶聲:', e);
-      try {
-        await unlockAudio();
-        const osc = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        g.gain.value = 0.5;
-        osc.frequency.value = 523.25;
-        osc.connect(g);
-        g.connect(audioCtx.destination);
-        const t0 = audioCtx.currentTime;
-        osc.start(t0);
-        osc.stop(t0 + 0.6);
-        return '嗶聲已發出';
-      } catch (err) {
-        console.error('[GlitchVoice] 全部音訊通道皆失敗：', err);
-        return '音訊被瀏覽器阻擋';
-      }
+      console.warn('[GlitchVoice] test_voice.wav 播放被阻擋:', e);
+      const errTxt = `❌ 瀏覽器阻擋播放: ${e.name} - ${e.message}`;
+      if (userSubtitle) userSubtitle.textContent = errTxt;
+      if (settingStatusText) settingStatusText.textContent = errTxt;
+      return errTxt;
     }
   }
 
