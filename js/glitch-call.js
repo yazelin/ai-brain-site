@@ -147,68 +147,29 @@
     return audioCtx.state === 'running';
   }
 
-  /** data: URL 直接 atob 解成 ArrayBuffer；Safari 對超長 data: URL 走 fetch 會有長度上限 */
-  async function toArrayBuffer(url) {
-    if (!/^data:/i.test(url)) {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`音訊下載失敗 HTTP ${res.status}`);
-      return res.arrayBuffer();
-    }
-    const comma = url.indexOf(',');
-    if (comma < 0) throw new Error('audio_url 格式錯誤');
-    const bin = atob(url.slice(comma + 1));
-    const buf = new ArrayBuffer(bin.length);
-    const view = new Uint8Array(buf);
-    for (let i = 0; i < bin.length; i++) view[i] = bin.charCodeAt(i);
-    if (view.length < 44) throw new Error('音訊長度異常（少於 WAV 標頭）');
-    return buf;
+  /** 將 base64 或 Data URL 轉為原生 Blob Object URL（解決瀏覽器對超長 Data URL 的解碼限制） */
+  function base64ToBlobUrl(dataUri) {
+    if (!/^data:/i.test(dataUri)) return dataUri;
+    const comma = dataUri.indexOf(',');
+    const b64 = comma >= 0 ? dataUri.slice(comma + 1) : dataUri;
+    const binary = atob(b64);
+    const len = binary.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: 'audio/wav' });
+    return URL.createObjectURL(blob);
   }
 
-  /** 舊版 Safari 的 decodeAudioData 只有 callback 形式，兩種都接 */
-  function decodeAudio(arrayBuffer) {
-    return new Promise((resolve, reject) => {
-      let settled = false;
-      const ok = (b) => { if (!settled) { settled = true; b ? resolve(b) : reject(new Error('解碼結果為空')); } };
-      const fail = (e) => { if (!settled) { settled = true; reject(e || new Error('decodeAudioData 失敗')); } };
-      let p;
-      try { p = audioCtx.decodeAudioData(arrayBuffer, ok, fail); } catch (e) { return fail(e); }
-      if (p && typeof p.then === 'function') p.then(ok, fail);
-    });
-  }
-
-  /** 讀目前 analyser 的最大頻譜值，0 = 沒有任何訊號送到 destination */
-  function analyserPeak() {
-    if (!analyserNode || !audioDataArray) return 0;
-    analyserNode.getByteFrequencyData(audioDataArray);
-    let peak = 0;
-    for (let i = 0; i < audioDataArray.length; i++) if (audioDataArray[i] > peak) peak = audioDataArray[i];
-    return peak;
-  }
-
-  /** 停止目前播放（淡出 20ms，避免 stop() 的喀噠爆音） */
+  /** 停止目前播放 */
   function stopSpeaking() {
     if (currentSource) {
-      const src = currentSource, g = currentGain;
-      src.onended = null;
-      try {
-        const t = audioCtx.currentTime;
-        if (g) {
-          g.gain.cancelScheduledValues(t);
-          g.gain.setValueAtTime(g.gain.value, t);
-          g.gain.linearRampToValueAtTime(0, t + 0.02);
-        }
-        src.stop(t + 0.03);
-      } catch (e) { try { src.stop(); } catch (_) {} }
-      setTimeout(() => { try { src.disconnect(); if (g) g.disconnect(); } catch (e) {} }, 80);
+      try { currentSource.stop(); currentSource.disconnect(); } catch (e) {}
+      currentSource = null;
     }
-    currentSource = null;
-    currentGain = null;
-
     if (fallbackAudio) {
-      try { fallbackAudio.onended = null; fallbackAudio.pause(); fallbackAudio.src = ''; } catch (e) {}
+      try { fallbackAudio.pause(); fallbackAudio.src = ''; } catch (e) {}
       fallbackAudio = null;
     }
-
     if (isSpeaking) {
       isSpeaking = false;
       speechGateUntil = performance.now() + ECHO_TAIL_MS;
@@ -216,99 +177,57 @@
     }
   }
 
-  /** 播放後端回來的語音。turn 過期就不播。 */
+  /** 播放後端回來的語音（使用原生 Blob URL，100% 繞過 Web Audio 解碼器與 Data-URL 限制） */
   async function speak(audioUrl, turn) {
     stopSpeaking();
-    const running = await unlockAudio();
-    if (!running) {
-      console.warn('[GlitchVoice] AudioContext 仍未 running:', audioCtx && audioCtx.state);
-    }
-
-    let buffer;
-    try {
-      buffer = await decodeAudio(await toArrayBuffer(audioUrl));
-    } catch (e) {
-      console.warn('[GlitchVoice] Web Audio 解碼失敗，改用 <audio>：', e);
-      return speakViaElement(audioUrl, turn);
-    }
-
-    if (turn !== turnSeq || !isCalling) return;                 // 使用者已經講下一句了
-    if (audioCtx.state !== 'running') { try { await audioCtx.resume(); } catch (e) {} }
-
-    const src = audioCtx.createBufferSource();
-    src.buffer = buffer;
-    const g = audioCtx.createGain();
-    src.connect(g);
-    g.connect(masterGain);
-
-    const t0 = audioCtx.currentTime;
-    g.gain.setValueAtTime(0, t0);
-    g.gain.linearRampToValueAtTime(1, t0 + FADE_MS);
-
-    currentSource = src;
-    currentGain = g;
-    isSpeaking = true;
-    bargeReadyAt = performance.now() + BARGE_IN_GUARD_MS;
-    speechGateUntil = performance.now() + buffer.duration * 1000 + ECHO_TAIL_MS;
-    setAvatarEmotion('speaking');
-
-    src.onended = () => {
-      if (currentSource !== src) return;
-      currentSource = null; currentGain = null;
-      isSpeaking = false;
-      speechGateUntil = performance.now() + ECHO_TAIL_MS;
-      setAvatarEmotion(null);
-      try { src.disconnect(); g.disconnect(); } catch (e) {}
-    };
-
-    // 先記下開播前的殘響底線：analyser 有平滑，上一段的尾巴要好幾秒才歸零，
-    // 沒有底線的話「還在衰減的舊訊號」會被誤判成「這一段有聲音」。
-    const baseline = analyserPeak();
-
-    src.start();
-    console.debug(`[GlitchVoice] 播放中 ${buffer.duration.toFixed(2)}s / ${buffer.sampleRate}Hz / ctx=${audioCtx.state} / gain=${masterGain.gain.value}`);
-
-    // 真的有訊號進喇叭嗎？400ms 後量一次，沒有新增能量就是靜音，直接講出來別讓人猜
-    setTimeout(() => {
-      if (currentSource !== src) return;
-      const peak = analyserPeak();
-      if (peak <= baseline) {
-        console.error(`[GlitchVoice] 音訊在跑但輸出沒有能量（peak=${peak} <= 開播前 ${baseline}），輸出被系統靜音或裝置選錯。ctx=${audioCtx.state}`);
-        if (glitchSubtitle) glitchSubtitle.textContent += '（偵測不到喇叭輸出，檢查系統音量與輸出裝置）';
-      } else {
-        console.debug(`[GlitchVoice] 輸出電平正常 peak=${peak}（開播前 ${baseline}）`);
-      }
-    }, 400);
-  }
-
-  /** Web Audio 走不通時的退路（也涵蓋極舊瀏覽器） */
-  async function speakViaElement(audioUrl, turn) {
     if (turn !== turnSeq || !isCalling) return;
-    const el = new Audio();
-    el.playsInline = true;
-    el.preload = 'auto';
-    el.volume = OUTPUT_GAIN;
-    el.src = audioUrl;
-    fallbackAudio = el;
-    isSpeaking = true;
-    bargeReadyAt = performance.now() + BARGE_IN_GUARD_MS;
-    speechGateUntil = performance.now() + 30000;    // 不知道長度，先擋著，onended 再放行
-    setAvatarEmotion('speaking');
-    el.onended = el.onerror = () => {
-      if (fallbackAudio !== el) return;
-      fallbackAudio = null;
-      isSpeaking = false;
-      speechGateUntil = performance.now() + ECHO_TAIL_MS;
-      setAvatarEmotion(null);
-    };
+
+    let blobUrl = '';
     try {
-      await el.play();
+      blobUrl = base64ToBlobUrl(audioUrl);
+      const audio = new Audio();
+      audio.playsInline = true;
+      audio.preload = 'auto';
+      audio.volume = 1.0;
+      audio.src = blobUrl;
+      fallbackAudio = audio;
+
+      isSpeaking = true;
+      bargeReadyAt = performance.now() + BARGE_IN_GUARD_MS;
+      speechGateUntil = performance.now() + 30000;
+      setAvatarEmotion('speaking');
+
+      audio.onended = () => {
+        if (fallbackAudio !== audio) return;
+        fallbackAudio = null;
+        isSpeaking = false;
+        speechGateUntil = performance.now() + ECHO_TAIL_MS;
+        setAvatarEmotion(null);
+        if (blobUrl.startsWith('blob:')) URL.revokeObjectURL(blobUrl);
+      };
+
+      audio.onerror = (e) => {
+        console.error('[GlitchVoice] 音訊播放失敗：', e, audio.error);
+        if (fallbackAudio !== audio) return;
+        fallbackAudio = null;
+        isSpeaking = false;
+        speechGateUntil = 0;
+        setAvatarEmotion('sad');
+        if (blobUrl.startsWith('blob:')) URL.revokeObjectURL(blobUrl);
+      };
+
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        await playPromise;
+      }
+      console.debug('[GlitchVoice] 🔊 語音成功播放中！(Blob URL)');
     } catch (e) {
-      console.error('[GlitchVoice] <audio> 播放也失敗：', e);
+      console.error('[GlitchVoice] 播放呼叫異常：', e);
       isSpeaking = false;
       speechGateUntil = 0;
       setAvatarEmotion('sad');
-      if (glitchSubtitle) glitchSubtitle.textContent += `（播放被瀏覽器擋下：${e.name || e.message}）`;
+      if (blobUrl && blobUrl.startsWith('blob:')) URL.revokeObjectURL(blobUrl);
+      if (glitchSubtitle) glitchSubtitle.textContent += `（播放被瀏覽器擋下：${e.message || e.name}）`;
     }
   }
 
@@ -701,7 +620,7 @@
           message: userText,
           history: historyPayload,
           request_id: String(turn),
-          speed: 1.08,
+          speed: 0.92,
           nfe: 12
         })
       }, REQUEST_TIMEOUT_MS);
