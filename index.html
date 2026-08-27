@@ -477,6 +477,37 @@
   .in button{width:34px;height:34px;border-radius:50%;border:none;background:#06c755;color:#fff;font-size:1rem;cursor:pointer;flex:0 0 auto;display:grid;place-items:center}
   .in button:disabled{opacity:.5}
   .in button svg{width:18px;height:18px;fill:#fff}
+
+  /* 格莉奇語音通話 Overlay 與通話按鈕樣式 */
+  .ph-call-btn{background:none;border:none;color:#06c755;cursor:pointer;padding:4px;border-radius:50%;display:grid;place-items:center;transition:transform .15s,background .15s;margin-left:auto;margin-right:4px}
+  .ph-call-btn:hover{background:rgba(6,199,85,.12);transform:scale(1.1)}
+  .call-overlay{position:absolute;inset:0;z-index:120;background:radial-gradient(circle at 50% 30%,#112530 0%,#060e14 100%);color:#fff;display:flex;flex-direction:column;justify-content:space-between;padding:16px 14px 20px;border-radius:32px;overflow:hidden;box-shadow:inset 0 0 20px rgba(45,212,191,.15);animation:fadeInCall .25s ease-out}
+  .call-overlay[hidden]{display:none!important}
+  @keyframes fadeInCall{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+  .call-header{display:flex;align-items:center;justify-content:space-between;padding:4px 6px;margin-top:10px}
+  .call-badge{font-size:.72rem;color:#2dd4bf;display:flex;align-items:center;gap:6px;background:rgba(45,212,191,.12);padding:3px 10px;border-radius:12px;border:1px solid rgba(45,212,191,.25)}
+  .pulse-dot{width:8px;height:8px;background:#2dd4bf;border-radius:50%;box-shadow:0 0 8px #2dd4bf;animation:pulseDot 1.4s infinite}
+  @keyframes pulseDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.75)}}
+  .call-timer{font-size:.85rem;font-variant-numeric:tabular-nums;color:#94a3b8}
+  .call-cfg-btn{background:rgba(255,255,255,.08);border:none;border-radius:50%;width:26px;height:26px;color:#cbd5e1;cursor:pointer;display:grid;place-items:center;font-size:.8rem}
+  .call-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:10px 0}
+  .call-avatar-wrap{position:relative;width:120px;height:120px;border-radius:50%;display:grid;place-items:center}
+  .call-avatar-glow{position:absolute;inset:-6px;border-radius:50%;background:conic-gradient(from 0deg,#2dd4bf,#38bdf8,#a855f7,#2dd4bf);filter:blur(10px);opacity:.7;animation:spinGlow 8s linear infinite}
+  @keyframes spinGlow{to{transform:rotate(360deg)}}
+  .call-avatar-img{position:relative;width:116px;height:116px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.8);background:#0f172a;z-index:2;transition:transform .2s}
+  .call-wave-canvas{width:100%;height:32px;border-radius:8px}
+  .call-subtitles{width:100%;min-height:75px;max-height:110px;overflow-y:auto;background:rgba(0,0,0,.35);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:8px 10px;font-size:.78rem;line-height:1.45;display:flex;flex-direction:column;gap:4px}
+  .user-sub{color:#38bdf8;font-size:.74rem}
+  .glitch-sub{color:#f1f5f9;font-weight:500}
+  .call-controls{display:flex;align-items:center;justify-content:center;gap:28px;padding-top:6px}
+  .ctrl-btn{width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;display:grid;place-items:center;color:#fff;transition:transform .12s,background .15s}
+  .ctrl-btn:active{transform:scale(.92)}
+  .ctrl-btn svg{width:24px;height:24px}
+  .mic-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2)}
+  .mic-btn.muted{background:#f43f5e;border-color:#fda4af}
+  .hangup-btn{background:#ef4444;box-shadow:0 4px 14px rgba(239,68,68,.4)}
+  .hangup-btn:hover{background:#dc2626}
+
   @media(max-width:560px){.phone{width:300px;height:560px}}
 
   /* 手機版：從桌面視窗系統切換為格莉奇手機 OS */
@@ -1920,6 +1951,7 @@ document.getElementById('chat-clear').addEventListener('click',async()=>{
       window.EMOTE_IDS = [];
     });
 </script>
+<script src="js/glitch-call.js"></script>
 <script>
 /* 使用記錄:只在正式站計一次到訪(站名),無任何個資;照全家站的共同 pattern */
 try{if(location.hostname==="yazelin.github.io"&&navigator.sendBeacon)navigator.sendBeacon("https://k-rider-api.yazelinj303.workers.dev/hit?s=ai-brain-site")}catch(e){}
