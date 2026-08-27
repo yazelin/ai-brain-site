@@ -2,7 +2,9 @@
  * 格莉奇語音通話模組 (Glitch Voice Call)
  *
  * 音訊路徑（只有一條，不重複接線）：
- *   BufferSource -> turnGain(淡入淡出) -> masterGain(音量) -> analyser(頻譜) -> destination
+ *   <audio>(串流播放) -> MediaElementSource -> masterGain(音量) -> analyser(頻譜) -> destination
+ *   解碼與緩衝交給 <audio>，接進 Web Audio 只為了頻譜與音量。接上之後聲音「只」從
+ *   destination 出去，所以 AudioContext 沒 running 就是全靜音 —— 播放前一定要 unlockAudio()。
  *
  * 三個會讓「有字幕卻沒聲音」的坑，這版都堵住了：
  *   1. 回音自我打斷：喇叭外放時麥克風會聽到格莉奇自己，Web Speech 一吐字就把播放停掉。
@@ -27,7 +29,6 @@
   const ECHO_TAIL_MS = 400;           // 播完之後再多擋一下殘響
   const UTTERANCE_DEBOUNCE_MS = 700;  // 幾毫秒內的 final 併成同一句
   const OUTPUT_GAIN = 0.9;            // 後端目前已經滿刻度，留一點餘裕避免破音
-  const FADE_MS = 0.015;              // 淡入淡出，避免 stop() 的爆音
   const REQUEST_TIMEOUT_MS = 60000;
 
   let serverUrl = (localStorage.getItem('glitch_server_url') || FALLBACK_TUNNEL_URL).replace(/\/+$/, '');
@@ -57,10 +58,8 @@
   let masterGain = null;
   let analyserNode = null;
   let audioDataArray = null;
-  let currentSource = null;   // 正在播的 BufferSource
-  let currentGain = null;     // 對應的淡入淡出 gain
-  let fallbackAudio = null;   // decodeAudioData 失敗時的 <audio> 退路
-  let silentLoop = null;      // iOS：把 audio session 從鈴聲通道拉到播放通道
+  let playerNode = null;      // <audio> 接進音訊圖的來源節點，一個 element 只能建一次
+  let fallbackAudio = null;   // 目前正在播的 <audio>
 
   // ---------- DOM ----------
   let callOverlay, callAvatar, callStatus, callTimer, userSubtitle, glitchSubtitle;
@@ -138,6 +137,36 @@
     return URL.createObjectURL(blob);
   }
 
+  /** 讀 analyser 目前的頻譜峰值（0-255）。0 代表沒有訊號真的流過音訊圖。 */
+  function analyserPeak() {
+    if (!analyserNode || !audioDataArray) return 0;
+    analyserNode.getByteFrequencyData(audioDataArray);
+    let peak = 0;
+    for (let i = 0; i < audioDataArray.length; i++) {
+      if (audioDataArray[i] > peak) peak = audioDataArray[i];
+    }
+    return peak;
+  }
+
+  /**
+   * 把語音 <audio> 接進音訊圖，頻譜與 setVolume 才有東西可讀可控。
+   * 一個 element 只能建一次 MediaElementSource，所以用 playerNode 擋重複。
+   * 接失敗就維持原樣直接播（沒頻譜但有聲音），不要因為視覺效果賠掉聲音。
+   */
+  function connectPlayerToGraph(player) {
+    if (playerNode) return true;
+    try {
+      ensureAudioGraph();
+      playerNode = audioCtx.createMediaElementSource(player);
+      playerNode.connect(masterGain);
+      return true;
+    } catch (e) {
+      console.warn('[GlitchVoice] 接不進音訊圖，改直接播（沒有頻譜）:', e);
+      playerNode = null;
+      return false;
+    }
+  }
+
   function getVoicePlayer() {
     let p = document.getElementById('glitch-voice-player');
     if (!p) {
@@ -151,10 +180,6 @@
 
   /** 停止目前播放 */
   function stopSpeaking() {
-    if (currentSource) {
-      try { currentSource.stop(); currentSource.disconnect(); } catch (e) {}
-      currentSource = null;
-    }
     if (fallbackAudio) {
       try { fallbackAudio.pause(); fallbackAudio.src = ''; } catch (e) {}
       fallbackAudio = null;
@@ -178,6 +203,7 @@
     try {
       blobUrl = base64ToBlobUrl(audioUrl);
       const player = getVoicePlayer();
+      if (connectPlayerToGraph(player)) await unlockAudio();
       player.volume = 1.0;
       player.src = blobUrl;
       player.currentTime = 0;
@@ -463,7 +489,6 @@
     callTimerInterval = null;
     if (visualizerAnimFrame) { cancelAnimationFrame(visualizerAnimFrame); visualizerAnimFrame = null; }
 
-    if (silentLoop) { try { silentLoop.pause(); } catch (e) {} }
     if (audioCtx && audioCtx.state === 'running') audioCtx.suspend().catch(() => {});
 
     callOverlay.classList.remove('active');
@@ -755,6 +780,7 @@
 
     try {
       const player = getVoicePlayer();
+      if (connectPlayerToGraph(player)) await unlockAudio();
       player.volume = 1.0;
       player.src = 'test_voice.wav';
       player.currentTime = 0;
