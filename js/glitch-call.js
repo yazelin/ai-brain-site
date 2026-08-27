@@ -390,8 +390,8 @@
           message: userText,
           history: historyPayload,
           request_id: String(reqId),
-          speed: 1.05,
-          nfe: 16
+          speed: 1.08,
+          nfe: 12
         })
       });
 
