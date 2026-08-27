@@ -481,7 +481,7 @@
   /* 格莉奇語音通話 Overlay 與通話按鈕樣式 */
   .ph-call-btn{background:none;border:none;color:#06c755;cursor:pointer;padding:4px;border-radius:50%;display:grid;place-items:center;transition:transform .15s,background .15s;margin-left:auto;margin-right:4px}
   .ph-call-btn:hover{background:rgba(6,199,85,.12);transform:scale(1.1)}
-  .call-overlay{position:absolute;inset:0;z-index:120;background:radial-gradient(circle at 50% 30%,#112530 0%,#060e14 100%);color:#fff;display:flex;flex-direction:column;justify-content:space-between;padding:16px 14px 20px;border-radius:32px;overflow:hidden;box-shadow:inset 0 0 20px rgba(45,212,191,.15);animation:fadeInCall .25s ease-out}
+  .call-overlay{position:absolute;inset:0;z-index:120;background:radial-gradient(circle at 50% 30%,#112530 0%,#060e14 100%);color:#fff;display:flex;flex-direction:column;justify-content:space-between;padding:16px 14px 20px;border-radius:inherit;overflow:hidden;box-shadow:inset 0 0 20px rgba(45,212,191,.15);animation:fadeInCall .25s ease-out}
   .call-overlay[hidden]{display:none!important}
   @keyframes fadeInCall{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
   .call-header{display:flex;align-items:center;justify-content:space-between;padding:4px 6px;margin-top:10px}
