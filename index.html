@@ -939,7 +939,13 @@
                 <div><h3 style="color:#2dd4bf">🎙️ 格莉奇語音伺服器 (Glitch Voice Server)</h3><p class="muted">設定 glitch-server 的 Cloudflare Tunnel HTTPS 網址，打通全雙工語音通話與 F5-TTS 發音。</p></div>
               </div>
               <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
-                <input type="url" id="setting-voice-server-url" style="width:100%;box-sizing:border-box;padding:8px 12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#f8fafc;font-size:.82rem" placeholder="https://xxxx.trycloudflare.com">
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <select id="setting-voice-node-select" style="flex:1;box-sizing:border-box;padding:8px 12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#f8fafc;font-size:.82rem">
+                    <option value="">📡 正在搜尋在線社群節點…</option>
+                  </select>
+                  <button class="btn" id="btn-refresh-nodes" type="button" style="background:#334155;color:#fff;border:none;padding:6px 12px;font-size:.8rem">🔄 重新整理</button>
+                </div>
+                <input type="url" id="setting-voice-server-url" style="width:100%;box-sizing:border-box;padding:8px 12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#f8fafc;font-size:.82rem" placeholder="https://xxxx.trycloudflare.com 或 http://127.0.0.1:8000">
                 <div style="display:flex;gap:8px;flex-wrap:wrap">
                   <button class="btn" id="btn-save-voice-url" type="button" style="background:#059669;color:#fff;border:none;padding:6px 14px">儲存並測試連線</button>
                   <button class="btn" id="btn-test-voice-tone" type="button" style="background:#0284c7;color:#fff;border:none;padding:6px 14px">🔊 播放測試音</button>

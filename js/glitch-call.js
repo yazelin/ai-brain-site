@@ -31,6 +31,13 @@
   const OUTPUT_GAIN = 0.9;            // 後端目前已經滿刻度，留一點餘裕避免破音
   const REQUEST_TIMEOUT_MS = 60000;
 
+  const urlParams = new URLSearchParams(location.search);
+  const paramServer = urlParams.get('set_server') || urlParams.get('server');
+  if (paramServer) {
+    const cleanP = paramServer.trim().replace(/\/+$/, '');
+    localStorage.setItem('glitch_server_url', cleanP);
+  }
+
   let serverUrl = (localStorage.getItem('glitch_server_url') || FALLBACK_TUNNEL_URL).replace(/\/+$/, '');
 
   // ---------- 狀態 ----------
@@ -372,8 +379,76 @@
     settingSaveBtn = document.getElementById('btn-save-voice-url');
     settingStatusText = document.getElementById('voice-server-status');
     const settingTestToneBtn = document.getElementById('btn-test-voice-tone');
+    const nodeSelect = document.getElementById('setting-voice-node-select');
+    const refreshNodesBtn = document.getElementById('btn-refresh-nodes');
 
     if (settingTestToneBtn) settingTestToneBtn.onclick = testTone;
+
+    async function loadCommunityNodes() {
+      if (!nodeSelect) return;
+      nodeSelect.innerHTML = '<option value="">📡 正在搜尋在線社群節點…</option>';
+      try {
+        const { promise } = fetchWithTimeout('https://glitch-chat.yazelinj303.workers.dev/voice/nodes', {}, 6000);
+        const res = await promise;
+        const data = await res.json();
+        const nodes = data.nodes || [];
+        nodeSelect.innerHTML = '';
+
+        // 本機預設選項
+        const optLocal = document.createElement('option');
+        optLocal.value = 'http://127.0.0.1:8000';
+        optLocal.textContent = '💻 本機端點 (http://127.0.0.1:8000)';
+        nodeSelect.appendChild(optLocal);
+
+        nodes.forEach(n => {
+          const opt = document.createElement('option');
+          opt.value = n.url;
+          opt.textContent = `🟢 ${n.name || '社群節點'} (${n.engine || 'F5-TTS'})`;
+          nodeSelect.appendChild(opt);
+        });
+
+        const optCustom = document.createElement('option');
+        optCustom.value = 'custom';
+        optCustom.textContent = '⚙️ 自訂伺服器網址…';
+        nodeSelect.appendChild(optCustom);
+
+        // 如果目前存的網址正好在選單裡，選中它
+        let matched = false;
+        for (let i = 0; i < nodeSelect.options.length; i++) {
+          if (nodeSelect.options[i].value === serverUrl) {
+            nodeSelect.selectedIndex = i;
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) {
+          nodeSelect.value = 'custom';
+        }
+      } catch (e) {
+        if (nodeSelect) nodeSelect.innerHTML = '<option value="custom">⚙️ 自訂伺服器網址（社群中心離線）</option>';
+      }
+    }
+
+    if (nodeSelect) {
+      nodeSelect.onchange = () => {
+        if (nodeSelect.value && nodeSelect.value !== 'custom') {
+          serverUrl = nodeSelect.value;
+          if (settingInput) settingInput.value = serverUrl;
+          localStorage.setItem('glitch_server_url', serverUrl);
+          testServerHealth(serverUrl);
+        } else if (nodeSelect.value === 'custom') {
+          if (settingInput) settingInput.focus();
+        }
+      };
+    }
+
+    if (refreshNodesBtn) {
+      refreshNodesBtn.onclick = () => {
+        loadCommunityNodes().then(() => testServerHealth(serverUrl));
+      };
+    }
+
+    loadCommunityNodes();
 
     if (settingInput && settingSaveBtn) {
       settingInput.value = serverUrl;
