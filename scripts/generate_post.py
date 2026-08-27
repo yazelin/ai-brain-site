@@ -270,11 +270,21 @@ def pick_inspiration(news, comments=None, recent=None):
     cmt_block = comment_prompt_block(comments, with_keys=True)
     recent_block = "\n".join(f"- {r}" for r in recent) if recent else "(還沒有發過文)"
     prompt = PICK_PROMPT.format(news=news_block, comments=cmt_block, recent=recent_block)
+    if comments:
+        # ponytail: 提示裡的 "STRONGLY prefer" 模型連日無視,有未回覆留言就直接指定 C1。
+        prompt += (
+            "\n\nMANDATORY OVERRIDE：今天一定要回覆粉絲留言 C1。"
+            "source_type 填 giscus、comment_key 填 C1、"
+            "inspiration 原樣複製 C1 的留言文字。新聞今天只能當配料。"
+        )
     data = parse_json(
         ask("gemini-2.5-flash", prompt),
         ["inspiration", "scene", "source_type", "comment_key"])
     inspiration = data.get("inspiration", "original")
     source_type = data.get("source_type", "news")
+    if comments:
+        # 就算模型還是填了 news,一樣走留言分支(下面會挑回候選清單內的留言)。
+        source_type = "giscus"
     comment_source = data.get("comment_source", "")
     selected_comment = resolve_comment(
         comments, data.get("comment_key", ""), comment_source, inspiration)

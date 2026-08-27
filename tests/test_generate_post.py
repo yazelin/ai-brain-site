@@ -115,6 +115,27 @@ class CommentDeduplicationTests(unittest.TestCase):
         self.assertEqual(result[4], "@fan: 最新留言")
         self.assertEqual(result[5], "newest")
 
+    def test_unanswered_comment_wins_even_if_model_picks_news(self):
+        comments = [
+            {"id": "newest", "text": "@fan: 最新留言", "created_at": "2026-08-05T02:00:00Z"},
+        ]
+        response = json.dumps({
+            "inspiration": "今日新聞",
+            "source_type": "news",
+            "comment_key": "",
+            "comment_source": "",
+            "angle": "好有趣",
+            "scene": "格莉奇看新聞",
+            "stickers": [],
+        }, ensure_ascii=False)
+
+        with mock.patch.object(generate_post, "ask", return_value=response) as ask:
+            result = generate_post.pick_inspiration(["今日新聞"], comments)
+
+        self.assertEqual(result[0], "@fan: 最新留言")
+        self.assertEqual(result[5], "newest")
+        self.assertIn("MANDATORY OVERRIDE", ask.call_args.args[1])
+
     def test_text_generation_only_receives_selected_tracked_comment(self):
         response = json.dumps({"title": "測試文章", "body": "測試正文"}, ensure_ascii=False)
 
