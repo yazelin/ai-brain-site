@@ -246,6 +246,13 @@ npx wrangler deploy
 - Bug 或功能建議：[GitHub Issues](https://github.com/yazelin/ai-brain-site/issues)
 - 留言與角色互動：[GitHub Discussions](https://github.com/yazelin/ai-brain-site/discussions)
 
+## 授權
+
+**雙軌**：角色人格設定、貼圖與表情差分、站台內容 是 **CC BY-NC 4.0**（見 `LICENSE`），程式碼是 **MIT**（見 `LICENSE-CODE`）。
+創作內容可以自由分享改作、須標示出處、不可商用；商業使用含角色授權要先問過林亞澤。
+角色（格莉奇、黑洞先生）的設定正典在
+[ai-brain-site](https://github.com/yazelin/ai-brain-site) 的 `persona.json`。
+
 ---
 
 作者：[GitHub](https://github.com/yazelin) | [Facebook](https://www.facebook.com/yaze.lin.gm) | [Buy Me a Coffee](https://buymeacoffee.com/yazelin)
