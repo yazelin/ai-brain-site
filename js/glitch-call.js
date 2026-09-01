@@ -785,10 +785,14 @@
       glitchSubtitle.textContent = replyText;
       setAvatarEmotion(EMOTION_CLASS[data.emotion] || '');
 
-      if (Array.isArray(window.chatHistory)) {
-        window.chatHistory.push({ role: 'user', content: userText, ts: Date.now() });
-        window.chatHistory.push({ role: 'assistant', content: replyText, ts: Date.now() });
-        if (typeof window.dbSet === 'function') window.dbSet('chat', window.chatHistory);
+      // 寫回聊天紀錄一律走 index.html 的 appendVoiceTurn。不要在這裡自己 push +
+      // dbSet:loadChat() 沒跑過的時候 window.chatHistory 是開機那個空陣列,存下去
+      // 會把整份聊天紀錄蓋掉(先開語音通話、沒碰過聊天視窗時必中)。
+      if (typeof window.appendVoiceTurn === 'function') {
+        try { await window.appendVoiceTurn(userText, replyText); }
+        catch (e) { console.warn('[GlitchVoice] 寫回聊天紀錄失敗', e); }
+      } else {
+        console.warn('[GlitchVoice] 找不到 appendVoiceTurn,這一輪沒有存進聊天紀錄');
       }
 
       if (data.audio_url) {

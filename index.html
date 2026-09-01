@@ -1539,6 +1539,23 @@ async function loadChat(){
 }
 function chatFocus(){loadChat();setTimeout(()=>chatIn.focus(),50);}
 
+// 語音通話把一輪對話寫回聊天。兩件事一定要一起做：
+// 1) 先 await loadChat()。loadChat 只在開聊天視窗或設定時才跑，先開語音通話的話
+//    window.chatHistory 還是開機那個空陣列，直接 dbSet 會把整份聊天紀錄蓋掉。
+// 2) 存完當場畫進 chatLog。少了這步，訊息在記憶體與 IndexedDB 裡都有，但畫面上
+//    要等下次重開才看得到。
+window.appendVoiceTurn=async(userText,replyText)=>{
+  await loadChat();
+  const now=Date.now();
+  const ask={role:'user',content:userText,ts:now};
+  const ans={role:'assistant',content:replyText,ts:now+1};
+  history.push(ask,ans);
+  await dbSet('chat',history);
+  chatLog.appendChild(renderMsg(ask,true,true));
+  chatLog.appendChild(renderMsg(ans,true,true));
+  chatLog.scrollTop=chatLog.scrollHeight;
+};
+
 async function sendChat(text){
   const msg={role:'user',content:text,ts:Date.now()};
   history.push(msg);await dbSet('chat',history);
