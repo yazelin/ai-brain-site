@@ -781,15 +781,21 @@
         return;
       }
 
-      const replyText = (data.reply_text || '').trim() || '（沒有收到回覆文字）';
+      // 後端沒回文字的時候,畫面上要講清楚,但那句佔位字串不能存進聊天紀錄——
+      // 存了就變成「格莉奇說過這句話」,之後還會被當成上下文餵回給模型。
+      const rawReply = (data.reply_text || '').trim();
+      const replyText = rawReply || '（沒有收到回覆文字）';
       glitchSubtitle.textContent = replyText;
       setAvatarEmotion(EMOTION_CLASS[data.emotion] || '');
 
       // 寫回聊天紀錄一律走 index.html 的 appendVoiceTurn。不要在這裡自己 push +
       // dbSet:loadChat() 沒跑過的時候 window.chatHistory 是開機那個空陣列,存下去
       // 會把整份聊天紀錄蓋掉(先開語音通話、沒碰過聊天視窗時必中)。
-      if (typeof window.appendVoiceTurn === 'function') {
-        try { await window.appendVoiceTurn(userText, replyText); }
+      if (!rawReply) {
+        // 整輪都不存。只存問句會留下一個沒有答案的半截對話,一樣會污染上下文。
+        console.warn('[GlitchVoice] 後端沒有回文字,這一輪不寫進聊天紀錄');
+      } else if (typeof window.appendVoiceTurn === 'function') {
+        try { await window.appendVoiceTurn(userText, rawReply); }
         catch (e) { console.warn('[GlitchVoice] 寫回聊天紀錄失敗', e); }
       } else {
         console.warn('[GlitchVoice] 找不到 appendVoiceTurn,這一輪沒有存進聊天紀錄');
