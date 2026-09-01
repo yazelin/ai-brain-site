@@ -85,6 +85,19 @@ export default {
     // 前端每 3 秒問一次＝每分鐘 20 次，計進去會把使用者自己鎖死（連聊天一起）。
     if (req.method === "GET" && path.endsWith("/img")) return imgStatus(env, url, cors, err);
 
+    // 格莉奇語音節點註冊中心（支援開源社群多節點自動發現）
+    if (req.method === "GET" && path.endsWith("/voice/nodes")) return handleGetVoiceNodes(env, cors);
+    if (req.method === "POST" && path.endsWith("/voice/register")) {
+      let body;
+      try { body = await req.json(); } catch { return err(400, "bad json"); }
+      return handleRegisterVoiceNode(env, body, cors, err);
+    }
+    if (req.method === "POST" && path.endsWith("/voice/unregister")) {
+      let body;
+      try { body = await req.json(); } catch { return err(400, "bad json"); }
+      return handleUnregisterVoiceNode(env, body, cors, err);
+    }
+
     if (req.method !== "POST") return new Response("POST only", { status: 405, headers: cors });
 
     const ip = req.headers.get("CF-Connecting-IP") || "unknown";
@@ -99,6 +112,67 @@ export default {
     return chat(env, body, cors, err);
   },
 };
+
+async function handleGetVoiceNodes(env, cors) {
+  const nodes = [];
+  if (env.GLITCH_VOICE_NODES) {
+    try {
+      const list = await env.GLITCH_VOICE_NODES.list({ prefix: "node:" });
+      for (const k of list.keys || []) {
+        const val = await env.GLITCH_VOICE_NODES.get(k.name, { type: "json" });
+        if (val && val.url) nodes.push(val);
+      }
+    } catch (e) {
+      console.error("KV fetch error", e);
+    }
+  }
+  nodes.sort((a, b) => (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0) || (b.last_seen || 0) - (a.last_seen || 0));
+  return new Response(JSON.stringify({ nodes }), {
+    headers: { "content-type": "application/json", ...cors },
+  });
+}
+
+async function handleRegisterVoiceNode(env, body, cors, err) {
+  const { id, name, url, engine, character, version, is_default, requires_key } = body || {};
+  if (!id || !url) return err(400, "missing id or url");
+
+  const cleanUrl = String(url).trim().replace(/\/+$/, "");
+  const cleanId = String(id).trim().replace(/[^a-zA-Z0-9_-]/g, "");
+
+  const nodeData = {
+    id: cleanId,
+    name: name || "社群格莉奇語音節點",
+    url: cleanUrl,
+    engine: engine || "f5-tts",
+    character: character || "格莉奇",
+    version: version || "1.0",
+    is_default: !!is_default,
+    // 節點自己說要不要金鑰，呼叫端才能在打之前就決定帶不帶，不用先吃一次 401
+    requires_key: !!requires_key,
+    last_seen: Date.now(),
+  };
+
+  if (env.GLITCH_VOICE_NODES) {
+    // TTL 300 秒（5 分鐘未收到心跳自動從在線清單過期）
+    await env.GLITCH_VOICE_NODES.put(`node:${cleanId}`, JSON.stringify(nodeData), { expirationTtl: 300 });
+  }
+
+  return new Response(JSON.stringify({ status: "registered", node: nodeData }), {
+    headers: { "content-type": "application/json", ...cors },
+  });
+}
+
+async function handleUnregisterVoiceNode(env, body, cors, err) {
+  const { id } = body || {};
+  if (!id) return err(400, "missing id");
+  const cleanId = String(id).trim().replace(/[^a-zA-Z0-9_-]/g, "");
+  if (env.GLITCH_VOICE_NODES) {
+    await env.GLITCH_VOICE_NODES.delete(`node:${cleanId}`);
+  }
+  return new Response(JSON.stringify({ status: "unregistered", id: cleanId }), {
+    headers: { "content-type": "application/json", ...cors },
+  });
+}
 
 async function gen(env, systemText, contents, maxTokens) {
   const base = (env.GEMINI_WEB_BASE_URL || "").replace(/\/+$/, "");
