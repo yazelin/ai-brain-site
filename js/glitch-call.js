@@ -40,6 +40,45 @@
 
   let serverUrl = (localStorage.getItem('glitch_server_url') || FALLBACK_TUNNEL_URL).replace(/\/+$/, '');
 
+  // ---------- 節點金鑰 ----------
+  // 節點可以設密碼；沒設的節點照樣直連，查不到金鑰就不帶標頭。
+  // 存在 localStorage 是刻意的選擇：yazelin.github.io 底下所有 Pages 專案共用
+  // 同一個 origin，所以這裡的金鑰其他專案的 JS 讀得到。這些金鑰只擋自己的
+  // 語音節點，不是帳號憑證，換來的是不用每次重帶。
+  const NODE_KEYS_LS = 'glitch_node_keys';
+
+  function loadNodeKeys() {
+    try { return JSON.parse(localStorage.getItem(NODE_KEYS_LS) || '{}'); }
+    catch { return {}; }
+  }
+
+  function nodeKey(url) {
+    return (loadNodeKeys()[(url || '').replace(/\/+$/, '')] || '').trim();
+  }
+
+  function setNodeKey(url, key) {
+    const keys = loadNodeKeys();
+    const u = (url || '').replace(/\/+$/, '');
+    if (key) keys[u] = key; else delete keys[u];
+    try { localStorage.setItem(NODE_KEYS_LS, JSON.stringify(keys)); } catch {}
+  }
+
+  function authHeaders(url) {
+    const k = nodeKey(url || serverUrl);
+    return k ? { 'X-Glitch-Key': k } : {};
+  }
+
+  // 分享連結可以帶 ?key=，讀完就從網址列拿掉，不要留在歷史紀錄與分享出去的網址裡
+  const paramKey = urlParams.get('key');
+  if (paramKey) {
+    setNodeKey(serverUrl, paramKey.trim());
+    urlParams.delete('key');
+    const rest = urlParams.toString();
+    // 一定要寫 window.history:index.html 頂層有個 let history=[](聊天紀錄),
+    // 那個宣告會在全域語彙作用域蓋掉 window.history,直接寫 history 會拿到陣列。
+    window.history.replaceState(null, '', location.pathname + (rest ? '?' + rest : '') + location.hash);
+  }
+
   // ---------- 狀態 ----------
   let isCalling = false;
   let isMuted = false;
@@ -380,6 +419,7 @@
     settingStatusText = document.getElementById('voice-server-status');
     const settingTestToneBtn = document.getElementById('btn-test-voice-tone');
     const nodeSelect = document.getElementById('setting-voice-node-select');
+    const settingKeyInput = document.getElementById('setting-voice-node-key');
     const refreshNodesBtn = document.getElementById('btn-refresh-nodes');
 
     if (settingTestToneBtn) settingTestToneBtn.onclick = testTone;
@@ -403,7 +443,8 @@
         nodes.forEach(n => {
           const opt = document.createElement('option');
           opt.value = n.url;
-          opt.textContent = `🟢 ${n.name || '社群節點'} (${n.engine || 'F5-TTS'})`;
+          const lock = n.requires_key ? (nodeKey(n.url) ? '🔑 ' : '🔒 ') : '';
+          opt.textContent = `🟢 ${lock}${n.name || '社群節點'} (${n.engine || 'F5-TTS'})`;
           nodeSelect.appendChild(opt);
         });
 
@@ -434,6 +475,7 @@
         if (nodeSelect.value && nodeSelect.value !== 'custom') {
           serverUrl = nodeSelect.value;
           if (settingInput) settingInput.value = serverUrl;
+          if (settingKeyInput) settingKeyInput.value = nodeKey(serverUrl);
           localStorage.setItem('glitch_server_url', serverUrl);
           testServerHealth(serverUrl);
         } else if (nodeSelect.value === 'custom') {
@@ -452,11 +494,14 @@
 
     if (settingInput && settingSaveBtn) {
       settingInput.value = serverUrl;
+      if (settingKeyInput) settingKeyInput.value = nodeKey(serverUrl);
       settingSaveBtn.onclick = () => {
         const val = settingInput.value.trim().replace(/\/+$/, '');
         if (!val) return;
         serverUrl = val;
         localStorage.setItem('glitch_server_url', serverUrl);
+        // 金鑰跟著網址一起存;留空就是把這個節點的金鑰拿掉
+        if (settingKeyInput) setNodeKey(serverUrl, settingKeyInput.value.trim());
         testServerHealth(serverUrl);
       };
       testServerHealth(serverUrl);
@@ -706,7 +751,7 @@
     try {
       const { ctrl, promise } = fetchWithTimeout(`${serverUrl}/api/glitch-call`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
         body: JSON.stringify({
           message: userText,
           history: historyPayload,
@@ -718,6 +763,16 @@
       inFlight = ctrl;
 
       const res = await promise;
+      if (res.status === 401) {
+        const entered = prompt(`這個節點需要金鑰\n${serverUrl}\n\n請向節點擁有者索取，或在設定裡填一次就好：`, nodeKey());
+        if (entered && entered.trim()) {
+          setNodeKey(serverUrl, entered.trim());
+          glitchSubtitle.textContent = '金鑰已記住，請再說一次。';
+        } else {
+          glitchSubtitle.textContent = '這個節點需要金鑰才能通話。';
+        }
+        return;
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
 
