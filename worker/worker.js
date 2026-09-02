@@ -71,7 +71,7 @@ export default {
     const path = url.pathname.replace(/\/+$/, "");
     const origin = req.headers.get("Origin") || "";
     const allowed = (env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
-    const allow = allowed.includes(origin) || allowed.includes("*");
+    const allow = originAllowed(origin, allowed);
     const cors = {
       "access-control-allow-origin": allow ? origin : "null",
       "access-control-allow-methods": "GET, POST, OPTIONS",
@@ -112,6 +112,19 @@ export default {
     return chat(env, body, cors, err);
   },
 };
+
+// 設定裡寫的是 http://localhost:*，但原本是字串完全比對，那個星號只是一個字元，
+// 所以那條規則從來沒生效過（本機開發打這個 Worker 一律被 CORS 擋）。這裡只讓
+// 埠號的位置吃萬用字元，其餘照舊完全比對，不做任意 pattern。
+function originAllowed(origin, allowed) {
+  if (!origin) return false;
+  if (allowed.includes("*") || allowed.includes(origin)) return true;
+  return allowed.some((a) => {
+    if (!a.endsWith(":*")) return false;
+    const prefix = a.slice(0, -1);                       // "http://localhost:"
+    return origin.startsWith(prefix) && /^\d+$/.test(origin.slice(prefix.length));
+  });
+}
 
 async function handleGetVoiceNodes(env, cors) {
   const nodes = [];
