@@ -90,6 +90,8 @@
 
   let rec = null;             // SpeechRecognition 實例
   let recGen = 0;             // 世代編號，讓殭屍 recognizer 的 onend 不會亂重啟
+  let netErrCount = 0;        // 連續 network 錯誤次數；開源 Chromium 會每次都錯
+  const NET_ERR_GIVE_UP = 3;  // 連錯這麼多次就別再重啟了，不然麥克風會一直開開關關
   let pendingText = '';
   let pendingTimer = null;
 
@@ -558,6 +560,7 @@
     if (!callOverlay) init();
     isCalling = true;
     turnSeq++;
+    netErrCount = 0;
 
     callOverlay.hidden = false;
     callOverlay.classList.add('active');
@@ -677,6 +680,7 @@
       }
       const heard = (final || interim).trim();
       if (!heard) return;
+      netErrCount = 0;   // 聽得到東西就代表辨識服務是通的
 
       // 回音閘門：播放中（含殘響）聽到的東西，預設當成格莉奇自己的聲音丟掉
       if (isSpeaking || performance.now() < speechGateUntil) {
@@ -698,7 +702,17 @@
         micBtn.classList.add('muted');
         stopRecognition();
       } else if (e.error === 'network') {
-        userSubtitle.textContent = '（💡 提示：開源 Chromium 缺少 Google 語音辨識服務，請使用 Google Chrome / Edge，或使用下方輸入框／快捷發話！）';
+        // 開源 Chromium 沒有 Google 的語音服務，每次 start() 都會立刻 network 錯誤，
+        // 接著 onend 又把它重啟——麥克風會每 250ms 開關一次。連錯就收手，改用打字。
+        netErrCount++;
+        if (netErrCount >= NET_ERR_GIVE_UP) {
+          userSubtitle.textContent = '（這個瀏覽器沒有語音辨識服務，已停止收音。請改用下方輸入框或快捷發話，或換 Google Chrome / Edge）';
+          isMuted = true;
+          micBtn.classList.add('muted');
+          stopRecognition();
+        } else {
+          userSubtitle.textContent = '（語音辨識連不上，重試中…）';
+        }
       }
     };
 
