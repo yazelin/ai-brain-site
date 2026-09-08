@@ -16,7 +16,7 @@
                         │
                         ▼ (自動查詢在線節點 GET /voice/nodes)
 ┌────────────────────────────────────────────────────────┐
-│     Cloudflare Worker + KV (GLITCH_VOICE_NODES)        │
+│     Cloudflare Worker + D1 (glitch-nodes)              │
 │   • 節點心跳與註冊中心 (TTL: 300s 自動過期清理)         │
 │   • 網址: https://glitch-chat.yazelinj303.workers.dev  │
 └───────────────────────▲────────────────────────────────┘
@@ -48,10 +48,12 @@
 
 ---
 
-## 3. Cloudflare KV 註冊中心通訊協議
+## 3. Cloudflare D1 註冊中心通訊協議
 
 * **端點**：`https://glitch-chat.yazelinj303.workers.dev`
-* **KV Namespace**：`GLITCH_VOICE_NODES` (`id = "fd26c85ec13745ef94e985fac027a955"`)
+* **D1 資料庫**：`glitch-nodes`，一張表 `voice_nodes`，一個節點一列，心跳就是 upsert。
+* **在線判定**：`last_seen` 五分鐘內。原本用 KV 的 `expirationTtl: 300` 自動過期，D1 沒有 TTL，改成查詢時過濾，並在每次註冊時順手刪掉一天以上沒回來的列。
+* **為什麼從 KV 搬過來（2026-09-09）**：節點每 60 秒心跳一次、KV 免費額度是一天 1000 次寫入，一個節點就吃滿。2026-09-02 單日 1109 次寫入、1118 次 list，兩項都超標。D1 免費額度是一天 10 萬列寫入，同樣的心跳只用掉 1.4%，而且列清單一次查詢就好，不必 list 之後再逐筆 get。
 
 ### 註冊節點 (`POST /voice/register`)
 ```json
@@ -88,4 +90,4 @@
 1. **URL 參數自動套用**：
    * 訪問 `https://yazelin.github.io/ai-brain-site/?set_server=https://xxxx.trycloudflare.com` 時，前端會自動寫入 `localStorage.getItem("glitch_custom_server")`，無需手動複製貼上。
 2. **設定視窗動態下拉選單**：
-   * 前端開啟「設定」視窗時，會自動向 KV 中心抓取所有在線節點並列於選單，包含 `💻 本機端點 (http://127.0.0.1:8000)` 與所有在線社群節點。
+   * 前端開啟「設定」視窗時，會自動向註冊中心抓取所有在線節點並列於選單，包含 `💻 本機端點 (http://127.0.0.1:8000)` 與所有在線社群節點。
