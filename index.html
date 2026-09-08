@@ -1094,11 +1094,12 @@
   for(const n of['localStorage','sessionStorage']){try{window[n].getItem('x');}catch(e){Object.defineProperty(window,n,{value:mem()});}}})();
 /* ===== IndexedDB：聊天歷史、記憶摘要、桌布選擇。ponytail: 裸 IndexedDB + tiny wrapper，不裝 lib。 ===== */
 const DB='glos-db',STORE='kv';
-let dbp;
-function db(){if(!dbp)dbp=new Promise((res,rej)=>{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>r.result.createObjectStore(STORE);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});return dbp;}
-async function dbGet(k){const d=await db();return new Promise((res,rej)=>{const q=d.transaction(STORE).objectStore(STORE).get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error);});}
-async function dbSet(k,v){const d=await db();return new Promise((res,rej)=>{const q=d.transaction(STORE,'readwrite').objectStore(STORE).put(v,k);q.onsuccess=()=>res();q.onerror=()=>rej(q.error);});}
-async function dbDel(k){const d=await db();return new Promise((res,rej)=>{const q=d.transaction(STORE,'readwrite').objectStore(STORE).delete(k);q.onsuccess=()=>res();q.onerror=()=>rej(q.error);});}
+let dbp,memKV=null;   // IndexedDB 開不了（sandbox iframe、封鎖網站資料）就退到記憶體 Map：功能照跑，只是關掉就忘
+function db(){if(!dbp)dbp=new Promise((res)=>{let r;try{r=indexedDB.open(DB,1);}catch(e){memKV=new Map();return res(null);}
+  r.onupgradeneeded=()=>r.result.createObjectStore(STORE);r.onsuccess=()=>res(r.result);r.onerror=()=>{memKV=new Map();res(null);};r.onblocked=r.onerror;});return dbp;}
+async function dbGet(k){const d=await db();if(!d)return memKV.get(k);return new Promise((res,rej)=>{const q=d.transaction(STORE).objectStore(STORE).get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error);});}
+async function dbSet(k,v){const d=await db();if(!d){memKV.set(k,v);return;}return new Promise((res,rej)=>{const q=d.transaction(STORE,'readwrite').objectStore(STORE).put(v,k);q.onsuccess=()=>res();q.onerror=()=>rej(q.error);});}
+async function dbDel(k){const d=await db();if(!d){memKV.delete(k);return;}return new Promise((res,rej)=>{const q=d.transaction(STORE,'readwrite').objectStore(STORE).delete(k);q.onsuccess=()=>res();q.onerror=()=>rej(q.error);});}
 
 /* ===== Service Worker（PWA 兩階段載入）===== */
 window.__glosCacheProgress=null;
