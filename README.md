@@ -207,6 +207,7 @@ npx wrangler deploy
 - Giscus 只在開啟「留言」視窗時載入，留言會公開保存於本 repo 的 GitHub Discussions。
 - Worker 的每 IP 限流保存在 isolate 記憶體中，isolate 回收後會重置；它是輕量防連點，不是持久配額系統。
 - PWA 快取不包含跨域聊天／生圖 API，因此離線時只能使用已快取內容與本機資料。
+- 被別的網站用 sandbox iframe 嵌入時（例如 Larch 的小遊戲卡），瀏覽器不給 localStorage、IndexedDB 與 Service Worker：站會以「網路模式」開機，功能照常，但那個環境裡什麼都不會被記住。
 
 ## 專案結構
 
