@@ -1088,6 +1088,10 @@
 </div>
 
 <script>
+/* ===== 被別人的 sandbox iframe 嵌進去時（opaque origin，例如 Larch 小遊戲卡）碰 storage 會丟 SecurityError，
+   整支 classic script 會在第一個 localStorage 就陣亡。換成記憶體版讓它以「不記東西」的模式活下去。 ===== */
+(function(){function mem(){const m={};return{getItem:k=>k in m?m[k]:null,setItem:(k,v)=>{m[k]=String(v);},removeItem:k=>{delete m[k];},clear:()=>{for(const k in m)delete m[k];},key:i=>Object.keys(m)[i]??null,get length(){return Object.keys(m).length;}};}
+  for(const n of['localStorage','sessionStorage']){try{window[n].getItem('x');}catch(e){Object.defineProperty(window,n,{value:mem()});}}})();
 /* ===== IndexedDB：聊天歷史、記憶摘要、桌布選擇。ponytail: 裸 IndexedDB + tiny wrapper，不裝 lib。 ===== */
 const DB='glos-db',STORE='kv';
 let dbp;
@@ -1098,14 +1102,17 @@ async function dbDel(k){const d=await db();return new Promise((res,rej)=>{const 
 
 /* ===== Service Worker（PWA 兩階段載入）===== */
 window.__glosCacheProgress=null;
-if('serviceWorker'in navigator){
+window.__glosSwUnavailable=true;
+try{window.__glosSwUnavailable=!('serviceWorker'in navigator)||!navigator.serviceWorker.ready;}catch(e){}
+const swUnavailable=()=>{window.__glosSwUnavailable=true;window.dispatchEvent(new Event('glos-sw-unavailable'));};
+if(!window.__glosSwUnavailable){
   const requestAssetWarm=()=>navigator.serviceWorker.ready.then(reg=>reg.active?.postMessage({type:'warm-assets'})).catch(()=>{});
   navigator.serviceWorker.addEventListener('message',event=>{
     if(event.data?.type!=='cache-progress')return;
     window.__glosCacheProgress=event.data;window.dispatchEvent(new CustomEvent('glos-cache-progress',{detail:event.data}));
   });
   requestAssetWarm();
-  navigator.serviceWorker.register('sw.js').then(requestAssetWarm).catch(()=>{});
+  navigator.serviceWorker.register('sw.js').then(requestAssetWarm).catch(swUnavailable);
   navigator.serviceWorker.addEventListener('controllerchange',requestAssetWarm);
 }
 
@@ -1381,7 +1388,8 @@ mobileOS.addEventListener?.('change',syncMobileOSState);
     ['校準天線裝置 ......... 收到雜訊','w'],
     ['啟動桌面環境 ......... ','ok'],
   ];
-  let i=0,linesDone=false,cacheSeen=false,cacheDone=!('serviceWorker'in navigator),cacheFailed=0,finished=false;
+  let i=0,linesDone=false,cacheSeen=false,cacheDone=!!window.__glosSwUnavailable,cacheFailed=0,finished=false;
+  window.addEventListener('glos-sw-unavailable',()=>{if(cacheDone)return;cacheDone=true;cap.textContent='沒有離線快取，以網路模式啟動';finish();});
   const fallback=setTimeout(()=>{if(cacheDone)return;cacheDone=true;cap.textContent='離線快取逾時，先以網路模式啟動';finish();},20000);
   function loadLabel(path=''){
     const name=path.replace(/^\.\//,'').split('/').pop();
