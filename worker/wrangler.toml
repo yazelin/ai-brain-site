@@ -1,6 +1,8 @@
 name = "glitch-chat"
 main = "worker.js"
 compatibility_date = "2026-08-01"
+# 這台登入了兩個 Cloudflare 帳號，不寫死會在非互動模式下失敗
+account_id = "986aa90dfb437b247dcb8e1819c9b525"
 
 # 非機密設定走 vars
 [vars]
@@ -8,6 +10,10 @@ GEMINI_WEB_BASE_URL = "https://ching-tech.ddns.net/gemini-web"
 ALLOWED_ORIGINS = "https://yazelin.github.io,http://localhost:*,https://localhost:*"
 # GEMINI_API_KEY 用 wrangler secret put 注入，不寫在這裡
 
-[[kv_namespaces]]
-binding = "GLITCH_VOICE_NODES"
-id = "fd26c85ec13745ef94e985fac027a955"
+# 語音節點註冊表。原本走 KV，但節點每 60 秒心跳一次、KV 免費額度是一天 1000 次寫入，
+# 一個節點就吃滿（2026-09-02 實測單日 1109 寫、1118 list，兩項都超標）。
+# D1 免費是一天 10 萬列寫入，同樣的心跳只用掉 1.4%，而且列清單一次查詢就好，不必 list + 逐筆 get。
+[[d1_databases]]
+binding = "NODES_DB"
+database_name = "glitch-nodes"
+database_id = "545bd67d-f620-41a7-8697-3ad5a776fa0e"

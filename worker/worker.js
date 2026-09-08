@@ -65,6 +65,9 @@ function limited(ip) {
   return null;
 }
 
+// 幾分鐘沒心跳就當節點離線（原 KV 版是 expirationTtl 300）
+const NODE_TTL_MS = 300000;
+
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);
@@ -127,19 +130,21 @@ function originAllowed(origin, allowed) {
 }
 
 async function handleGetVoiceNodes(env, cors) {
+  // 只回最近有心跳的節點。KV 版靠 TTL 300 秒自動過期，D1 沒有 TTL，改用 last_seen 過濾。
   const nodes = [];
-  if (env.GLITCH_VOICE_NODES) {
+  if (env.NODES_DB) {
     try {
-      const list = await env.GLITCH_VOICE_NODES.list({ prefix: "node:" });
-      for (const k of list.keys || []) {
-        const val = await env.GLITCH_VOICE_NODES.get(k.name, { type: "json" });
-        if (val && val.url) nodes.push(val);
+      const { results } = await env.NODES_DB.prepare(
+        "SELECT id, name, url, engine, character, version, is_default, requires_key, last_seen FROM voice_nodes " +
+        "WHERE last_seen > ?1 ORDER BY is_default DESC, last_seen DESC"
+      ).bind(Date.now() - NODE_TTL_MS).all();
+      for (const r of results || []) {
+        if (r.url) nodes.push({ ...r, is_default: !!r.is_default, requires_key: !!r.requires_key });
       }
     } catch (e) {
-      console.error("KV fetch error", e);
+      console.error("D1 fetch error", e);
     }
   }
-  nodes.sort((a, b) => (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0) || (b.last_seen || 0) - (a.last_seen || 0));
   return new Response(JSON.stringify({ nodes }), {
     headers: { "content-type": "application/json", ...cors },
   });
@@ -165,9 +170,17 @@ async function handleRegisterVoiceNode(env, body, cors, err) {
     last_seen: Date.now(),
   };
 
-  if (env.GLITCH_VOICE_NODES) {
-    // TTL 300 秒（5 分鐘未收到心跳自動從在線清單過期）
-    await env.GLITCH_VOICE_NODES.put(`node:${cleanId}`, JSON.stringify(nodeData), { expirationTtl: 300 });
+  if (env.NODES_DB) {
+    // 心跳 = 一列 upsert。順手刪掉一天以上沒回來的，D1 沒有 TTL 要自己收。
+    await env.NODES_DB.batch([
+      env.NODES_DB.prepare(
+        "INSERT INTO voice_nodes (id, name, url, engine, character, version, is_default, requires_key, last_seen) " +
+        "VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9) ON CONFLICT(id) DO UPDATE SET " +
+        "name=?2, url=?3, engine=?4, character=?5, version=?6, is_default=?7, requires_key=?8, last_seen=?9"
+      ).bind(nodeData.id, nodeData.name, nodeData.url, nodeData.engine, nodeData.character,
+             nodeData.version, nodeData.is_default ? 1 : 0, nodeData.requires_key ? 1 : 0, nodeData.last_seen),
+      env.NODES_DB.prepare("DELETE FROM voice_nodes WHERE last_seen < ?1").bind(Date.now() - 86400000),
+    ]);
   }
 
   return new Response(JSON.stringify({ status: "registered", node: nodeData }), {
@@ -179,8 +192,8 @@ async function handleUnregisterVoiceNode(env, body, cors, err) {
   const { id } = body || {};
   if (!id) return err(400, "missing id");
   const cleanId = String(id).trim().replace(/[^a-zA-Z0-9_-]/g, "");
-  if (env.GLITCH_VOICE_NODES) {
-    await env.GLITCH_VOICE_NODES.delete(`node:${cleanId}`);
+  if (env.NODES_DB) {
+    await env.NODES_DB.prepare("DELETE FROM voice_nodes WHERE id = ?1").bind(cleanId).run();
   }
   return new Response(JSON.stringify({ status: "unregistered", id: cleanId }), {
     headers: { "content-type": "application/json", ...cors },
