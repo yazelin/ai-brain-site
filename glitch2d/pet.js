@@ -123,6 +123,8 @@ export async function mountPet(canvas, options = {}) {
        所以站上要帶嘴型的音檔改成從這裡播，不要另外 new Audio()。 */
     speak(url) { return voice.play(url); },
     get speaking() { return motion.speaking; },
+    /* 驗收用：講話時這個值應該跟著音量跳動，靜止時是 0。 */
+    get mouthOpen() { return motion.values.mouthOpen; },
     stopSpeaking() { voice.stop(); },
     dispose() {
       cancelAnimationFrame(frameID); clearTimeout(emoteTimer);

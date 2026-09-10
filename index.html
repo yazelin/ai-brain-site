@@ -1331,7 +1331,13 @@ window.addEventListener('popstate',event=>{
       /* 格莉奇的配音改由骨架自己播，嘴型才跟得上音量；黑洞先生沒有骨架，照舊。 */
       if (b.dataset.say === 'glitch' && petRig) {
         viaRig = true;
-        petRig.onvoice = function (state) { if (state !== 'playing') stop(); };
+        /* speak() 內部會先 stop() 一次做重置，那一發 'stopped' 要忽略，
+           不然按鈕會在開始播的瞬間自己彈回去。播出來以後的停止才算數。 */
+        var started = false;
+        petRig.onvoice = function (state) {
+          if (state === 'playing') { started = true; return; }
+          if (started) stop();
+        };
         petRig.speak('audio/intro-glitch.mp3').catch(stop);
         return;
       }
@@ -1473,6 +1479,7 @@ import('./glitch2d/pet.js').then(async ({mountPet})=>{
   /* WebGL 失敗時 mountPet 會換掉 canvas 節點（失敗的 context 會把型別鎖死），
      所以要顯示的是它回傳的那一張，不是原本那個參考。 */
   const canvas=handle.canvas;
+  window.petRig=handle;      /* 主控台可以直接 petRig.emote('happy') 試，除錯用 */
   petRig=handle;
   /* 當機表情：骨架只能把眼睛與嘴帶到位，抖動與色偏交給 CSS，
      用的是開機畫面那組故障感的參數，站上的視覺語言一致。 */

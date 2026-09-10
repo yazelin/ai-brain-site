@@ -251,7 +251,7 @@ npx wrangler deploy
 
 桌面右下角那位不再是換圖，是 [glitch-2d](https://github.com/yazelin/glitch-2d) 的原生 2D 骨架在跑：21 個部件、網格形變、WebGL 繪製，執行期沒有 Live2D、Cubism 或 Pixi。她會呼吸、會眨眼、點她會揮手，按「聽我自我介紹」時嘴型跟著音量走。
 
-**怎麼接的。** `glitch2d/pet.js` 匯出 `mountPet(canvas)`，回傳的 handle 只有四件事：`emote(id,hold)`、`wave()`、`speak(url)`、`dispose()`。`index.html` 的 `petEmote()` 前面加一段：骨架掛得起來就呼叫它，掛不起來就走原本換圖那條路，兩條路的呼叫介面一樣。
+**怎麼接的。** `glitch2d/pet.js` 匯出 `mountPet(canvas)`，回傳的 handle 只有四件事：`emote(id,hold)`、`wave()`、`speak(url)`、`dispose()`。`index.html` 的 `petEmote()` 前面加一段：骨架掛得起來就呼叫它，掛不起來就走原本換圖那條路，兩條路的呼叫介面一樣。handle 也掛在 `window.petRig`，主控台可以直接 `petRig.emote('happy')`、`petRig.wave()` 試。
 
 **三層退路。** WebGL 開不起來換 Canvas 2D；兩個都失敗、或 `rig.json` 與貼圖沒下載完，就維持原本的 `images/pet-*.webp` 靜態立繪，畫面不會開天窗。實測過三種情境都會落在該落的地方。
 
