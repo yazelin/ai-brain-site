@@ -18,7 +18,7 @@
 | 功能 | 現況 |
 | --- | --- |
 | 桌面／手機 OS 體驗 | 桌面版提供可拖曳、縮放與切換層級的視窗；手機版改為四欄 App 主畫面、狀態列、Dock 與全螢幕 App |
-| 格莉奇桌寵 | 角色常駐桌面、隨機對話泡泡；點擊即可開啟聊天。表情差分（開心／發呆／當機／睡眠）：聊天回覆夾 `[emote:...]` 標記時切換，閒置時也會偶爾自己換 |
+| 格莉奇桌寵 | 角色常駐桌面、隨機對話泡泡；點擊即可開啟聊天並揮手。桌寵是**會動的 2D 骨架**（[glitch-2d](https://github.com/yazelin/glitch-2d)），會呼吸、眨眼、講話時嘴型跟著音量走。表情（開心／發呆／當機／睡眠）：聊天回覆夾 `[emote:...]` 標記時切換，閒置時也會偶爾自己換。骨架載不起來就退回原本的靜態立繪 |
 | AI 聊天 | LINE 風格介面，由 Cloudflare Worker 注入格莉奇人設，再轉送自架 `gemini-web` |
 | 長期記憶 | 聊天歷史與摘要進度存在本機 IndexedDB；每累積 10 則新訊息會自動更新可編輯的記憶摘要 |
 | AI 畫圖 | 前端不再用關鍵字判斷；由格莉奇自己決定要不要畫，回覆中夾帶標記即觸發生圖；成品自動存進虛擬 `~/下載/` |
@@ -227,6 +227,10 @@ npx wrangler deploy
 ├── worker/
 │   ├── worker.js               # Cloudflare Worker：chat / summarize / img
 │   └── wrangler.toml           # Worker 部署設定
+├── glitch2d/                   # 桌寵骨架執行期（抄自 glitch-2d，用 sync_glitch2d.py 同步）
+│   ├── pet.js                  # 掛載與對外介面：表情、揮手、嘴型、收掉
+│   ├── rig.json                # 角色設定，貼圖指向 images/glitch2d/
+│   └── engine/                 # motion／geometry／renderer／audio 四支模組
 ├── scripts/
 │   ├── generate_post.py        # 每日新聞／留言驅動的日記產線
 │   ├── generate_avatar.py      # 頭像生成
@@ -235,12 +239,29 @@ npx wrangler deploy
 │   ├── update_sw_hashes.py     # 依內容產生 PWA cache hash
 │   ├── persona.py              # 讀取 persona.json 的共用角色設定
 │   ├── check_character_sync.py # 比對 ai-comic-starter 的角色造型有沒有漂掉
+│   ├── sync_glitch2d.py        # 同步／檢查桌寵骨架有沒有跟 glitch-2d 漂掉
 │   └── remove_chroma_key.py    # 去背工具
 ├── tests/
 │   ├── test_generate_post.py   # 日記產線與人設載入的單元測試
 │   └── test_tags.mjs           # 標記解析（parseTags）的單元測試
 └── .github/workflows/          # 每日與手動素材自動化，以及 CI 檢查
 ```
+
+## 桌寵是活的：glitch-2d 骨架
+
+桌面右下角那位不再是換圖，是 [glitch-2d](https://github.com/yazelin/glitch-2d) 的原生 2D 骨架在跑：21 個部件、網格形變、WebGL 繪製，執行期沒有 Live2D、Cubism 或 Pixi。她會呼吸、會眨眼、點她會揮手，按「聽我自我介紹」時嘴型跟著音量走。
+
+**怎麼接的。** `glitch2d/pet.js` 匯出 `mountPet(canvas)`，回傳的 handle 只有四件事：`emote(id,hold)`、`wave()`、`speak(url)`、`dispose()`。`index.html` 的 `petEmote()` 前面加一段：骨架掛得起來就呼叫它，掛不起來就走原本換圖那條路，兩條路的呼叫介面一樣。
+
+**三層退路。** WebGL 開不起來換 Canvas 2D；兩個都失敗、或 `rig.json` 與貼圖沒下載完，就維持原本的 `images/pet-*.webp` 靜態立繪，畫面不會開天窗。實測過三種情境都會落在該落的地方。
+
+**表情對應。** `happy` 直接對上骨架的 happy；`thinking` 用 curious 加視線飄開；`sleep` 用 sleepy 加閉眼；`error` 是眼睛半閉、嘴張開，抖動與色偏交給 CSS（開機畫面那組故障感）。**還缺的是螺旋眼**，那要在臉部圖集加一組虹膜差分，不是參數能生出來的。
+
+**素材與離線。** 8 張執行期貼圖從 PNG 8.2 MB 轉成 WebP 共 0.7 MB，放在 `images/glitch2d/`，跟其他角色圖一樣走 asset cache 背景暖載；engine 與 rig.json 進 shell cache。改完貼圖或 engine 記得跑 `python3 scripts/update_sw_hashes.py`。
+
+**更新方式。** glitch-2d 有新版就跑 `python3 scripts/sync_glitch2d.py --write`，再跑一次 `update_sw_hashes.py`。不帶 `--write` 是檢查模式，會告訴你哪一份漂掉了。
+
+**耗電。** 桌寵是常駐的，所以畫面更新壓在 32fps，捲出視窗或分頁切走就不畫；`prefers-reduced-motion` 會關掉待機晃動與當機抖動。
 
 ## 回報問題與交流
 

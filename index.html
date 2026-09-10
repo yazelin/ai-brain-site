@@ -277,8 +277,15 @@
   .wall-del:hover{background:rgba(180,60,60,.9)}
   /* 圖片的命中區是整個矩形,透明處照樣吃掉點擊(pointer-events 不做 alpha 判定,
      那是 SVG 才有的)。所以容器與圖都不吃事件,只有蓋在她身上的這塊吃。 */
-  #pet,#pet>img,#pet .bubble{pointer-events:none}
+  #pet,#pet>img,#pet>canvas,#pet .bubble{pointer-events:none}
   #pet>img{transition:opacity .16s ease}
+  /* canvas 沒有內在尺寸，用三視圖的畫布比例把寬度撐出來，站位才跟原本那張圖一樣。 */
+  #pet>canvas{height:100%;aspect-ratio:1320/2470;display:block}
+  #pet>canvas[hidden]{display:none}
+  #pet.glitching>canvas{animation:petglitch .16s steps(2) infinite}
+  @keyframes petglitch{0%,100%{transform:translate(0,0);filter:none}
+    50%{transform:translate(-3px,1px);filter:hue-rotate(28deg) saturate(1.3) brightness(1.08)}}
+  @media (prefers-reduced-motion:reduce){#pet.glitching>canvas{animation:none}}
   #pet .pet-hit{position:absolute;left:22%;right:22%;top:30%;bottom:2%;
     pointer-events:auto;cursor:pointer;border:0;background:transparent;padding:0}
   #pet.on-top{z-index:9998}
@@ -885,6 +892,9 @@
          但還沒開機完成」，當第一印象很準，可是桌寵九成時間都是這張臉。
          plain 是清醒、看著你、平常說話那張，小說站用的也是它。 -->
     <img src="images/pet-plain.webp" alt="格莉奇" onerror="this.onerror=null;this.src='images/sticker-01.png';this.style.height='40vh'">
+    <!-- 活體版本掛在這張 canvas 上。骨架載入成功才顯示它、把上面那張靜態圖收掉；
+         WebGL 與 Canvas 2D 都失敗，或素材還沒下載完，畫面就維持靜態圖。 -->
+    <canvas id="pet-canvas" hidden aria-hidden="true"></canvas>
     <div class="bubble" id="pet-bubble">逼——嗶！點我聊天～</div>
     <button class="pet-hit" type="button" aria-label="跟格莉奇聊天"></button>
   </div>
@@ -1296,8 +1306,9 @@ window.addEventListener('popstate',event=>{
    帶過來（scripts/sync_intro.py），**不要在這裡另外抄一份**。
    **文字一直在畫面上**，不方便聽的人也讀得到；這裡只負責換左邊那條線的顏色。 */
 (function () {
-  var cur = null, curBtn = null;
+  var cur = null, curBtn = null, viaRig = false;
   function stop() {
+    if (viaRig) { viaRig = false; if (petRig) petRig.stopSpeaking(); }
     if (cur) { cur.pause(); cur.currentTime = 0; }
     if (curBtn) {
       curBtn.setAttribute('aria-pressed', 'false');
@@ -1313,11 +1324,18 @@ window.addEventListener('popstate',event=>{
       var mine = curBtn === b;
       stop();
       if (mine) return;
-      cur = new Audio('audio/intro-' + b.dataset.say + '.mp3');
       curBtn = b;
       b.setAttribute('aria-pressed', 'true');
       b.firstChild.textContent = '\u25a0';
       if (t) t.setAttribute('data-on', '1');
+      /* 格莉奇的配音改由骨架自己播，嘴型才跟得上音量；黑洞先生沒有骨架，照舊。 */
+      if (b.dataset.say === 'glitch' && petRig) {
+        viaRig = true;
+        petRig.onvoice = function (state) { if (state !== 'playing') stop(); };
+        petRig.speak('audio/intro-glitch.mp3').catch(stop);
+        return;
+      }
+      cur = new Audio('audio/intro-' + b.dataset.say + '.mp3');
       cur.addEventListener('ended', stop);
       /* 檔案掉了也要把按鈕收回去，不然會一直停在「播放中」 */
       cur.addEventListener('error', stop);
@@ -1434,7 +1452,7 @@ mobileOS.addEventListener?.('change',syncMobileOSState);
 // 桌面寵物：點擊開聊天窗 + 偶爾冒泡
 const pet=document.getElementById('pet'),bubble=document.getElementById('pet-bubble');
 const petLines=['逼——嗶！點我聊天～','系統讀取中…（過久）','今天也超開心！','要吃好吃的喔','先去睡個覺...','這不是 Bug，是 Feature！'];
-pet.querySelector('.pet-hit').addEventListener('click',()=>open('chat'));
+pet.querySelector('.pet-hit').addEventListener('click',()=>{petRig?.wave();open('chat');});
 function bubbleSay(t){bubble.textContent=t;bubble.classList.add('show');setTimeout(()=>bubble.classList.remove('show'),2600);}
 setTimeout(()=>bubbleSay('逼——嗶！點我聊天～'),1800);
 setInterval(()=>bubbleSay(petLines[Math.floor(Math.random()*petLines.length)]),12000);
@@ -1444,8 +1462,29 @@ setInterval(()=>bubbleSay(petLines[Math.floor(Math.random()*petLines.length)]),1
 // 先 preload 成功才換圖，圖缺或載不到時 onload 不會發生，桌寵維持現狀。
 const petImg=pet.querySelector('img');
 let petTimer=0;
+/* 活體桌寵：glitch-2d 的原生 2D 骨架。掛得起來就用它，掛不起來（WebGL 與
+   Canvas 2D 都失敗、素材沒下載完、離線第一次進站）就沿用下面那套換圖的做法，
+   兩條路的對外介面都是 petEmote(id,hold)。 */
+let petRig=null;
+import('./glitch2d/pet.js').then(async ({mountPet})=>{
+  const handle=await mountPet(document.getElementById('pet-canvas'),
+    {view:'full',onError:e=>console.warn('桌寵骨架載入失敗，維持靜態圖',e)});
+  if(!handle)return;
+  /* WebGL 失敗時 mountPet 會換掉 canvas 節點（失敗的 context 會把型別鎖死），
+     所以要顯示的是它回傳的那一張，不是原本那個參考。 */
+  const canvas=handle.canvas;
+  petRig=handle;
+  /* 當機表情：骨架只能把眼睛與嘴帶到位，抖動與色偏交給 CSS，
+     用的是開機畫面那組故障感的參數，站上的視覺語言一致。 */
+  handle.onemote=id=>pet.classList.toggle('glitching',id==='error');
+  canvas.hidden=false; petImg.hidden=true;
+  /* 骨架自己有呼吸與待機晃動，再疊 CSS 的上下浮動會過動。 */
+  pet.classList.remove('bob');
+}).catch(e=>console.warn('桌寵骨架載入失敗，維持靜態圖',e));
+
 function petEmote(id,hold){
   clearTimeout(petTimer);
+  if(petRig){petRig.emote(id,hold||6000);return;}
   const img=new Image();
   img.onload=()=>{
     petImg.style.opacity=.25;

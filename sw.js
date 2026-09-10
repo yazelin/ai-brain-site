@@ -5,8 +5,8 @@
    聊天歷史與使用者資料在 IndexedDB；跨域 AI / Giscus 請求不快取。 */
 
 /* cache:start — scripts/update_sw_hashes.py 產生，勿手改 */
-const SHELL_CACHE = 'glos-shell-37dd21af092d';
-const ASSET_CACHE = 'glos-assets-e4547950a416';
+const SHELL_CACHE = 'glos-shell-f3c1cfc0a24e';
+const ASSET_CACHE = 'glos-assets-6c1bf6a7ccbb';
 /* cache:end */
 const KEEP = [SHELL_CACHE, ASSET_CACHE];
 const MATCH = { ignoreSearch: true, ignoreVary: true };
@@ -15,7 +15,9 @@ const SHELL_FILES = [
 /* shell:start */
   './', './index.html', './manifest.webmanifest', './posts.json', './wallpapers.json',
   './persona.json', './js/tags.js', './js/glitch-call.js',
-  './images/icon-192.png', './images/icon-512.png', './images/glitch-logo.svg'
+  './images/icon-192.png', './images/icon-512.png', './images/glitch-logo.svg',
+  './glitch2d/pet.js', './glitch2d/rig.json', './glitch2d/engine/motion.js',
+  './glitch2d/engine/geometry.js', './glitch2d/engine/renderer.js', './glitch2d/engine/audio.js'
 /* shell:end */
 ];
 const PRIORITY_ASSETS = [
@@ -35,7 +37,11 @@ const WARM_ASSETS = [
   './images/hole-01.png', './images/hole-02.png', './images/hole-03.png',
   './images/hole-04.png', './images/hole-05.png', './images/hole-06.png',
   './images/hole-07.png', './images/hole-08.png', './images/hole-09.png',
-  './audio/intro-glitch.mp3', './audio/intro-blackhole.mp3'
+  './audio/intro-glitch.mp3', './audio/intro-blackhole.mp3',
+  './images/glitch2d/face-features.webp', './images/glitch2d/torso.webp',
+  './images/glitch2d/face-base.webp', './images/glitch2d/hair-v2.webp',
+  './images/glitch2d/sleeve-left-v8.webp', './images/glitch2d/sleeve-right-v6.webp',
+  './images/glitch2d/skirt-v2.webp', './images/glitch2d/legs-v6.webp'
 /* warm:end */
 ];
 
