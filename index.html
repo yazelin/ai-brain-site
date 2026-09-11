@@ -453,6 +453,11 @@
   .mb.her .bub{background:#fff;color:#222;border-bottom-left-radius:6px;box-shadow:0 1px 1px rgba(0,0,0,.12)}
   .mb .t{font-size:.58rem;color:rgba(0,0,0,.55);align-self:flex-end;margin:0 2px;flex:0 0 auto}
   .mb.thinking .bub{opacity:.7;font-style:italic}
+  /* 貼圖與生成圖不套白框，所以 img-bub 是透明的。說明文字不能放在它裡面，
+     那會讓文字跟著失去泡泡；改成兩個泡泡直向堆疊，跟 LINE 一樣。 */
+  .mb .bub-stack{display:flex;flex-direction:column;gap:4px;align-items:flex-start;max-width:72%;min-width:0}
+  .mb.me .bub-stack{align-items:flex-end}
+  .mb .bub-stack .bub{max-width:100%}
   .mb .bub.img-bub{padding:3px;max-width:170px;background:transparent!important;box-shadow:none}
   .mb .bub.img-bub img{display:block;width:100%;border-radius:14px}
   .mb.her .bub.img-bub img{box-shadow:0 1px 3px rgba(0,0,0,.18)}
@@ -1567,6 +1572,19 @@ window.chatHistory=history;
 
 function lastDay(ts){return new Date(ts).toLocaleDateString('zh-TW',{month:'long',day:'numeric',weekday:'short'});}
 function hm(ts){return new Date(ts).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});}
+/* 貼圖與生成圖共用的泡泡。圖本身不套白框（img-bub 是透明的），有說明文字時
+   把文字放進它自己的泡泡再直向疊起來——文字如果塞進 img-bub 裡面，會跟著
+   變成沒有底的裸字，那正是 2026-09-11 修掉的那個 bug。 */
+function imageBubble(src,caption,onClick){
+  const img=document.createElement('div');img.className='bub img-bub';
+  const im=document.createElement('img');im.src=src;img.appendChild(im);
+  if(onClick){img.style.cursor='pointer';img.addEventListener('click',onClick);}
+  if(!caption)return img;
+  const stack=document.createElement('div');stack.className='bub-stack';
+  const text=document.createElement('div');text.className='bub';text.textContent=caption;
+  stack.append(img,text);
+  return stack;
+}
 function renderMsg(m,showAvatar,showTime){
   const wrap=document.createElement('div');
   wrap.className='mb '+(m.role==='user'?'me':'her');
@@ -1576,15 +1594,14 @@ function renderMsg(m,showAvatar,showTime){
     const b=document.createElement('div');b.className='bub';b.textContent=m.content;wrap.appendChild(b);
   }else{
     if(showAvatar){const a=document.createElement('div');a.className='av';a.innerHTML=avImg();wrap.appendChild(a);}
-    const b=document.createElement('div');
-    if(m.image){b.className='bub img-bub';const im=document.createElement('img');im.src=m.image;b.appendChild(im);b.style.cursor='pointer';b.addEventListener('click',()=>openViewer(m.image));
-      // m.content 為了記憶（history.filter(m=>m.content)）必須非空，但那不等於
-      // 「她說了這句話、要顯示在貼圖下面」——貼圖單獨送出時 content 存的是貼圖
-      // 台詞，不是她真的講的話。m.wordless 才是「要不要顯示說明文字」的判準：
-      // 她沒有講話、貼圖本身就是訊息時才會是 true。舊資料沒有這個欄位，
-      // m.wordless 是 undefined，!undefined 為 true，行為等同原本只看 m.content。
-      if(m.content&&!m.wordless){const c=document.createElement('div');c.style.cssText='padding:4px 6px 2px;font-size:.74rem;color:#666';c.textContent=m.content;b.appendChild(c);}}
-    else{b.className='bub';b.textContent=m.content;}
+    // m.content 為了記憶（history.filter(m=>m.content)）必須非空，但那不等於
+    // 「她說了這句話、要顯示在貼圖下面」——貼圖單獨送出時 content 存的是貼圖
+    // 台詞，不是她真的講的話。m.wordless 才是「要不要顯示說明文字」的判準：
+    // 她沒有講話、貼圖本身就是訊息時才會是 true。舊資料沒有這個欄位，
+    // m.wordless 是 undefined，!undefined 為 true，行為等同原本只看 m.content。
+    let b;
+    if(m.image)b=imageBubble(m.image,(m.content&&!m.wordless)?m.content:'',()=>openViewer(m.image));
+    else{b=document.createElement('div');b.className='bub';b.textContent=m.content;}
     wrap.appendChild(b);
     if(t)wrap.appendChild(t);          // 對方訊息：時間在氣泡右邊
   }
@@ -1647,9 +1664,7 @@ async function sendChat(text){
     const bub=tm.querySelector('.bub');
     if(sticker){
       const src=stickerSrc(sticker);
-      bub.className='bub img-bub';bub.innerHTML='';
-      const im=document.createElement('img');im.src=src;bub.appendChild(im);
-      if(clean){const c=document.createElement('div');c.style.cssText='padding:4px 6px 2px;font-size:.74rem;color:#666';c.textContent=clean;bub.appendChild(c);}
+      bub.replaceWith(imageBubble(src,clean,null));
       // 沒有文字時畫面不多顯示一行，但 content 仍要存這張貼圖的台詞，
       // 不然 history.filter(m=>m.content) 會把這則訊息整個濾掉，她會忘記
       // 自己送過貼圖。content 非空與「要不要顯示說明文字」是兩件事：記憶要
@@ -1708,10 +1723,7 @@ async function runDraw(draw){
       catch(err){console.warn('疊貼圖失敗，用原圖',err);}
     }
     tm.classList.remove('thinking');
-    const b=tm.querySelector('.bub');b.className='bub img-bub';b.innerHTML='';
-    const im=document.createElement('img');im.src=image;b.appendChild(im);
-    b.style.cursor='pointer';b.addEventListener('click',()=>openViewer(image));
-    const cap=document.createElement('div');cap.style.cssText='padding:4px 6px 2px;font-size:.74rem;color:#666';cap.textContent='逼——嗶！畫好啦～';b.appendChild(cap);
+    tm.querySelector('.bub').replaceWith(imageBubble(image,'逼——嗶！畫好啦～',()=>openViewer(image)));
     const fn=saveFile(image);
     history.push({role:'assistant',content:'逼——嗶！畫好啦～',image,file:fn,ts:Date.now()});
   }catch(e){
