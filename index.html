@@ -461,6 +461,9 @@
   .mb .bub.img-bub{padding:3px;max-width:170px;background:transparent!important;box-shadow:none}
   .mb .bub.img-bub img{display:block;width:100%;border-radius:14px}
   .mb.her .bub.img-bub img{box-shadow:0 1px 3px rgba(0,0,0,.18)}
+  /* 貼圖是去背的，box-shadow 畫的是整個 <img> 方框的影子，會在她身後多出一張
+     圓角卡片。生成圖是滿版不透明的，那個陰影才有意義，所以只有貼圖關掉。 */
+  .mb .bub.img-bub img.sticker{box-shadow:none;border-radius:0}
   /* 看圖 app */
   .viewer-stage{height:420px;display:flex;align-items:center;justify-content:center;background:#1a1d22;overflow:hidden;cursor:zoom-in;touch-action:none}
   #w-viewer.fs{left:0!important;top:0!important;width:100vw!important;height:100vh!important;margin:0!important;border-radius:0;z-index:9999!important}
@@ -1577,7 +1580,10 @@ function hm(ts){return new Date(ts).toLocaleTimeString('zh-TW',{hour:'2-digit',m
    變成沒有底的裸字，那正是 2026-09-11 修掉的那個 bug。 */
 function imageBubble(src,caption,onClick){
   const img=document.createElement('div');img.className='bub img-bub';
-  const im=document.createElement('img');im.src=src;img.appendChild(im);
+  const im=document.createElement('img');im.src=src;
+  // 貼圖是站內去背的檔案，生成圖是 data: URL。兩者的陰影處理不一樣。
+  if(/^images\//.test(src))im.className='sticker';
+  img.appendChild(im);
   if(onClick){img.style.cursor='pointer';img.addEventListener('click',onClick);}
   if(!caption)return img;
   const stack=document.createElement('div');stack.className='bub-stack';
