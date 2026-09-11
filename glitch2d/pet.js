@@ -10,14 +10,27 @@ import { buildScene } from './engine/geometry.js';
 import { WebGLRenderer, CanvasRenderer, loadTextures } from './engine/renderer.js';
 import { VoicePlayer } from './engine/audio.js';
 
-/* 站上的 emote id 對到 engine 內建的表情。engine 沒有的表情走 fallback 欄位：
-   先套一個最接近的底，再疊自己的參數。 */
+/* 站上的 emote id 對到一組參數。這裡刻意不用 engine 內建的 happy / curious：
+   那兩組是給角色展示頁用的微表情（happy 只把嘴角彎 3 像素、眉毛抬 2 像素），
+   桌寵只有 220 像素高，那種幅度在畫面上跟平常臉分不出來。
+
+   這個骨架能改變臉的只有四件事，全部都用上了：
+     eyeOpen   眼睛開合，低於 .16 會換成畫好的閉眼線
+     mouthOpen 高於 .12 會從閉嘴換成張嘴那張圖，同時決定張多大
+     mouthWide 嘴的橫向寬窄，正是笑、負是嘟
+     brow/gaze/head  眉毛高度與傾斜、視線、頭的角度
+   smile 只有在閉嘴時才看得到（把嘴角彎 3 像素），張嘴時完全沒作用。 */
 const EMOTES = {
-  happy: { expression: 'happy' },
-  thinking: { expression: 'curious', params: { gazeX: -.55, gazeY: -.5, brow: .35 } },
-  sleep: { expression: 'sleepy', params: { eyeOpen: 0, smile: -.1, headY: .5 } },
-  error: { expression: 'neutral', params: { eyeOpen: .12, brow: -.9, mouthOpen: .5, mouthWide: .6 }, glitch: true },
+  // 瞇眼加張大嘴：笑。
+  happy: { params: { smile: 1, brow: .55, eyeOpen: .3, mouthWide: 1, mouthOpen: .8, gazeY: .25, headY: -.2 } },
+  // 眼睛往上飄開、頭歪一邊、嘴嘟成小口：在想事情。
+  thinking: { params: { smile: 0, brow: .9, eyeOpen: .95, mouthWide: -1, mouthOpen: .22, gazeX: -1, gazeY: -.85, headX: -.35, headZ: .55 } },
+  // 閉眼、閉嘴、頭垂下來。
+  sleep: { params: { smile: -.2, brow: -.3, eyeOpen: 0, mouthWide: -.2, mouthOpen: 0, headY: .6, headZ: -.3 } },
+  // 閉眼、嘴張到最大，配上 CSS 的抖動與色偏。螺旋眼還缺一張差分圖。
+  error: { params: { smile: -1, brow: -1, eyeOpen: 0, mouthWide: 1, mouthOpen: 1 }, glitch: true },
 };
+const NEUTRAL = { smile: 0, brow: 0, eyeOpen: 1, mouthWide: 0, mouthOpen: 0, gazeX: 0, gazeY: 0, headX: 0, headY: 0, headZ: 0 };
 
 export async function mountPet(canvas, options = {}) {
   const { view = 'full', base = new URL('./', import.meta.url), onError } = options;
@@ -94,8 +107,7 @@ export async function mountPet(canvas, options = {}) {
 
   const neutral = () => {
     glitching = false;
-    motion.setExpression('neutral');
-    motion.setParameters({ gazeX: 0, gazeY: 0, headX: 0, headY: 0, headZ: 0 });
+    motion.setParameters(NEUTRAL);
     handle.onemote?.(null);
   };
 
@@ -110,8 +122,8 @@ export async function mountPet(canvas, options = {}) {
       const preset = id && EMOTES[id];
       if (!preset) { neutral(); return false; }
       glitching = !!preset.glitch;
-      motion.setExpression(preset.expression);
-      if (preset.params) motion.setParameters(preset.params);
+      // 先回到平常臉再疊，表情之間切換才不會把上一個的殘留帶過去。
+      motion.setParameters({ ...NEUTRAL, ...preset.params });
       emoteTimer = setTimeout(neutral, hold);
       handle.onemote?.(id);
       return true;

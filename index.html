@@ -279,8 +279,20 @@
      那是 SVG 才有的)。所以容器與圖都不吃事件,只有蓋在她身上的這塊吃。 */
   #pet,#pet>img,#pet>canvas,#pet .bubble{pointer-events:none}
   #pet>img{transition:opacity .16s ease}
-  /* canvas 沒有內在尺寸，用三視圖的畫布比例把寬度撐出來，站位才跟原本那張圖一樣。 */
-  #pet>canvas{height:100%;aspect-ratio:1320/2470;display:block}
+  /* 舊版桌寵是一張裁到主體邊界的圖：圖多高她就多高，桌面版用原始尺寸 598x1536
+     溢出容器，做出「超大半身、腳在畫面外」的效果。骨架的 canvas 不一樣，她四周
+     還有空白（上 1.38%、下 2.67%、左 4.39%、右 8.79%，量自 full 取景），所以要
+     先把 canvas 撐大再往外推，她本人才會落回舊版的大小與位置。
+     #pet 的寬度也固定成舊圖的寬度，命中區與泡泡那些百分比才不會跟著跑。
+     要改大小就改 --pet-figure（她的身高），不要改容器。 */
+  #pet.rigged{width:598px;--pet-figure:1536px}
+  #pet.rigged>canvas{position:absolute;display:block;
+    --pet-canvas-h:calc(var(--pet-figure) / 0.9595);   /* 她佔 canvas 高度的 95.95% */
+    height:var(--pet-canvas-h);aspect-ratio:1320/2470;
+    /* 這兩個位移是量出來的：拿舊圖與骨架在同一個視窗下比對胸前那塊 ERROR 布標，
+       調到兩邊的中心重合（桌機 1440x900 與手機 390x844 都對得上）。 */
+    top:calc(var(--pet-canvas-h) * -0.0104);
+    right:calc(var(--pet-canvas-h) * 0.534413 * -0.1364)}
   #pet>canvas[hidden]{display:none}
   #pet.glitching>canvas{animation:petglitch .16s steps(2) infinite}
   @keyframes petglitch{0%,100%{transform:translate(0,0);filter:none}
@@ -580,6 +592,8 @@
        跟桌面版同一個原理(那邊圖是原始 1484px,切在胸口),只是切得低一點。
        要調大小就改這個數字,不要改容器。 */
     #pet>img,#pet2>img{height:min(62vh,520px);width:auto}
+    /* 骨架版照同一個數字走，寬度對齊舊圖在這個高度下的 202px。 */
+    #pet.rigged{width:202px;--pet-figure:min(62vh,520px)}
     #pet .bubble{left:auto;right:58%;top:4%;max-width:165px;font-size:.72rem;padding:7px 10px}
     #pet .bubble::after{left:100%;right:auto}
     #pet2{left:-7%;bottom:calc(76px + env(safe-area-inset-bottom));height:min(34vh,285px);min-height:0;max-height:none;
@@ -1485,8 +1499,9 @@ import('./glitch2d/pet.js').then(async ({mountPet})=>{
      用的是開機畫面那組故障感的參數，站上的視覺語言一致。 */
   handle.onemote=id=>pet.classList.toggle('glitching',id==='error');
   canvas.hidden=false; petImg.hidden=true;
-  /* 骨架自己有呼吸與待機晃動，再疊 CSS 的上下浮動會過動。 */
-  pet.classList.remove('bob');
+  /* 骨架自己有呼吸與待機晃動，再疊 CSS 的上下浮動會過動。
+     rigged 這個 class 決定桌寵的版型走 canvas 那一套，退回靜態圖時不會掛上。 */
+  pet.classList.remove('bob'); pet.classList.add('rigged');
 }).catch(e=>console.warn('桌寵骨架載入失敗，維持靜態圖',e));
 
 function petEmote(id,hold){
