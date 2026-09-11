@@ -429,7 +429,7 @@ def stamp_image(img_path, stickers):
     margin = max(12, bw // 30)
     x_cursor = bw - margin
     for num in stickers:
-        sp = ROOT / "images" / f"sticker-0{num}.png"
+        sp = ROOT / "images" / f"sticker-0{num}.webp"
         if not sp.exists():
             continue
         st = Image.open(sp).convert("RGBA")

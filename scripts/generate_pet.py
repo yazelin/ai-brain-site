@@ -23,7 +23,7 @@ import persona
 
 ROOT = Path(__file__).resolve().parent.parent
 # Outfit B 的正典就是現有的 idle 立繪本身(persona.json 的 refB)。舊版用
-# sticker-01.png 當參考圖,那張只有上半身,下半身既沒參考也沒寫進 prompt,
+# sticker-01.webp 當參考圖,那張只有上半身,下半身既沒參考也沒寫進 prompt,
 # 模型就自由發揮。重生 idle 時拿現有 idle 當參考,服裝才不會漂掉。
 REF = ROOT / "images" / "pet.webp"
 OUT = ROOT / "images" / "pet.webp"

@@ -334,7 +334,7 @@
         <div class="call-body">
           <div class="call-avatar-wrap">
             <div class="call-avatar-glow"></div>
-            <img id="call-avatar-img" class="call-avatar-img" src="images/avatar.webp" alt="格莉奇" onerror="this.onerror=null;this.src='images/sticker-01.png'">
+            <img id="call-avatar-img" class="call-avatar-img" src="images/avatar.webp" alt="格莉奇" onerror="this.onerror=null;this.src='images/sticker-01.webp'">
           </div>
 
           <canvas id="call-wave-canvas" class="call-wave-canvas"></canvas>

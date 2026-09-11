@@ -221,7 +221,7 @@ npx wrangler deploy
 ├── sitemap.xml                 # 正式站 sitemap
 ├── posts.json                  # 日記內容索引
 ├── wallpapers.json             # 桌布索引
-├── images/                     # 角色、貼圖、桌布、PWA 圖示與文章圖片
+├── images/                     # 角色、貼圖、桌布、PWA 圖示與文章圖片（除了 PWA 圖示全是 WebP）
 ├── js/
 │   └── tags.js                 # 解析聊天回覆裡的 [sticker:...] / [draw:...] / [emote:...] 標記
 ├── worker/
@@ -267,6 +267,18 @@ npx wrangler deploy
 
 - Bug 或功能建議：[GitHub Issues](https://github.com/yazelin/ai-brain-site/issues)
 - 留言與角色互動：[GitHub Discussions](https://github.com/yazelin/ai-brain-site/discussions)
+
+## 圖片格式：除了 PWA 圖示都用 WebP
+
+站上的圖一律 WebP。2026-09-11 把最後 18 張 PNG（`sticker-01` 到 `09`、`hole-01` 到 `09`）也轉了，**2.58 MB 變 0.41 MB，省 84%**；這 18 張全在 service worker 的預載清單裡，每個第一次進站的人都會下載。
+
+轉檔用 Pillow `quality=92, method=6`。量過邊緣沒有被壓壞：**18 張的 alpha 通道逐像素相同**（RMSE 0、最大差 0、沒有任何一個像素的 alpha 變動超過 8），半透明邊緣環帶的顏色差平均 2.1 到 3.6（滿分 765，0.3% 到 0.5%），肉眼與程式都看不出來。WebP 的 alpha 是無損存的，所以去背邊緣不會有事；會被壓的只有 RGB。
+
+只留 `images/icon-192.png` 與 `images/icon-512.png` 兩張 PNG，那是 manifest 圖示，各家系統的安裝流程對格式最保守，留著比較安全。
+
+改副檔名不是只改檔名。牽動的地方：`stickerSrc()`（字串拼接，grep 檔名抓不到）、`index.html` 幾處 `onerror` 退路、`js/glitch-call.js` 的通話頭像退路、`sw.js` 預載清單、`persona.json` 的 `styleAnchor`、還有三支會把 `sticker-01` 當參考圖上傳的產圖腳本（`generate_avatar.py`、`generate_wallpaper.py`、`generate_post.py`）與對應的單元測試。產圖服務吃不吃 WebP 是實測過的，不是假設：拿 `sticker-01.webp` 送一次 `/v1/images/generate` 回 succeeded。聊天的 `/img` 走另一條路，它的參考圖本來就是 `images/glitch-ref.webp`，不受影響。
+
+同一次也刪掉三張沒有任何引用的孤兒圖（共 876 KB）：`a8qmb3a8qmb3a8qm.png`、`kgyeu2kgyeu2kgye.png`、`u1zfo4u1zfo4u1zf.png`。它們是 2026-08-04 第一個 commit 帶進來的早期角色設定圖與宣傳卡，其中一張當過一陣子的 favicon，後來被 `icon-192.png` 取代。要找回來的話 git 歷史裡還在。
 
 ## 授權
 

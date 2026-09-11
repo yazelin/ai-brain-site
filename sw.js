@@ -5,8 +5,8 @@
    聊天歷史與使用者資料在 IndexedDB；跨域 AI / Giscus 請求不快取。 */
 
 /* cache:start — scripts/update_sw_hashes.py 產生，勿手改 */
-const SHELL_CACHE = 'glos-shell-092ce0d9d0df';
-const ASSET_CACHE = 'glos-assets-6c1bf6a7ccbb';
+const SHELL_CACHE = 'glos-shell-326982416f19';
+const ASSET_CACHE = 'glos-assets-3b509222617d';
 /* cache:end */
 const KEEP = [SHELL_CACHE, ASSET_CACHE];
 const MATCH = { ignoreSearch: true, ignoreVary: true };
@@ -31,12 +31,12 @@ const WARM_ASSETS = [
   './images/pet-plain.webp', './images/pet.webp', './images/pet-blackhole.webp',
   './images/pet-happy.webp', './images/pet-thinking.webp',
   './images/pet-error.webp', './images/pet-sleep.webp',
-  './images/sticker-01.png', './images/sticker-02.png', './images/sticker-03.png',
-  './images/sticker-04.png', './images/sticker-05.png', './images/sticker-06.png',
-  './images/sticker-07.png', './images/sticker-08.png', './images/sticker-09.png',
-  './images/hole-01.png', './images/hole-02.png', './images/hole-03.png',
-  './images/hole-04.png', './images/hole-05.png', './images/hole-06.png',
-  './images/hole-07.png', './images/hole-08.png', './images/hole-09.png',
+  './images/sticker-01.webp', './images/sticker-02.webp', './images/sticker-03.webp',
+  './images/sticker-04.webp', './images/sticker-05.webp', './images/sticker-06.webp',
+  './images/sticker-07.webp', './images/sticker-08.webp', './images/sticker-09.webp',
+  './images/hole-01.webp', './images/hole-02.webp', './images/hole-03.webp',
+  './images/hole-04.webp', './images/hole-05.webp', './images/hole-06.webp',
+  './images/hole-07.webp', './images/hole-08.webp', './images/hole-09.webp',
   './audio/intro-glitch.mp3', './audio/intro-blackhole.mp3',
   './images/glitch2d/face-features.webp', './images/glitch2d/torso.webp',
   './images/glitch2d/face-base.webp', './images/glitch2d/hair-v2.webp',

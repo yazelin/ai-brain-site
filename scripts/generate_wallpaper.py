@@ -16,7 +16,7 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-REF_IMAGE = ROOT / "images" / "sticker-01.png"
+REF_IMAGE = ROOT / "images" / "sticker-01.webp"
 WALLPAPER_DIR = ROOT / "images" / "wallpapers"
 WALLPAPER_INDEX = ROOT / "wallpapers.json"
 

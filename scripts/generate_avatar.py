@@ -16,7 +16,7 @@ from pathlib import Path
 import persona
 
 ROOT = Path(__file__).resolve().parent.parent
-REF = ROOT / "images" / "sticker-01.png"
+REF = ROOT / "images" / "sticker-01.webp"
 OUT = ROOT / "images" / "avatar.webp"
 BASE_URL = os.environ.get("CODEX_IMAGE_BASE_URL", "").rstrip("/")
 KEY = os.environ.get("CODEX_IMAGE_KEY", "")
