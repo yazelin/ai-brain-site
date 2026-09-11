@@ -37,6 +37,10 @@ export const EMOTES = Object.freeze({
 });
 // Emotes the caller should render with its own glitch treatment.
 export const GLITCHED_EMOTES = Object.freeze(['error']);
+// Drawn eye art that replaces the whole eye for an emote. Parameters can
+// narrow an eye but cannot bend it into a smile or fill it with a spiral, so
+// these two swap in their own art through the eyes slot.
+export const EMOTE_EYES = Object.freeze({ happy: 'smile', error: 'spiral' });
 // A full reset, so switching emotes never carries the previous one's leftovers.
 export const NEUTRAL_POSE = Object.freeze({
   smile: 0, brow: 0, eyeOpen: 1, mouthWide: 0, mouthOpen: 0,
@@ -155,12 +159,23 @@ export class Motion {
     this.nextBlink = 2.5;
     this.blinkTime = -1;
     this.waveTime = -1;
+    this.slots = {};
     this.hair = new Spring();
   }
   setParameters(values) {
     for (const [id, value] of Object.entries(values)) {
       if (!Object.hasOwn(PARAMS, id) || !Number.isFinite(value)) continue;
       this.target[id] = clamp(value, PARAMS[id][0], PARAMS[id][1]);
+    }
+  }
+  /* Which variant is showing in each art slot. Unknown slots are ignored so a
+     caller cannot invent one, and 'default' clears a slot back to the base art. */
+  setSlots(values) {
+    const known = new Set(this.rigSlots || []);
+    for (const [slot, variant] of Object.entries(values)) {
+      if (known.size && !known.has(slot)) continue;
+      if (variant === 'default' || variant == null) delete this.slots[slot];
+      else this.slots[slot] = String(variant);
     }
   }
   setExpression(name) {
@@ -170,6 +185,7 @@ export class Motion {
   reset() {
     this.setParameters(Object.fromEntries(Object.entries(PARAMS).map(([id, spec]) => [id, spec[2]])));
     this.pointer = { x: 0, y: 0 };
+    this.slots = {};
     this.blinkTime = this.waveTime = -1;
   }
   blink() { this.blinkTime = 0; }
@@ -206,10 +222,17 @@ export class Motion {
       const speed = key === 'mouthOpen' ? (target[key] > this.values[key] ? 25 : 17) : 12;
       this.values[key] = lerp(this.values[key], clamp(target[key], PARAMS[key][0], PARAMS[key][1]), 1 - Math.exp(-speed * dt));
     }
+    // Which hand is on. The sleeve's own hand is cut out of its texture, so a
+    // hand part is always drawn and exactly one of them is visible. The side
+    // view is drawn hanging and the palm is drawn raised, so the swap happens
+    // once the forearm is up far enough for the palm to read as a greeting.
+    // Live2D swaps hands the same way rather than trying to turn one.
+    const HAND_SWAP = .55;
     // The bend drivers are already smooth in time; running them through the
     // spring would only damp the swing, so they go straight onto the pose.
-    const pose = { ...this.values, armRaise: 0, armFold: 0, handAngle: 0, lean: 0, tilt: 0 };
+    const pose = { ...this.values, armRaise: 0, armFold: 0, handAngle: 0, lean: 0, tilt: 0, slots: {} };
     if (wave) Object.assign(pose, { armRaise: wave.armRaise, armFold: wave.armFold, handAngle: wave.handAngle, lean: wave.lean, tilt: wave.tilt });
+    pose.slots = { ...this.slots, leftHand: pose.armFold > HAND_SWAP ? 'open' : 'default' };
     if (this.blinkTime >= 0) {
       this.blinkTime += dt;
       // Fast closure, a brief hold, then a slower reopening. Geometric aperture.

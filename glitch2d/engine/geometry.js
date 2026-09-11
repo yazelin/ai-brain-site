@@ -182,6 +182,9 @@ export function partOpacity(part, pose) {
   if (part.type === 'mouth') return clamp(pose.mouthOpen / .12, 0, 1);
   if (part.type === 'lip') return 1 - clamp(pose.mouthOpen / .12, 0, 1);
   if (part.type === 'closed-eye') return 1 - clamp(pose.eyeOpen / .16, 0, 1);
+  // A drawn replacement for the whole eye. Its own slot decides when it shows,
+  // so it must not also fade with the aperture the way the default parts do.
+  if (part.type === 'eye-art') return part.opacity ?? 1;
   if (part.type === 'eye' || part.type === 'iris' || part.type === 'lash') return clamp(pose.eyeOpen / .09, 0, 1);
   if (part.type === 'blush') return clamp(pose.smile, 0, 1) * .4;
   return part.opacity ?? 1;

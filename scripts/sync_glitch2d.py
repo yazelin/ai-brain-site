@@ -42,6 +42,43 @@ def rig_for_site(source_rig: dict) -> dict:
     return rig
 
 
+SW_START = "  './images/glitch2d/"
+
+
+def sw_asset_lines(rig: dict) -> str:
+    """離線清單裡的骨架貼圖，兩個一行，照 rig 的順序。"""
+    names = []
+    for spec in rig["textures"].values():
+        name = spec["src"].rsplit("/", 1)[-1].replace(".png", ".webp")
+        if name not in names:
+            names.append(name)
+    entries = [f"'./images/glitch2d/{n}'" for n in names]
+    rows = [entries[i:i + 2] for i in range(0, len(entries), 2)]
+    return ",\n".join("  " + ", ".join(row) for row in rows)
+
+
+def rewrite_sw(rig: dict) -> bool:
+    """把 sw.js 的骨架貼圖區塊換成 rig 現在真正載入的那幾張。
+
+    這份清單原本是手動維護的，rig 加了貼圖就會忘記跟上，離線時新素材抓不到。
+    改由這裡產生，漏不掉。
+    """
+    path = ROOT / "sw.js"
+    text = path.read_text(encoding="utf-8")
+    lines = text.split("\n")
+    first = next((i for i, line in enumerate(lines) if line.startswith(SW_START)), None)
+    if first is None:
+        return False
+    last = first
+    while last + 1 < len(lines) and lines[last + 1].startswith(SW_START):
+        last += 1
+    wanted = sw_asset_lines(rig)
+    if "\n".join(lines[first:last + 1]) == wanted:
+        return False
+    path.write_text("\n".join(lines[:first] + wanted.split("\n") + lines[last + 1:]), encoding="utf-8")
+    return True
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", default=str(ROOT.parent / "glitch-2d"))
@@ -91,6 +128,8 @@ def main() -> int:
                 drift.append(f"images/glitch2d/{webp.name}")
 
     if args.write:
+        if rewrite_sw(source_rig):
+            print("sw.js 的骨架貼圖清單已更新")
         print(f"已從 {source} 同步骨架執行期；記得跑 scripts/update_sw_hashes.py")
         return 0
     if drift:

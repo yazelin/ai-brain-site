@@ -8,7 +8,7 @@
    對外只有 mountPet()。它回傳的 handle 就是站上會用到的四件事：
    表情、揮手、跟著音訊動嘴、把自己收掉。載入失敗時回傳 null，
    呼叫端保持原本的靜態圖，不會開天窗。 */
-import { Motion, EMOTES, GLITCHED_EMOTES, NEUTRAL_POSE } from './engine/motion.js';
+import { Motion, EMOTES, GLITCHED_EMOTES, EMOTE_EYES, NEUTRAL_POSE } from './engine/motion.js';
 import { buildScene } from './engine/geometry.js';
 import { WebGLRenderer, CanvasRenderer, loadTextures } from './engine/renderer.js';
 import { VoicePlayer } from './engine/audio.js';
@@ -89,6 +89,7 @@ export async function mountPet(canvas, options = {}) {
   const neutral = () => {
     glitching = false;
     motion.setParameters(NEUTRAL_POSE);
+    motion.setSlots({ eyes: 'default' });
     handle.onemote?.(null);
   };
 
@@ -105,6 +106,8 @@ export async function mountPet(canvas, options = {}) {
       glitching = GLITCHED_EMOTES.includes(id);
       // 先回到平常臉再疊，表情之間切換才不會把上一個的殘留帶過去。
       motion.setParameters({ ...NEUTRAL_POSE, ...preset });
+      // happy and error swap in drawn eyes; the rest use the base art.
+      motion.setSlots({ eyes: EMOTE_EYES[id] ?? 'default' });
       emoteTimer = setTimeout(neutral, hold);
       handle.onemote?.(id);
       return true;

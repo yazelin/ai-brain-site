@@ -5,8 +5,8 @@
    聊天歷史與使用者資料在 IndexedDB；跨域 AI / Giscus 請求不快取。 */
 
 /* cache:start — scripts/update_sw_hashes.py 產生，勿手改 */
-const SHELL_CACHE = 'glos-shell-e2b67ad16ed9';
-const ASSET_CACHE = 'glos-assets-3b509222617d';
+const SHELL_CACHE = 'glos-shell-44391c24f397';
+const ASSET_CACHE = 'glos-assets-9d5f4887fd5f';
 /* cache:end */
 const KEEP = [SHELL_CACHE, ASSET_CACHE];
 const MATCH = { ignoreSearch: true, ignoreVary: true };
@@ -40,8 +40,9 @@ const WARM_ASSETS = [
   './audio/intro-glitch.mp3', './audio/intro-blackhole.mp3',
   './images/glitch2d/face-features.webp', './images/glitch2d/torso.webp',
   './images/glitch2d/face-base.webp', './images/glitch2d/hair-v2.webp',
-  './images/glitch2d/sleeve-left-v8.webp', './images/glitch2d/sleeve-right-v6.webp',
-  './images/glitch2d/skirt-v2.webp', './images/glitch2d/legs-v6.webp'
+  './images/glitch2d/sleeve-left-v9.webp', './images/glitch2d/sleeve-right-v6.webp',
+  './images/glitch2d/skirt-v2.webp', './images/glitch2d/legs-v6.webp',
+  './images/glitch2d/sleeve-left-v8.webp', './images/glitch2d/hand-open-v6.webp'
 /* warm:end */
 ];
 
