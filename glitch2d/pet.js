@@ -2,35 +2,16 @@
    來源 repo https://github.com/yazelin/glitch-2d ，engine/ 與 rig.json 是抄過來的
    副本（照慣例把相依打包進 repo，離線才不會缺件）。更新方式寫在 README。
 
+   emote 的定義住在 glitch-2d 的 engine/motion.js，跟著 sync_glitch2d.py 一起抄
+   過來，這邊不再留一份，免得改一邊忘記另一邊。
+
    對外只有 mountPet()。它回傳的 handle 就是站上會用到的四件事：
    表情、揮手、跟著音訊動嘴、把自己收掉。載入失敗時回傳 null，
    呼叫端保持原本的靜態圖，不會開天窗。 */
-import { Motion } from './engine/motion.js';
+import { Motion, EMOTES, GLITCHED_EMOTES, NEUTRAL_POSE } from './engine/motion.js';
 import { buildScene } from './engine/geometry.js';
 import { WebGLRenderer, CanvasRenderer, loadTextures } from './engine/renderer.js';
 import { VoicePlayer } from './engine/audio.js';
-
-/* 站上的 emote id 對到一組參數。這裡刻意不用 engine 內建的 happy / curious：
-   那兩組是給角色展示頁用的微表情（happy 只把嘴角彎 3 像素、眉毛抬 2 像素），
-   桌寵只有 220 像素高，那種幅度在畫面上跟平常臉分不出來。
-
-   這個骨架能改變臉的只有四件事，全部都用上了：
-     eyeOpen   眼睛開合，低於 .16 會換成畫好的閉眼線
-     mouthOpen 高於 .12 會從閉嘴換成張嘴那張圖，同時決定張多大
-     mouthWide 嘴的橫向寬窄，正是笑、負是嘟
-     brow/gaze/head  眉毛高度與傾斜、視線、頭的角度
-   smile 只有在閉嘴時才看得到（把嘴角彎 3 像素），張嘴時完全沒作用。 */
-const EMOTES = {
-  // 瞇眼加張大嘴：笑。
-  happy: { params: { smile: 1, brow: .55, eyeOpen: .3, mouthWide: 1, mouthOpen: .8, gazeY: .25, headY: -.2 } },
-  // 眼睛往上飄開、頭歪一邊、嘴嘟成小口：在想事情。
-  thinking: { params: { smile: 0, brow: .9, eyeOpen: .95, mouthWide: -1, mouthOpen: .22, gazeX: -1, gazeY: -.85, headX: -.35, headZ: .55 } },
-  // 閉眼、閉嘴、頭垂下來。
-  sleep: { params: { smile: -.2, brow: -.3, eyeOpen: 0, mouthWide: -.2, mouthOpen: 0, headY: .6, headZ: -.3 } },
-  // 閉眼、嘴張到最大，配上 CSS 的抖動與色偏。螺旋眼還缺一張差分圖。
-  error: { params: { smile: -1, brow: -1, eyeOpen: 0, mouthWide: 1, mouthOpen: 1 }, glitch: true },
-};
-const NEUTRAL = { smile: 0, brow: 0, eyeOpen: 1, mouthWide: 0, mouthOpen: 0, gazeX: 0, gazeY: 0, headX: 0, headY: 0, headZ: 0 };
 
 export async function mountPet(canvas, options = {}) {
   const { view = 'full', base = new URL('./', import.meta.url), onError } = options;
@@ -107,7 +88,7 @@ export async function mountPet(canvas, options = {}) {
 
   const neutral = () => {
     glitching = false;
-    motion.setParameters(NEUTRAL);
+    motion.setParameters(NEUTRAL_POSE);
     handle.onemote?.(null);
   };
 
@@ -119,11 +100,11 @@ export async function mountPet(canvas, options = {}) {
     /* 站上的 [emote:xxx] 走這裡。hold 到了就自己回到平常的臉。 */
     emote(id, hold = 6000) {
       clearTimeout(emoteTimer);
-      const preset = id && EMOTES[id];
+      const preset = id && Object.hasOwn(EMOTES, id) && EMOTES[id];
       if (!preset) { neutral(); return false; }
-      glitching = !!preset.glitch;
+      glitching = GLITCHED_EMOTES.includes(id);
       // 先回到平常臉再疊，表情之間切換才不會把上一個的殘留帶過去。
-      motion.setParameters({ ...NEUTRAL, ...preset.params });
+      motion.setParameters({ ...NEUTRAL_POSE, ...preset });
       emoteTimer = setTimeout(neutral, hold);
       handle.onemote?.(id);
       return true;

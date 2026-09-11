@@ -12,6 +12,7 @@ export function around([x, y], angle = 0, sx = 1, sy = 1, tx = 0, ty = 0) {
   return [c*sx, s*sx, -s*sy, c*sy, x-c*sx*x+s*sy*y+tx, y-s*sx*x-c*sy*y+ty];
 }
 
+
 function nodeTransform(node, pose) {
   let angle = node.restAngle || 0, sx = 1, sy = 1, tx = 0, ty = 0;
   if (node.drive === 'body') {
@@ -19,10 +20,21 @@ function nodeTransform(node, pose) {
     sy = 1 + pose.breath * .003;
     ty = -pose.breath * .5;
   }
+  if (node.drive === 'waist') {
+    // Live2D's guide puts it as: the tilt of the body should be transformed
+    // into an arc rather than translating sideways, and the feet must not
+    // leave the ground. Pivoting at the waist is that arc — the torso, arms
+    // and head turn as one piece and the legs stay planted. Shearing the torso
+    // instead was tried and read as the hips and the neck twisting.
+    angle += (pose.lean || 0) * .027;
+  }
   if (node.drive === 'head') {
-    angle += pose.headZ * .075;
+    // headZ is the idle and cursor-follow drive and stays subtle on purpose.
+    // tilt is the gesture drive, an order of magnitude larger, and is zero
+    // unless something is deliberately moving the head.
+    angle += pose.headZ * .075 + (pose.tilt || 0) * .13;
     sx = 1 - Math.abs(pose.headX) * .012;
-    tx = pose.headX * 8;
+    tx = pose.headX * 8 + (pose.tilt || 0) * 14;
     ty = pose.headY * 4;
   }
   if (node.drive === 'arm') angle += pose.arm * .07 * (node.side || 1);
@@ -72,8 +84,30 @@ export function deformPoint(part, x, y, pose, rig, explode = 0) {
     const distance = delta[0] * part.hand.axis[0] + delta[1] * part.hand.axis[1];
     let blend = clamp(distance / (h * part.hand.transition), 0, 1);
     blend = blend * blend * (3 - 2 * blend);
-    const adjusted = point(around(anchor, part.hand.angle, part.hand.scale, part.hand.scale), x, y);
+    const angle = part.hand.angle + (pose.handAngle || 0) * (part.hand.wave || 0);
+    const adjusted = point(around(anchor, angle, part.hand.scale, part.hand.scale), x, y);
     x += (adjusted[0] - x) * blend; y += (adjusted[1] - y) * blend;
+  }
+  if (part.bend && (pose.armRaise || pose.armFold || pose.armTuck)) {
+    // ponytail: throwaway spike — two-bone bend over the existing joints, no
+    // reweighting UI, no per-vertex weights stored. Child (elbow) first, then
+    // the parent (shoulder), which is the order a deformer chain resolves in.
+    const at = ([u, v]) => [rx + w * u, ry + h * v];
+    const shoulder = at(part.joints.shoulder), elbow = at(part.joints.elbow);
+    const axis = [elbow[0] - shoulder[0], elbow[1] - shoulder[1]];
+    const span = axis[0] * axis[0] + axis[1] * axis[1];
+    // s counts bone lengths from the shoulder: <1 upper arm, >1 forearm and hand.
+    const s = ((x - shoulder[0]) * axis[0] + (y - shoulder[1]) * axis[1]) / span;
+    const ramp = (a, b) => { const t = clamp((s - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+    // Two drivers so the elbow can lag the shoulder and then swing on its own.
+    const fold = pose.armFold ?? pose.armRaise, raise = pose.armRaise ?? pose.armFold;
+    const fore = around(elbow, part.bend.elbow * fold * ramp(1 - part.bend.blend, 1 + part.bend.blend));
+    [x, y] = point(fore, x, y);
+    // Tuck pulls the upper arm toward vertical while the forearm sweeps past
+    // horizontal, which keeps the hand inside the view on the way up and down.
+    const swing = part.bend.shoulder * raise + (part.bend.tuck || 0) * (pose.armTuck || 0);
+    const upper = around(shoulder, swing * ramp(-part.bend.blend, part.bend.blend));
+    [x, y] = point(upper, x, y);
   }
   if (part.neck && Math.abs(x - part.neck.center) < 80 && y < part.neck.bottom) {
     const weight = clamp((part.neck.bottom - y) / (part.neck.bottom - part.neck.top), 0, 1);
@@ -111,9 +145,10 @@ export function deformPoint(part, x, y, pose, rig, explode = 0) {
     x = cx + (x - cx) * (1 + widen * weight);
     y += drop * weight;
   }
-  if (type === 'hair') {
+  if (part.sway) {
+    // Rooted at the top, free at the bottom: hair, and anything else that hangs.
     const weight = clamp((y - ry) / h, 0, 1);
-    x += pose.hair * (part.sway ?? 16) * weight * weight;
+    x += pose.hair * part.sway * weight * weight;
   }
   if (type === 'eye' || type === 'lash') {
     const apertureY = part.apertureY ?? cy;
@@ -141,6 +176,9 @@ export function deformPoint(part, x, y, pose, rig, explode = 0) {
 
 export function partOpacity(part, pose) {
   if (part.visible === false) return 0;
+  // A slot holds interchangeable art. Exactly one variant in a slot is visible,
+  // picked by pose.slots; a slot nobody has chosen shows its 'default' variant.
+  if (part.slot && (pose.slots?.[part.slot] ?? 'default') !== part.variant) return 0;
   if (part.type === 'mouth') return clamp(pose.mouthOpen / .12, 0, 1);
   if (part.type === 'lip') return 1 - clamp(pose.mouthOpen / .12, 0, 1);
   if (part.type === 'closed-eye') return 1 - clamp(pose.eyeOpen / .16, 0, 1);
