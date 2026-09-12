@@ -189,7 +189,11 @@ export class Motion {
     this.blinkTime = this.waveTime = -1;
   }
   blink() { this.blinkTime = 0; }
-  wave() { this.waveTime = 0; }
+  /* Ignored while one is already running. Restarting mid-wave snapped the arm
+     back to hanging and began again, which reads as the hand falling off. A
+     second click still lands elsewhere, it just does not interrupt this. */
+  wave() { if (this.waveTime < 0) this.waveTime = 0; }
+  get waving() { return this.waveTime >= 0; }
   step(dt) {
     dt = clamp(Number.isFinite(dt) ? dt : 0, 0, .05);
     this.time += dt;
