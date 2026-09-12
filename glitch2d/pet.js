@@ -119,6 +119,9 @@ export async function mountPet(canvas, options = {}) {
        所以站上要帶嘴型的音檔改成從這裡播，不要另外 new Audio()。 */
     speak(url) { return voice.play(url); },
     get speaking() { return motion.speaking; },
+    /* 驗收用：揮手期間為 true。連點時用它確認第二次被忽略——重揮的話這段
+       時間會從一次揮手的長度變成「點下去到最後一次點擊再加一次揮手」。 */
+    get waving() { return motion.waving; },
     /* 驗收用：講話時這個值應該跟著音量跳動，靜止時是 0。 */
     get mouthOpen() { return motion.values.mouthOpen; },
     stopSpeaking() { voice.stop(); },

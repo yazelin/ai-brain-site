@@ -288,11 +288,13 @@
   #pet.rigged{width:598px;--pet-figure:1536px}
   #pet.rigged>canvas{position:absolute;display:block;
     --pet-canvas-h:calc(var(--pet-figure) / 0.9595);   /* 她佔 canvas 高度的 95.95% */
-    height:var(--pet-canvas-h);aspect-ratio:1320/2470;
-    /* 這兩個位移是量出來的：拿舊圖與骨架在同一個視窗下比對胸前那塊 ERROR 布標，
-       調到兩邊的中心重合（桌機 1440x900 與手機 390x844 都對得上）。 */
-    top:calc(var(--pet-canvas-h) * -0.0104);
-    right:calc(var(--pet-canvas-h) * 0.534413 * -0.1364)}
+    height:var(--pet-canvas-h);aspect-ratio:1472/2470;
+    /* 這三個數字跟著 rig 的 views.full 走，改取景就要一起改，否則長寬比對不上
+       會讓 fitView 留白、角色縮水。目前對應 [-390,0,1472,2470]：長寬比是取景本身，
+       top 是她上方留白佔畫布高的比例，right 是右方留白佔畫布寬的比例乘上長寬比。
+       tools/check-live.mjs 會在真站上量這件事，改錯了它會紅。 */
+    top:calc(var(--pet-canvas-h) * -0.01336);
+    right:calc(var(--pet-canvas-h) * 0.595951 * -0.025815)}
   #pet>canvas[hidden]{display:none}
   #pet.glitching>canvas{animation:petglitch .16s steps(2) infinite}
   @keyframes petglitch{0%,100%{transform:translate(0,0);filter:none}
