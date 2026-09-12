@@ -289,10 +289,17 @@
   #pet.rigged>canvas{position:absolute;display:block;
     --pet-canvas-h:calc(var(--pet-figure) / 0.9595);   /* 她佔 canvas 高度的 95.95% */
     height:var(--pet-canvas-h);aspect-ratio:1472/2470;
-    /* 這三個數字跟著 rig 的 views.full 走，改取景就要一起改，否則長寬比對不上
-       會讓 fitView 留白、角色縮水。目前對應 [-390,0,1472,2470]：長寬比是取景本身，
-       top 是她上方留白佔畫布高的比例，right 是右方留白佔畫布寬的比例乘上長寬比。
-       tools/check-live.mjs 會在真站上量這件事，改錯了它會紅。 */
+    /* 規矩：glitch-2d 的 rig 改了 views.full，這三個數字就要一起重算。它們是照
+       取景算出來的——長寬比就是取景本身，top 是她上方留白佔畫布高的比例，right
+       是右方留白佔畫布寬的比例乘上長寬比。目前對應 [-390,0,1472,2470]。
+
+       不改的後果是長寬比對不上，fitView 會留白，她就縮水，而且看起來只是「變小
+       了一點」不像壞掉。這件事已經發生三次，前兩次都是本人用眼睛發現的。
+
+       怎麼重算：在 glitch-2d 跑一次無姿勢的 full 取景渲染，量她的外接框，
+       top = 上方留白 / 畫布高，right 係數 = 右方留白 / 畫布寬。
+       改完跑 glitch-2d 的 node tools/check-live.mjs 驗，它會直接告訴你她畫出來
+       幾像素、CSS 要求幾像素。 */
     top:calc(var(--pet-canvas-h) * -0.01336);
     right:calc(var(--pet-canvas-h) * 0.595951 * -0.025815)}
   #pet>canvas[hidden]{display:none}
