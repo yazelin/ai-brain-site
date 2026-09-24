@@ -404,7 +404,13 @@ def _save_webp(raw, path):
         print("  沒裝 Pillow,原樣落檔(檔案會很大)。", flush=True)
         path.write_bytes(raw)
         return
-    Image.open(io.BytesIO(raw)).convert("RGB").save(path, "WEBP", quality=88, method=6)
+    im = Image.open(io.BytesIO(raw)).convert("RGB")
+    im.save(path, "WEBP", quality=88, method=6)
+    # 日記卡片牆用 360px 縮圖（原圖 1024px 約 160KB）；只有日記插畫需要
+    if Path(path).parent == IMG_DIR:
+        (IMG_DIR / "thumbs").mkdir(parents=True, exist_ok=True)
+        im.thumbnail((360, 360))
+        im.save(IMG_DIR / "thumbs" / Path(path).name, "WEBP", quality=80, method=6)
 
 
 def _image_bytes(payload):
