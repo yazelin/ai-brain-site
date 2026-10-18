@@ -708,6 +708,7 @@
   <symbol id="i-fit" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
   <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></symbol>
   <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></symbol>
+  <symbol id="i-live" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4Z"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><path d="m7 4 13 8-13 8Z" fill="currentColor" stroke="none"/></symbol>
   <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/><rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/></symbol>
   <symbol id="i-rewind" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M10 9v6M14 9v6"/></symbol>
@@ -742,6 +743,8 @@
     <div class="icon" data-app="settings"><div class="emo"><svg class="ic"><use href="#i-gear"/></svg></div><div class="lbl">設定</div></div>
     <div class="icon" data-app="files"><div class="emo"><svg class="ic"><use href="#i-folder"/></svg></div><div class="lbl">檔案</div></div>
     <div class="icon" data-app="music"><div class="emo"><svg class="ic"><use href="#i-music"/></svg></div><div class="lbl">音樂</div></div>
+    <!-- 直播記錄是另一個站,不開視窗:登入(Google/LINE)不能在 iframe 裡完成,所以直接開新分頁 -->
+    <div class="icon" data-app="live" data-href="https://ai-workshop-backend.yazelinj303.workers.dev/live/" title="週三直播記錄(另開分頁)"><div class="emo"><svg class="ic"><use href="#i-live"/></svg></div><div class="lbl">直播記錄</div></div>
     <button class="icon" id="install-app" type="button" hidden><span class="emo"><svg class="ic"><use href="#i-download"/></svg></span><span class="lbl">安裝 App</span></button>
   </div>
 
@@ -757,6 +760,7 @@
     <div class="dapp mobile-dock" data-app="settings" title="設定"><svg class="ic"><use href="#i-gear"/></svg></div>
     <div class="dapp" data-app="files" title="檔案"><svg class="ic"><use href="#i-folder"/></svg></div>
     <div class="dapp mobile-dock" data-app="music" title="格莉奇的音樂"><svg class="ic"><use href="#i-music"/></svg></div>
+    <div class="dapp" data-app="live" data-href="https://ai-workshop-backend.yazelinj303.workers.dev/live/" title="週三直播記錄(另開分頁)"><svg class="ic"><use href="#i-live"/></svg></div>
   </div>
 
   <dialog class="install-guide" id="install-guide" aria-labelledby="install-guide-title">
@@ -1438,7 +1442,7 @@ function loadGiscus(){
   s.async=true;
   document.getElementById('giscus-here').appendChild(s);
 }
-document.querySelectorAll('[data-app]').forEach(b=>b.addEventListener('click',()=>toggle(b.dataset.app)));
+document.querySelectorAll('[data-app]').forEach(b=>b.addEventListener('click',()=>b.dataset.href?window.open(b.dataset.href,'_blank','noopener'):toggle(b.dataset.app)));
 // 綠燈=最大化/還原。原本黃綠兩顆都是純裝飾,只有紅色有作用。
 // 記住原本的幾何再還原,不然關掉重開會停在最大化的尺寸。
 document.querySelectorAll('.win .tb .dot.g').forEach(d=>{
