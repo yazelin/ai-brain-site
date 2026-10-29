@@ -1,0 +1,97 @@
+"""Larch agent REST 的薄包裝，只用 stdlib。
+
+認證用固定的 Bearer 金鑰（LARCH_AGENT_KEY）。不走 MCP（一次呼叫約 30 秒）。
+寫入限流是整個帳號共用，連續十幾次就回 429，照 retry-after 等完再送。
+
+這裡直接拒絕兩種請求：
+- 發佈到市集（/publish）：第一階段只用分享連結，發佈一次就是一個新版本。
+- PUT /projects/<id>：整包覆寫會靜默洗掉沒帶到的欄位。
+"""
+import base64
+import json
+import mimetypes
+import re
+import time
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+BASE = "https://larch.ink/api/agent"
+MAX_TRIES = 5
+
+
+class LarchError(Exception):
+    def __init__(self, status, body):
+        super().__init__(f"Larch HTTP {status}: {str(body)[:300]}")
+        self.status = status
+        self.body = body
+
+
+class Larch:
+    def __init__(self, key, base=BASE, sleep=time.sleep, opener=urllib.request.urlopen):
+        self.key = key
+        self.base = base.rstrip("/")
+        self.sleep = sleep
+        self.opener = opener
+
+    def request(self, method, path, body=None, headers=None):
+        if "/publish" in path:
+            raise LarchError(0, f"拒絕呼叫發佈端點：{method} {path}")
+        if method == "PUT" and re.fullmatch(r"/projects/[^/]+/?", path):
+            raise LarchError(0, f"拒絕整包覆寫專案：{path}")
+        h = {"Authorization": f"Bearer {self.key}", "Accept": "application/json"}
+        data = None
+        if body is not None:
+            h["Content-Type"] = "application/json"
+            data = json.dumps(body, ensure_ascii=False).encode()
+        h.update(headers or {})
+        for attempt in range(1, MAX_TRIES + 1):
+            req = urllib.request.Request(self.base + path, data=data, headers=h, method=method)
+            try:
+                with self.opener(req, timeout=180) as r:
+                    raw = r.read()
+                    out = json.loads(raw) if raw else {}
+                    etag = r.headers.get("ETag") if r.headers else None
+                    if etag and isinstance(out, dict):
+                        out["_etag"] = etag
+                    return out
+            except urllib.error.HTTPError as e:
+                text = e.read().decode("utf-8", "replace")
+                # 429 一律等完重送；502/503 只有冪等的 GET/PUT 才重送，
+                # POST 收到 502 時伺服器可能已經寫進去了，重送會多一筆。
+                retry = e.code == 429 or (e.code in (502, 503) and method in ("GET", "PUT"))
+                if not retry or attempt == MAX_TRIES:
+                    raise LarchError(e.code, text) from None
+                wait = int((e.headers or {}).get("retry-after") or 0) or 5 * attempt
+                print(f"  Larch {e.code}，等 {wait} 秒再試（第 {attempt} 次）", flush=True)
+                self.sleep(wait)
+
+    def get(self, path):
+        return self.request("GET", path)
+
+    def post(self, path, body):
+        return self.request("POST", path, body)
+
+    def patch(self, path, body, etag):
+        return self.request("PATCH", path, body, {"If-Match": etag})
+
+    def delete(self, path, body=None):
+        return self.request("DELETE", path, body)
+
+    def put_board(self, project_id, board_id, body, etag):
+        """整張白板覆寫。條件邊與同一出口的多條邊只有這條路保得住。"""
+        return self.request("PUT", f"/projects/{project_id}/boards/{board_id}", body,
+                            {"If-Match": etag} if etag else None)
+
+    def upload_media(self, project_id, path, category="scene"):
+        path = Path(path)
+        mime = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+        res = self.post(f"/projects/{project_id}/media", {
+            "name": path.name, "mimeType": mime, "category": category,
+            "base64": base64.b64encode(path.read_bytes()).decode()})
+        asset = res.get("asset") or (res.get("assets") or [res])[0]
+        return asset["url"]
+
+    def refresh_share_link(self, project_id):
+        res = self.post(f"/projects/{project_id}/share-link", {"permission": "play"})
+        return res.get("playUrl") or res.get("url") or json.dumps(res, ensure_ascii=False)
