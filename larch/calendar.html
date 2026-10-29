@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+@font-face{font-family:Iansui;src:url(https://cdn.jsdelivr.net/gh/ButTaiwan/iansui@v1.020/fonts/ttf/Iansui-Regular.ttf)}
+html,body{margin:0;height:100%;background:#f7f1e2;font-family:Iansui,"Noto Sans TC",sans-serif;color:#3a3446;overflow:hidden}
+body{background-image:repeating-linear-gradient(#f7f1e2 0 53px,#d6cdb6 53px 55px);display:flex;flex-direction:column;align-items:center;justify-content:center}
+h1{font-size:min(5.5vw,7vh);margin:0 0 2vh;font-weight:normal;letter-spacing:.05em}
+.nav{display:flex;align-items:center;gap:3vw;margin-bottom:2vh}
+.nav button{font:inherit;font-size:min(2.6vw,3.6vh);background:none;border:2px dashed #b9ab8c;border-radius:10px;padding:.3em .8em;color:#3a3446;cursor:pointer}
+.nav button:disabled{visibility:hidden}
+.grid{display:grid;grid-template-columns:repeat(7,min(10vw,10.5vh));gap:min(.8vw,1vh)}
+.grid div{aspect-ratio:1/.82;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;font-size:min(3vw,4.2vh);position:relative}
+.grid .wd{aspect-ratio:auto;font-size:min(2vw,3vh);color:#8a7f92}
+.grid .day{background:rgba(255,255,255,.55)}
+.grid .has{cursor:pointer;background:#fff;box-shadow:0 2px 0 #d6cdb6}
+.grid .has:hover{transform:translateY(-2px)}
+.grid .img{background:#ffe9a6}
+.grid .today{outline:4px solid #e0524f;outline-offset:-2px}
+.grid .none{color:#c4b9a3}
+.grid small{font-size:.45em;color:#8a7f92;margin-top:.1em}
+.pick{position:fixed;inset:0;background:rgba(58,52,70,.35);display:none;align-items:center;justify-content:center}
+.pick.on{display:flex}
+.pick div{background:#fffaf0;border-radius:16px;padding:3vh 3vw;display:flex;flex-direction:column;gap:2vh;min-width:40vw}
+.pick button{font:inherit;font-size:min(2.6vw,3.6vh);background:#fff;border:2px solid #d6cdb6;border-radius:12px;padding:.5em 1em;cursor:pointer;text-align:left}
+</style></head><body>
+<h1 id="t"></h1>
+<div class="nav"><button id="prev">← 上個月</button><button id="next">下個月 →</button></div>
+<div class="grid" id="g"></div>
+<div class="pick" id="pk"><div id="pkl"></div></div>
+<script>
+// 同步程式把這一行換成那個月的資料：{year, month, today, prev, next, days:{"29":[{key,title,image}]}}
+var M = /*DATA*/{"year":2026,"month":10,"today":"2026-10-29","prev":true,"next":false,"days":{"28":[{"key":"2026-10-28-1","title":"文字日","image":false}],"29":[{"key":"2026-10-29-1","title":"插畫日","image":true}]}}/*END*/;
+function go(v){
+  parent.postMessage({type:'larch:set',name:'diary_go',value:v},'*');
+  setTimeout(function(){parent.postMessage({type:'larch:complete',result:'go',payload:{go:v}},'*')},120);
+}
+document.getElementById('t').textContent = M.year + ' 年 ' + M.month + ' 月・格莉奇日記';
+var prev = document.getElementById('prev'), next = document.getElementById('next');
+prev.disabled = !M.prev; next.disabled = !M.next;
+prev.onclick = function(){go('prev')}; next.onclick = function(){go('next')};
+var g = document.getElementById('g');
+'日一二三四五六'.split('').forEach(function(w){var d=document.createElement('div');d.className='wd';d.textContent=w;g.appendChild(d)});
+var first = new Date(M.year, M.month - 1, 1).getDay(), n = new Date(M.year, M.month, 0).getDate();
+for (var i = 0; i < first; i++) g.appendChild(document.createElement('span'));
+for (var day = 1; day <= n; day++) (function(day){
+  var c = document.createElement('div'), posts = M.days[day] || [];
+  var iso = M.year + '-' + String(M.month).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+  c.className = 'day' + (posts.length ? ' has' : ' none') + (posts.some(function(p){return p.image}) ? ' img' : '') + (iso === M.today ? ' today' : '');
+  c.textContent = day;
+  if (posts.length > 1) { var s = document.createElement('small'); s.textContent = posts.length + ' 篇'; c.appendChild(s); }
+  if (posts.length) c.onclick = function(){
+    if (posts.length === 1) return go(posts[0].key);
+    var l = document.getElementById('pkl'); l.innerHTML = '';
+    posts.forEach(function(p){var b=document.createElement('button');b.textContent=p.title;b.onclick=function(){go(p.key)};l.appendChild(b)});
+    document.getElementById('pk').classList.add('on');
+  };
+  g.appendChild(c);
+})(day);
+document.getElementById('pk').onclick = function(e){ if (e.target === this) this.classList.remove('on'); };
+parent.postMessage({type:'larch:ready'},'*');
+</script></body></html>
