@@ -47,3 +47,23 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FORCE_IMAGE: ${{ github.event.inputs.force_image == 'true' && '1' || '0' }}
         run: python scripts/generate_post.py
+      # 網站那篇已經推上去了，這一步失敗也不會影響網站，下一班會自動補。
+      - name: 同步到 Larch
+        continue-on-error: true
+        env:
+          LARCH_AGENT_KEY: ${{ secrets.LARCH_AGENT_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_WEB_BASE_URL: ${{ secrets.GEMINI_WEB_BASE_URL }}
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --ff-only
+          # 先切句、產背景圖並推上去，Larch 的卡片才讀得到 GitHub Pages 上的背景
+          python scripts/larch_sync.py --dry-run
+          git add -- larch/pages/*.json larch/bg/*.webp
+          if ! git diff --cached --quiet; then
+            git commit -m "larch: $(TZ=Asia/Taipei date +%F) 同步"
+            git push
+          fi
+          python scripts/larch_sync.py || { echo "::warning::Larch 同步失敗，下一班會自動補上"; exit 1; }
