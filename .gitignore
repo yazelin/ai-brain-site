@@ -6,3 +6,6 @@ worker/node_modules/
 worker/preview.toml
 .superpowers/
 docs/superpowers/
+
+# Larch 日記頁用的字型（芫荽），執行時從 release 下載。
+larch/assets/fonts/
