@@ -187,3 +187,30 @@ class CharacterSyncTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DiaryPromptTests(unittest.TestCase):
+    def test_text_prompt_asks_for_longer_and_less_formula(self):
+        p = generate_post.TEXT_PROMPT
+        self.assertIn("250", p)
+        self.assertIn("400", p)
+        self.assertNotIn("3-6 句", p)
+        self.assertNotIn("結尾可以加一句你的口頭禪", p)
+
+    def test_image_post_with_empty_caption_falls_back(self):
+        empty = json.dumps({"title": "今日插畫", "body": ""})
+        with mock.patch.object(generate_post, "generate_image", return_value="images/posts/x.webp"), \
+             mock.patch.object(generate_post, "ask", return_value=empty) as ask, \
+             mock.patch.object(generate_post, "ROOT") as root:
+            self.assertIsNone(generate_post.gen_image_post("新聞", "場景"))
+        self.assertEqual(ask.call_count, 2)
+        root.__truediv__.return_value.unlink.assert_called_once_with(missing_ok=True)
+
+    def test_image_post_retry_succeeds(self):
+        replies = [json.dumps({"title": "x", "body": " "}),
+                   json.dumps({"title": "黑洞好可愛", "body": "今天畫了黑洞。"})]
+        with mock.patch.object(generate_post, "generate_image", return_value="images/posts/x.webp"), \
+             mock.patch.object(generate_post, "ask", side_effect=replies):
+            post = generate_post.gen_image_post("新聞", "場景")
+        self.assertEqual(post["body"], "今天畫了黑洞。")
+        self.assertEqual(post["title"], "黑洞好可愛")

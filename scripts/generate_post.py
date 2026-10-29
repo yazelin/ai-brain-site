@@ -74,9 +74,12 @@ TEXT_PROMPT = (
     "今天看到一則新聞：{inspiration}\n"
     "你的角度：{angle}\n"
     "最近粉絲留言：{comments}\n\n"
-    "寫一篇今天的日記（繁體中文，第一人稱，3-6 句，分段用 \\n\\n）。"
+    "寫一篇今天的日記（繁體中文，第一人稱，大約 250 到 400 字，分 2-4 段，分段用 \\n\\n）。"
+    "寫出這則新聞哪裡新奇或有趣、你看到時的反應和聯想，講具體的細節，"
+    "不要只寫「好興奮然後當機了」。"
     "可以順便回應粉絲留言，但不要硬塞。"
-    "結尾可以加一句你的口頭禪。\n\n"
+    "「逼——嗶」、當機、「這不是 Bug，是 Feature」這些口頭禪十篇裡用一兩次就好，"
+    "今天先不要用；開頭直接講你看到了什麼，結尾停在你自己的想法上。\n\n"
     'Output JSON: {{"title": "標題，繁體中文，6-15字", "body": "日記正文，可含\\n\\n分段"}}'
 )
 
@@ -339,11 +342,17 @@ def gen_image_post(inspiration, scene, stickers=None):
         return None
     if stickers:
         stamp_image(img_path, stickers)
-    cap = parse_json(
-        ask("gemini-2.5-flash", CAPTION_PROMPT.format(scene=scene, inspiration=inspiration)),
-        ["title", "body"])
-    return {"type": "image", "title": cap.get("title", "今日插畫"),
-            "body": cap.get("body", ""), "image": img_path}
+    # 圖說沒有內文時重問一次；還是空的就丟掉這張圖，退回文字日記。
+    for _ in range(2):
+        cap = parse_json(
+            ask("gemini-2.5-flash", CAPTION_PROMPT.format(scene=scene, inspiration=inspiration)),
+            ["title", "body"])
+        if str(cap.get("body", "")).strip():
+            return {"type": "image", "title": cap.get("title") or "今日插畫",
+                    "body": cap["body"], "image": img_path}
+    print("  圖說兩次都空白，退回文字日記。", flush=True)
+    (ROOT / img_path).unlink(missing_ok=True)
+    return None
 
 
 def generate_image(prompt):
