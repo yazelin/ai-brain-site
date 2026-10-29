@@ -93,5 +93,5 @@ class Larch:
         return asset["url"]
 
     def refresh_share_link(self, project_id):
-        res = self.post(f"/projects/{project_id}/share-link", {"permission": "play"})
+        res = self.post(f"/projects/{project_id}/share-link", {"permission": "view"})
         return res.get("playUrl") or res.get("url") or json.dumps(res, ensure_ascii=False)
