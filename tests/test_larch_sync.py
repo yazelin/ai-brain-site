@@ -90,6 +90,29 @@ class PlanTests(unittest.TestCase):
         self.assertEqual(order[-1], "board-main")
 
 
+class RenderTests(unittest.TestCase):
+    def test_existing_background_is_not_rerendered_and_missing_illustration_is_tolerated(self):
+        import tempfile
+        from pathlib import Path
+        calls = []
+
+        def fake_render(p, out, illu):
+            calls.append((p["date"], illu))
+            if illu is not None and not Path(illu).exists():
+                raise FileNotFoundError(illu)
+            Path(out).write_bytes(b"x")
+        with tempfile.TemporaryDirectory() as d:
+            bg = Path(d)
+            (bg / "2026-10-28-1.webp").write_bytes(b"old")
+            posts = [post("2026-10-28"), post("2026-10-29", type_="image"), post("2026-10-30", body=" ")]
+            with self.assertLogs("larch_sync", "WARNING"):
+                ls.render_backgrounds(posts, bg, Path(d) / "nope", fake_render)
+            self.assertEqual((bg / "2026-10-28-1.webp").read_bytes(), b"old")
+            self.assertTrue((bg / "2026-10-29-1.webp").exists())
+        self.assertEqual([c[0] for c in calls], ["2026-10-29", "2026-10-29"])
+        self.assertIsNone(calls[-1][1])
+
+
 class FakeApi:
     def __init__(self, fail_on=None):
         self.puts, self.shares, self.fail_on = [], 0, fail_on
@@ -108,13 +131,12 @@ class FakeApi:
 
 
 class ApplyTests(unittest.TestCase):
-    def test_refresh_share_only_when_something_changed(self):
+    def test_share_refreshes_every_run_even_with_nothing_to_put(self):
+        # 上一班 board 都寫好了、只有刷新分享連結失敗：同一天重跑也要補刷。
         boards = build([post("2026-10-28")])
         api = FakeApi()
-        self.assertIsNone(ls.apply([], boards, api, "p", share=True))
-        self.assertEqual(api.shares, 0)
-        ls.apply(["m-2026-10"], boards, api, "p", share=True)
-        self.assertEqual((api.puts, api.shares), (["m-2026-10"], 1))
+        self.assertEqual(ls.apply([], boards, api, "p", share=True), "https://larch.ink/play/x")
+        self.assertEqual((api.puts, api.shares), ([], 1))
 
     def test_no_share_link_while_share_disabled(self):
         api = FakeApi()

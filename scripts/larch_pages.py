@@ -77,7 +77,10 @@ def fallback_split(body):
         if not para:
             continue
         cur = ""
-        for sent in re.findall(r"[^。！？!?…]+[。！？!?…」』）)]*|[^。！？!?…]+$", para):
+        sents = re.findall(r"[^。！？!?…]*[。！？!?…」』）)]+|[^。！？!?…]+$", para)
+        if _squash("".join(sents)) != _squash(para):
+            sents = [para]  # 切不乾淨就整段一句，寧可長也不能掉字
+        for sent in sents:
             if cur and len(cur) + len(sent) > MAX_LINE:
                 lines.append(cur)
                 cur = ""

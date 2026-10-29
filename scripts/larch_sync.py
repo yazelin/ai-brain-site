@@ -135,9 +135,26 @@ def apply(todo, boards, api, project_id, share):
         etag = api.get(f"/projects/{project_id}")["_etag"]
         api.put_board(project_id, bid, {**boards[bid], "summary": f"同步日記：{boards[bid]['name']}"}, etag)
         log.info("已更新 %s", bid)
-    if todo and share:
+    # 分享連結每班都刷：上一班 board 寫好了、只有刷新失敗時，重跑才補得回來。網址不會變。
+    if share:
         return api.refresh_share_link(project_id)
     return None
+
+
+def render_backgrounds(posts, bg_dir, root, render):
+    """只產還沒有的背景。已經產過的不重產：Pillow 換版本時位元組會變，全部重寫會讓 repo 每次多十幾 MB。
+    插畫檔不見時退回文字頁並警告，不讓一篇舊日記擋住每天的同步。"""
+    bg_dir.mkdir(parents=True, exist_ok=True)
+    for key, p in larch_pages.post_key(posts):
+        out = bg_dir / f"{key}.webp"
+        if out.exists() or not str(p.get("body", "")).strip():
+            continue
+        illu = root / p["image"] if p.get("type") == "image" and p.get("image") else None
+        try:
+            render(p, out, illu)
+        except FileNotFoundError as e:
+            log.warning("%s 的插畫檔找不到（%s），先用文字頁", key, e)
+            render(p, out, None)
 
 
 def remote_descriptions(api, project_id):
@@ -161,10 +178,7 @@ def main():
     def lines_for(key, p):
         return larch_pages.load_or_split(key, p, ask, pages_dir)
 
-    for key, p in larch_pages.post_key(posts):
-        if str(p.get("body", "")).strip():
-            illu = ROOT / p["image"] if p.get("type") == "image" and p.get("image") else None
-            larch_page_image.render_page(p, bg_dir / f"{key}.webp", illu)
+    render_backgrounds(posts, bg_dir, ROOT, larch_page_image.render_page)
 
     boards = build(posts, lines_for, dt.datetime.now(TZ).date().isoformat(), cfg["base_url"])
     api = Larch(os.environ["LARCH_AGENT_KEY"])

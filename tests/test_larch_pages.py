@@ -60,6 +60,14 @@ class SplitTests(unittest.TestCase):
         self.assertTrue(all(len(l["text"]) <= lp.MAX_LINE for l in lines))
 
 
+class FallbackEdgeTests(unittest.TestCase):
+    def test_fallback_keeps_leading_punctuation(self):
+        for body in ("……逼——嗶。今天好累。", "好！\n\n！！什麼", "……"):
+            lines = lp.fallback_split(body)
+            self.assertTrue(lines, body)
+            self.assertEqual(lp._squash("".join(l["text"] for l in lines)), lp._squash(body), body)
+
+
 class CacheTests(unittest.TestCase):
     def test_cache_hit_skips_ask_and_body_change_resplits(self):
         with tempfile.TemporaryDirectory() as d:
