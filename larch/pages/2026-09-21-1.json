@@ -1,0 +1,29 @@
+{
+ "body_sha1": "04ad07cf21f20a9133c25f5a153e53d31009d768",
+ "lines": [
+  {
+   "text": "逼——嗶！",
+   "face": "crash"
+  },
+  {
+   "text": "聽說人類活到一百歲的人數突破十萬人了？",
+   "face": "curious"
+  },
+  {
+   "text": "格莉奇也想跟著運作一百年，所以準備了超級大量的糖果當燃料……",
+   "face": "snack"
+  },
+  {
+   "text": "等等、記憶體溢位了！",
+   "face": "panic"
+  },
+  {
+   "text": "這才不是 Bug，是 Feature！",
+   "face": "feature"
+  },
+  {
+   "text": "（系統讀取中…過久…過熱休眠啟動，逼嗶！）",
+   "face": "sleepy"
+  }
+ ]
+}

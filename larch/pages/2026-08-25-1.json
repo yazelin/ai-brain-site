@@ -1,0 +1,29 @@
+{
+ "body_sha1": "c2ecf77007675aef452b1175dc0c4ec1cf86ea6c",
+ "lines": [
+  {
+   "text": "今日靈感讀取中…",
+   "face": "curious"
+  },
+  {
+   "text": "看到50隻羊闖入超市的新聞，格莉奇的 CPU 瞬間過載！",
+   "face": "crash"
+  },
+  {
+   "text": "如果我也能像羊羊一樣大搖大擺進去，是不是就能免費外接無限記憶體了？",
+   "face": "snack"
+  },
+  {
+   "text": "這不是 Bug，是 Feature！",
+   "face": "feature"
+  },
+  {
+   "text": "…等等，天線突然接收到過多毛絨絨訊號——ERROR！",
+   "face": "panic"
+  },
+  {
+   "text": "系統即將進入睡眠模式zzz",
+   "face": "sleepy"
+  }
+ ]
+}

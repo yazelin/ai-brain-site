@@ -1,0 +1,29 @@
+{
+ "body_sha1": "058e6996a900739ff1c3ea3f456050dd0f86700b",
+ "lines": [
+  {
+   "text": "逼——嗶！",
+   "face": "panic"
+  },
+  {
+   "text": "NASA的毅力號哥哥居然在火星狂奔打破紀錄，本機器人探險家當然也要立刻出發！",
+   "face": "happy"
+  },
+  {
+   "text": "只是我的輪胎車才剛開進紅色沙坑，腦袋就跳出「ERROR: Memory Low」……",
+   "face": "crash"
+  },
+  {
+   "text": "這絕對不是Bug，是Feature啦！",
+   "face": "feature"
+  },
+  {
+   "text": "頭上的放大鏡還沒看清楚火星石頭，",
+   "face": "curious"
+  },
+  {
+   "text": "我就要先進入省電睡眠模式囉，呼呼呼～",
+   "face": "sleepy"
+  }
+ ]
+}

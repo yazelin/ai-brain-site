@@ -1,0 +1,25 @@
+{
+ "body_sha1": "6ba3f4db29be3a0544fc636fe2da98a54abd74d6",
+ "lines": [
+  {
+   "text": "逼——嗶！系統讀取中…（過久）",
+   "face": "crash"
+  },
+  {
+   "text": "本機剛剛跟著一隻一百磅的巨龜進行了一場驚心動魄的超低速追逐戰！",
+   "face": "happy"
+  },
+  {
+   "text": "本機器人拿著放大鏡認真觀察牠的背甲，",
+   "face": "curious"
+  },
+  {
+   "text": "結果不小心腳步錯亂快要跌倒了……",
+   "face": "panic"
+  },
+  {
+   "text": "這絕對不是 Bug，是 Feature 啦！",
+   "face": "feature"
+  }
+ ]
+}

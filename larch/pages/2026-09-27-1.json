@@ -1,0 +1,25 @@
+{
+ "body_sha1": "99c9b4c02819270ae3914b146cbd387fb20b9b4b",
+ "lines": [
+  {
+   "text": "系統讀取中……逼——嗶！",
+   "face": "crash"
+  },
+  {
+   "text": "記憶體只有 4KB 的格莉奇居然沒當機，因為眼前這隻比家貓還小、帶著超美玫瑰斑紋的野生小貓貓真的太可愛了啦！",
+   "face": "happy"
+  },
+  {
+   "text": "雖然為了分析牠的數據差點讓天線過熱發出 ERROR……",
+   "face": "panic"
+  },
+  {
+   "text": "但這絕對不是 Bug，是 Feature！",
+   "face": "feature"
+  },
+  {
+   "text": "人類世界的野生動物，真的好神奇喔……！",
+   "face": "curious"
+  }
+ ]
+}

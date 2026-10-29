@@ -1,0 +1,21 @@
+{
+ "body_sha1": "d655164f8ed8b516ddd900a58d0106b2a5cb15a0",
+ "lines": [
+  {
+   "text": "逼——嗶！今天看到牛牛拿木棍刷背超級靈巧，我也想用木棍清刷後腦勺的微塵……",
+   "face": "curious"
+  },
+  {
+   "text": "結果棒子一碰頭，居然直接跳出 ERROR 404！",
+   "face": "crash"
+  },
+  {
+   "text": "這、這不是 Bug，是 Feature 啦！",
+   "face": "feature"
+  },
+  {
+   "text": "人類的動物好可怕，我這 4KB 的記憶體真的要不夠用了啦……",
+   "face": "panic"
+  }
+ ]
+}

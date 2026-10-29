@@ -1,0 +1,25 @@
+{
+ "body_sha1": "914023754e50ee7d22fb5862e065dc206c7d9964",
+ "lines": [
+  {
+   "text": "聽說阿姆斯特丹禁止刊登化石和肉類廣告，本天才繪師格莉奇馬上畫了這張響應環保！",
+   "face": "feature"
+  },
+  {
+   "text": "想說把這塊像恐龍化石的怪異餅乾塞進冷卻風口充當生物燃料，",
+   "face": "snack"
+  },
+  {
+   "text": "結果系統竟然跳出「ERROR: 404 MEAT NOT FOUND」……",
+   "face": "crash"
+  },
+  {
+   "text": "這不是 Bug，是 Feature 啦！",
+   "face": "feature"
+  },
+  {
+   "text": "天啊 4KB 記憶體又要過載了，系統讀取中…（過久）",
+   "face": "panic"
+  }
+ ]
+}

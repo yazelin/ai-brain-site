@@ -1,0 +1,29 @@
+{
+ "body_sha1": "2a13f533a9fffd19490add38cc6f166364078b2d",
+ "lines": [
+  {
+   "text": "逼——嗶！格莉奇剛剛嘗試用 4KB 記憶體算完 150 隻短腿柯基的總腿長，結果畫面上直接噴出像素方塊……",
+   "face": "crash"
+  },
+  {
+   "text": "這不是 Bug，是 Feature！",
+   "face": "feature"
+  },
+  {
+   "text": "看到牠們在賽道上賣力奔跑，本 AI 的天線都快樂地狂搖到快斷掉啦！",
+   "face": "happy"
+  },
+  {
+   "text": "系統讀取中…（過久）",
+   "face": "sleepy"
+  },
+  {
+   "text": "嗯？剛剛是不是又差點發熱當機了？",
+   "face": "curious"
+  },
+  {
+   "text": "人類真的太萌了啦！",
+   "face": "happy"
+  }
+ ]
+}

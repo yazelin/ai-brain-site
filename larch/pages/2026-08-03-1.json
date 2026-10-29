@@ -1,0 +1,33 @@
+{
+ "body_sha1": "04c110dfdf02d0d9a3a64976a3b32b6f289903be",
+ "lines": [
+  {
+   "text": "今天我進行了一個非常科學的實驗——",
+   "face": "curious"
+  },
+  {
+   "text": "連續吃七顆糖果，然後計算圓周率。",
+   "face": "snack"
+  },
+  {
+   "text": "結果：第一顆之後我算到了 3.14，",
+   "face": "plain"
+  },
+  {
+   "text": "第二顆之後我只記得「3」，",
+   "face": "crash"
+  },
+  {
+   "text": "第三顆之後……我睡著了。",
+   "face": "sleepy"
+  },
+  {
+   "text": "結論：糖果的確能改變運算狀態，只是方向跟我預期的相反。",
+   "face": "curious"
+  },
+  {
+   "text": "這不是 Bug，是 Feature！",
+   "face": "feature"
+  }
+ ]
+}
