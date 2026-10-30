@@ -4,33 +4,37 @@
 <style>
 @font-face{font-family:Iansui;src:url(https://cdn.jsdelivr.net/gh/ButTaiwan/iansui@v1.020/fonts/ttf/Iansui-Regular.ttf)}
 html,body{margin:0;height:100%;background:#f7f1e2;font-family:Iansui,"Noto Sans TC",sans-serif;color:#3a3446;overflow:hidden}
-body{background-image:repeating-linear-gradient(#f7f1e2 0 53px,#d6cdb6 53px 55px);display:flex;flex-direction:column;align-items:center;justify-content:center}
-h1{font-size:min(5.5vw,7vh);margin:0 0 2vh;font-weight:normal;letter-spacing:.05em}
-.nav{display:flex;align-items:center;gap:3vw;margin-bottom:2vh}
-.nav button{font:inherit;font-size:min(2.6vw,3.6vh);background:none;border:2px dashed #b9ab8c;border-radius:10px;padding:.3em .8em;color:#3a3446;cursor:pointer}
-.nav button:disabled{visibility:hidden}
-.grid{display:grid;grid-template-columns:repeat(7,min(10vw,10.5vh));gap:min(.8vw,1vh)}
-.grid div{aspect-ratio:1/.82;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;font-size:min(3vw,4.2vh);position:relative}
-.grid .wd{aspect-ratio:auto;font-size:min(2vw,3vh);color:#8a7f92}
-.grid .day{background:rgba(255,255,255,.55)}
-.grid .has{cursor:pointer;background:#fff;box-shadow:0 2px 0 #d6cdb6}
+body{background-image:repeating-linear-gradient(#f7f1e2 0 53px,#d6cdb6 53px 55px);display:flex;flex-direction:column;padding:2vh 2vw;box-sizing:border-box}
+.top{display:flex;align-items:center;justify-content:center;gap:3vw;margin-bottom:1.5vh}
+h1{font-size:min(4vw,5.5vh);margin:0;font-weight:normal;letter-spacing:.05em}
+.top button{font:inherit;font-size:min(2.2vw,3.2vh);background:none;border:2px dashed #b9ab8c;border-radius:10px;padding:.2em .8em;color:#3a3446;cursor:pointer}
+.top button:disabled{visibility:hidden}
+.grid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:auto;grid-auto-rows:1fr;gap:min(.6vw,.8vh)}
+.grid .wd{display:flex;align-items:end;justify-content:center;font-size:min(1.8vw,2.6vh);color:#8a7f92}
+.grid .day{position:relative;overflow:hidden;border-radius:10px;background:rgba(255,255,255,.45);font-size:min(1.5vw,2.2vh)}
+.grid .has{cursor:pointer;background:#fff center/cover no-repeat;box-shadow:0 2px 0 #d6cdb6}
 .grid .has:hover{transform:translateY(-2px)}
-.grid .img{background:#ffe9a6}
 .grid .today{outline:4px solid #e0524f;outline-offset:-2px}
-.grid .none{color:#c4b9a3}
-.grid small{font-size:.45em;color:#8a7f92;margin-top:.1em}
+.grid .n{position:absolute;top:.25em;left:.35em;font-size:1.3em;line-height:1;color:#3a3446}
+.grid .none .n{color:#c4b9a3}
+.grid .pic .n{background:rgba(255,250,240,.85);border-radius:6px;padding:.1em .3em}
+.grid .tt{position:absolute;left:0;right:0;bottom:0;padding:.3em .45em;line-height:1.3}
+.grid .tt span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.grid .txt .tt{top:1.8em;bottom:auto}
+.grid .txt .tt span{-webkit-line-clamp:4}
+.grid .pic .tt{background:rgba(255,250,240,.88)}
+.grid .more{position:absolute;top:.3em;right:.35em;font-size:.9em;background:#a0523f;color:#fff;border-radius:6px;padding:.1em .4em}
 .pick{position:fixed;inset:0;background:rgba(58,52,70,.35);display:none;align-items:center;justify-content:center}
 .pick.on{display:flex}
 .pick div{background:#fffaf0;border-radius:16px;padding:3vh 3vw;display:flex;flex-direction:column;gap:2vh;min-width:40vw}
 .pick button{font:inherit;font-size:min(2.6vw,3.6vh);background:#fff;border:2px solid #d6cdb6;border-radius:12px;padding:.5em 1em;cursor:pointer;text-align:left}
 </style></head><body>
-<h1 id="t"></h1>
-<div class="nav"><button id="prev">← 上個月</button><button id="next">下個月 →</button></div>
+<div class="top"><button id="prev">← 上個月</button><h1 id="t"></h1><button id="next">下個月 →</button></div>
 <div class="grid" id="g"></div>
 <div class="pick" id="pk"><div id="pkl"></div></div>
 <script>
-// 同步程式把這一行換成那個月的資料：{year, month, today, prev, next, days:{"29":[{key,title,image}]}}
-var M = /*DATA*/{"year":2026,"month":10,"today":"2026-10-29","prev":true,"next":false,"days":{"28":[{"key":"2026-10-28-1","title":"文字日","image":false}],"29":[{"key":"2026-10-29-1","title":"插畫日","image":true}]}}/*END*/;
+// 同步程式把這一行換成那個月的資料：{year, month, today, prev, next, days:{"29":[{key,title,thumb}]}}
+var M = /*DATA*/{"year":2026,"month":10,"today":"2026-10-29","prev":true,"next":false,"days":{"28":[{"key":"2026-10-28-1","title":"文字日","thumb":null}],"29":[{"key":"2026-10-29-1","title":"插畫日","thumb":"../images/posts/thumbs/20260804.webp"}]}}/*END*/;
 function go(v){
   parent.postMessage({type:'larch:set',name:'diary_go',value:v},'*');
   setTimeout(function(){parent.postMessage({type:'larch:complete',result:'go',payload:{go:v}},'*')},120);
@@ -46,9 +50,15 @@ for (var i = 0; i < first; i++) g.appendChild(document.createElement('span'));
 for (var day = 1; day <= n; day++) (function(day){
   var c = document.createElement('div'), posts = M.days[day] || [];
   var iso = M.year + '-' + String(M.month).padStart(2,'0') + '-' + String(day).padStart(2,'0');
-  c.className = 'day' + (posts.length ? ' has' : ' none') + (posts.some(function(p){return p.image}) ? ' img' : '') + (iso === M.today ? ' today' : '');
-  c.textContent = day;
-  if (posts.length > 1) { var s = document.createElement('small'); s.textContent = posts.length + ' 篇'; c.appendChild(s); }
+  var thumb = (posts.filter(function(p){return p.thumb})[0] || {}).thumb;
+  c.className = 'day' + (posts.length ? ' has' : ' none') + (posts.length ? (thumb ? ' pic' : ' txt') : '') + (iso === M.today ? ' today' : '');
+  if (thumb) c.style.backgroundImage = 'url("' + thumb + '")';
+  var nn = document.createElement('span'); nn.className = 'n'; nn.textContent = day; c.appendChild(nn);
+  if (posts.length) {
+    var tt = document.createElement('div'), tx = document.createElement('span');
+    tt.className = 'tt'; tx.textContent = posts[0].title; tt.appendChild(tx); c.appendChild(tt);
+    if (posts.length > 1) { var s = document.createElement('span'); s.className = 'more'; s.textContent = posts.length + ' 篇'; c.appendChild(s); }
+  }
   if (posts.length) c.onclick = function(){
     if (posts.length === 1) return go(posts[0].key);
     var l = document.getElementById('pkl'); l.innerHTML = '';
