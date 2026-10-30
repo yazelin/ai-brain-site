@@ -131,6 +131,19 @@ function system() {
   ].join('\n\n');
 }
 
+// 送給 gemini-web 的只取最近一小段：它把整串攤平貼進 Gemini 網頁，送越多越慢也越容易出錯。
+// 畫面上的紀錄照舊保留（save 的 BUDGET），這裡只管每次送出去的量。
+var SEND_CHARS = 2500, SEND_MSGS = 12, MSG_CHARS = 600;
+function recent() {
+  var out = [], total = 0;
+  for (var i = chat.length - 1; i >= 0 && out.length < SEND_MSGS; i--) {
+    var c = String(chat[i].content).slice(0, MSG_CHARS);
+    if (out.length && total + c.length > SEND_CHARS) break;
+    total += c.length; out.unshift({role: chat[i].role, content: c});
+  }
+  return out;
+}
+
 function ask() {
   busy = true; $('send').disabled = true;
   // 前 5 秒顯示「思考中」，之後換「回應中」，讓讀者知道還在跑；回覆到了就換成內容
@@ -140,7 +153,7 @@ function ask() {
   var later = setTimeout(function () { label.textContent = '回應中'; }, 5000);
   loadPosts().then(function () {
     return fetch(RELAY, {method: 'POST', headers: {'content-type': 'application/json'},
-      body: JSON.stringify({system: system(), messages: chat.slice(-20)})});
+      body: JSON.stringify({system: system(), messages: recent()})});
   }).then(function (r) { return r.json(); }).then(function (j) {
     clearTimeout(later); t.remove();
     if (!j || !j.reply) throw new Error(j && j.error || '沒有回覆');
