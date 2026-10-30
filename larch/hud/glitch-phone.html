@@ -74,7 +74,15 @@ $('fabImg').src = $('av').src = AVATAR;
 
 function resize(s) { parent.postMessage({type: 'larch:hud:resize', width: s.w, height: s.h}, '*'); }
 function setVar(n, v) { parent.postMessage({type: 'larch:set', name: n, value: v}, '*'); }
-function save() { chat = chat.slice(-MAX); setVar(CHAT_VAR, JSON.stringify(chat)); }
+// 播放器收到超過 10 萬字的字串變數會整筆丟掉（不報錯），所以存之前先從最舊的丟到 2 萬字以內。
+// 這個變數跨週目保留，存在讀者自己的瀏覽器，不算進專案大小。
+var BUDGET = 20000;
+function save() {
+  chat = chat.slice(-MAX);
+  var s = JSON.stringify(chat);
+  while (s.length > BUDGET && chat.length > 2) { chat.shift(); s = JSON.stringify(chat); }
+  setVar(CHAT_VAR, s);
+}
 
 function row(cls, text) {
   var d = document.createElement('div'); d.className = 'm ' + cls; d.textContent = text;
