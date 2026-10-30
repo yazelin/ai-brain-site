@@ -46,15 +46,23 @@ class BuildTests(unittest.TestCase):
     def test_two_posts_same_day_both_added(self):
         b = build([post("2026-08-04"), post("2026-08-04", title="第二篇")])["m-2026-08"]
         self.assertEqual({n["id"] for n in b["nodes"]} - {"cal-2026-08"}, {"d-20260804-1", "d-20260804-2"})
-        days = ls.calendar_data(2026, 8, [("2026-08-04-1", post("2026-08-04")), ("2026-08-04-2", post("2026-08-04", title="第二篇"))], "2026-10-31", True, False, BASE)["days"]
+        days = ls.calendar_data(2026, 8, [("2026-08-04-1", post("2026-08-04")), ("2026-08-04-2", post("2026-08-04", title="第二篇"))], "2026-10-31", True, False, BASE, "2026-08-01")["days"]
         self.assertEqual([d["key"] for d in days["4"]], ["2026-08-04-1", "2026-08-04-2"])
 
     def test_calendar_day_has_title_and_thumb(self):
         days = ls.calendar_data(2026, 10, [("2026-10-28-1", post("2026-10-28", title="文字日")),
                                            ("2026-10-29-1", post("2026-10-29", type_="image", title="插畫日"))],
-                                "2026-10-31", True, False, BASE)["days"]
+                                "2026-10-31", True, False, BASE, "2026-08-01")["days"]
         self.assertEqual(days["28"], [{"key": "2026-10-28-1", "title": "文字日", "thumb": None}])
         self.assertEqual(days["29"][0]["thumb"], BASE + "/images/posts/thumbs/20261029.webp")
+
+    def test_missing_days_between_start_and_today_are_rest(self):
+        entries = [("2026-10-02-1", post("2026-10-02")), ("2026-10-04-1", post("2026-10-04"))]
+        cal = ls.calendar_data(2026, 10, entries, "2026-10-06", True, False, BASE, "2026-08-02")
+        self.assertEqual(cal["rest"], [1, 3, 5])  # 今天（6 號）還沒寫，不算休息
+        aug = ls.calendar_data(2026, 8, [("2026-08-02-1", post("2026-08-02"))], "2026-10-06", False, True, BASE, "2026-08-02")
+        self.assertEqual(aug["rest"][:2], [3, 4])  # 8/1 在開始寫之前，不算
+        self.assertEqual(len(aug["rest"]), 29)
 
     def test_empty_body_is_skipped_with_warning(self):
         with self.assertLogs("larch_sync", "WARNING") as cm:

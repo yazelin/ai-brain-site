@@ -17,6 +17,7 @@ h1{font-size:min(4vw,5.5vh);margin:0;font-weight:normal;letter-spacing:.05em}
 .grid .today{outline:4px solid #e0524f;outline-offset:-2px}
 .grid .n{position:absolute;top:.25em;left:.35em;font-size:1.3em;line-height:1;color:#3a3446}
 .grid .none .n{color:#c4b9a3}
+.grid .rest{display:flex;align-items:center;justify-content:center;color:#8f8268;font-size:min(1.9vw,2.8vh);letter-spacing:.2em;background:repeating-linear-gradient(-45deg,rgba(255,255,255,.35) 0 8px,rgba(214,205,182,.25) 8px 16px)}
 .grid .pic .n{background:rgba(255,250,240,.85);border-radius:6px;padding:.1em .3em}
 .grid .tt{position:absolute;left:0;right:0;bottom:0;padding:.3em .45em;line-height:1.3}
 .grid .tt span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
@@ -33,8 +34,8 @@ h1{font-size:min(4vw,5.5vh);margin:0;font-weight:normal;letter-spacing:.05em}
 <div class="grid" id="g"></div>
 <div class="pick" id="pk"><div id="pkl"></div></div>
 <script>
-// 同步程式把這一行換成那個月的資料：{year, month, today, prev, next, days:{"29":[{key,title,thumb}]}}
-var M = /*DATA*/{"year":2026,"month":10,"today":"2026-10-29","prev":true,"next":false,"days":{"28":[{"key":"2026-10-28-1","title":"文字日","thumb":null}],"29":[{"key":"2026-10-29-1","title":"插畫日","thumb":"../images/posts/thumbs/20260804.webp"}]}}/*END*/;
+// 同步程式把這一行換成那個月的資料：{year, month, today, prev, next, days:{"29":[{key,title,thumb}]}, rest:[沒寫日記的日子]}
+var M = /*DATA*/{"year":2026,"month":10,"today":"2026-10-29","prev":true,"next":false,"days":{"28":[{"key":"2026-10-28-1","title":"文字日","thumb":null}],"29":[{"key":"2026-10-29-1","title":"插畫日","thumb":"../images/posts/thumbs/20260804.webp"}]},"rest":[27]}/*END*/;
 function go(v){
   parent.postMessage({type:'larch:set',name:'diary_go',value:v},'*');
   setTimeout(function(){parent.postMessage({type:'larch:complete',result:'go',payload:{go:v}},'*')},120);
@@ -54,6 +55,7 @@ for (var day = 1; day <= n; day++) (function(day){
   c.className = 'day' + (posts.length ? ' has' : ' none') + (posts.length ? (thumb ? ' pic' : ' txt') : '') + (iso === M.today ? ' today' : '');
   if (thumb) c.style.backgroundImage = 'url("' + thumb + '")';
   var nn = document.createElement('span'); nn.className = 'n'; nn.textContent = day; c.appendChild(nn);
+  if ((M.rest || []).indexOf(day) >= 0) { c.className += ' rest'; c.appendChild(document.createTextNode('休息')); }
   if (posts.length) {
     var tt = document.createElement('div'), tx = document.createElement('span');
     tt.className = 'tt'; tx.textContent = posts[0].title; tt.appendChild(tx); c.appendChild(tt);

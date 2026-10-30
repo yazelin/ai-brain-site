@@ -12,6 +12,7 @@ board-main 只有一張 boardJump，讀者按「開始遊戲」就到最新的�
 用法：python scripts/larch_sync.py [--config larch/config.json] [--dry-run]
 """
 import argparse
+import calendar
 import datetime as dt
 import hashlib
 import json
@@ -52,16 +53,19 @@ def _actor(base, face):
                         "slot": "right", "enter": "none", "scale": 1, "offsetX": 0, "offsetY": 0}]}
 
 
-def calendar_data(year, month, entries, today, has_prev, has_next, base):
+def calendar_data(year, month, entries, today, has_prev, has_next, base, start):
     days = {}
     for key, p in entries:
         img = p.get("image") if p.get("type") == "image" else None
         # 月曆格子用網站本來就有的 360px 縮圖，整個月才不會一次載十幾張大圖。
         thumb = f"{base}/images/posts/thumbs/{img.rsplit('/', 1)[-1]}" if img else None
         days.setdefault(str(int(p["date"][8:])), []).append({"key": key, "title": p.get("title", ""), "thumb": thumb})
+    # 開始寫日記以後、今天以前，沒有日記的日子是產文失敗那天，月曆標「休息」。
+    n = calendar.monthrange(year, month)[1]
+    rest = [d for d in range(1, n + 1) if str(d) not in days and start < f"{year}-{month:02d}-{d:02d}" < today]
     # 今天只寫進自己那個月，舊月份的內容才不會每天都變、每天都重送。
     return {"year": year, "month": month, "today": today if _ym(today) == f"{year}-{month:02d}" else None,
-            "prev": has_prev, "next": has_next, "days": days}
+            "prev": has_prev, "next": has_next, "days": days, "rest": rest}
 
 
 def _cal_html(data):
@@ -84,6 +88,7 @@ def build(posts, lines_for, today, base):
             continue
         months.setdefault(_ym(p["date"]), []).append((key, p))
     order = sorted(months)
+    start = min(p["date"] for _, p in months[order[0]]) if order else today
     boards = {}
     for i, ym in enumerate(order):
         y, m = int(ym[:4]), int(ym[5:])
@@ -92,7 +97,7 @@ def build(posts, lines_for, today, base):
         next_ym = order[i + 1] if i + 1 < len(order) else None
         nodes = [{"id": cal_id, "type": "story", "position": {"x": 0, "y": 0}, "data": {
             "type": "miniGame", "title": f"{y} 年 {m} 月", "text": "", "start": True,
-            "miniGameHtml": _cal_html(calendar_data(y, m, entries, today, bool(prev_ym), bool(next_ym), base)),
+            "miniGameHtml": _cal_html(calendar_data(y, m, entries, today, bool(prev_ym), bool(next_ym), base, start)),
             "miniGameReadVars": [], "miniGameWriteVars": ["diary_go"], "miniGamePresentation": "fullscreen",
             "miniGameFrame": {"showButton": False, "showTitle": False},
             "transition": "pageTurn", "transitionMs": 700, "stage": {"actors": []}, "characterLayers": []}}]
