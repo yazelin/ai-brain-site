@@ -56,6 +56,17 @@ class LarchApiTests(unittest.TestCase):
         self.assertEqual(api.request("PUT", "/projects/p/boards/b", {}), {"ok": 1})
         self.assertEqual(api.replace_project("p", {}, '"e"'), {"ok": 1})
 
+    def test_patch_settings_sends_latest_revision(self):
+        reqs = []
+
+        def fake(req, timeout=None):
+            reqs.append(req)
+            return FakeResp({"revision": 12, "settings": {}} if req.get_method() == "GET" else {"changed": {}})
+        Larch("k", opener=fake).patch_settings("p", {"cgGalleryEnabled": True}, "測試")
+        self.assertEqual([r.get_method() for r in reqs], ["GET", "PATCH"])
+        self.assertEqual(reqs[1].get_header("If-match"), '"12"')
+        self.assertEqual(json.loads(reqs[1].data), {"summary": "測試", "changes": {"cgGalleryEnabled": True}})
+
     def test_gives_up_after_5_429s(self):
         def fake(req, timeout=None):
             raise http_error(429, {"retry-after": "1"})

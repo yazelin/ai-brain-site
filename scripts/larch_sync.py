@@ -186,17 +186,58 @@ def render_backgrounds(posts, bg_dir, root, render):
             render(p, out, None)
 
 
-def sync_description(api, project_id, description):
-    """專案簡介（標題畫面也顯示它）只有整份 PUT 改得到，所以只在跟設定檔不同時才做：
-    讀整份、只換簡介、帶 If-Match 推回。整份 PUT 會清掉白板（larch-vn 筆記），
-    回傳 True 時呼叫端要把白板全部重推。"""
+# 格莉奇手機：遊戲常駐 UI（HUD），角落一顆頭像，點開跟格莉奇聊天。原始碼在 larch/hud/。
+# 從編輯器導入插件時 Larch 會把執行內容存進 settings.plugins[id].playback，這裡直接寫同樣的形狀。
+HUD_ID = "glitch-phone"
+CHAT_VARS = [
+    {"id": "glitch_reader_name", "name": "glitch_reader_name", "type": "string", "label": "讀者名字",
+     "description": "格莉奇手機第一次打開時問的名字", "defaultValue": ""},
+    {"id": "glitch_chat", "name": "glitch_chat", "type": "string", "label": "格莉奇手機對話",
+     "description": "格莉奇手機的對話紀錄（JSON）", "defaultValue": "[]"},
+]
+
+
+def hud_plugin():
+    names = [v["name"] for v in CHAT_VARS]
+    return {"enabled": True, "playback": {
+        "version": "1.0.0", "permissions": ["player:ui", "variables:read", "variables:write"], "defaults": {},
+        "huds": [{"id": "phone", "title": "格莉奇手機", "anchor": "top-right", "width": 64, "height": 64,
+                  "offsetX": 16, "offsetY": 56, "interactive": True, "readVariables": names, "writeVariables": names,
+                  "html": (ROOT / "larch" / "hud" / "glitch-phone.html").read_text("utf-8")}]}}
+
+
+def sync_project_meta(api, project_id, description, plugins, variables):
+    """專案簡介（標題畫面也顯示）、插件與變數都只有整份 PUT 改得到，所以只在跟這裡不同時才做：
+    讀整份、只改這幾項、帶 If-Match 推回。變數只補缺的，不動作者改過的預設值。
+    整份 PUT 會清掉白板（larch-vn 筆記），回傳 True 時呼叫端要把白板全部重推。"""
     proj = api.get(f"/projects/{project_id}")
-    if not description or proj.get("description") == description:
-        return False
     etag = proj.pop("_etag")
-    api.replace_project(project_id, {**proj, "description": description}, etag)
-    log.info("已更新專案簡介")
+    out = dict(proj)
+    if description and proj.get("description") != description:
+        out["description"] = description
+    settings = proj.get("settings") or {}
+    current = settings.get("plugins") or {}
+    if any(current.get(k) != v for k, v in plugins.items()):
+        out["settings"] = {**settings, "plugins": {**current, **plugins}}
+    have = {v.get("name") for v in proj.get("variables") or []}
+    missing = [v for v in variables if v["name"] not in have]
+    if missing:
+        out["variables"] = (proj.get("variables") or []) + missing
+    if out == proj:
+        return False
+    api.replace_project(project_id, out, etag)
+    log.info("已更新專案設定：%s", ", ".join(k for k in out if out[k] != proj.get(k)))
     return True
+
+
+def sync_cg(api, project_id, items):
+    """插畫收藏只補 Larch 上還沒有的網址（addCgGalleryItems 本身也會略過重複的）。"""
+    have = {i.get("url") for i in api.get(f"/projects/{project_id}/settings")["settings"].get("cgGalleryItems") or []}
+    new = [i for i in items if i["url"] not in have]
+    if new:
+        api.patch_settings(project_id, {"addCgGalleryItems": new}, f"插畫收藏加入 {len(new)} 張")
+        log.info("插畫收藏加入 %d 張", len(new))
+    return new
 
 
 def remote_descriptions(api, project_id):
@@ -229,7 +270,8 @@ def main():
         todo = plan(boards, remote_descriptions(api, pid))
         print(f"要更新 {len(todo)} 張 board：{', '.join(todo) or '（沒有）'}", flush=True)
         return
-    replaced = sync_description(api, pid, cfg.get("description"))
+    replaced = sync_project_meta(api, pid, cfg.get("description"), {HUD_ID: hud_plugin()}, CHAT_VARS)
+    sync_cg(api, pid, cg_items(posts, cfg["base_url"]))
     todo = plan(boards, {} if replaced else remote_descriptions(api, pid))
     print(f"要更新 {len(todo)} 張 board：{', '.join(todo) or '（沒有）'}", flush=True)
     url = apply(todo, boards, api, pid, cfg.get("share", False))

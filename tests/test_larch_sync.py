@@ -172,29 +172,71 @@ class FakeApi:
 
 
 class ProjectApi:
-    def __init__(self, desc):
-        self.desc, self.replaced = desc, []
+    def __init__(self, desc, plugins=None, variables=None):
+        self.desc, self.plugins, self.variables, self.replaced = desc, plugins or {}, variables or [], []
 
     def get(self, path):
-        return {"_etag": '"r9"', "description": self.desc, "boards": [{"id": "m-2026-10"}], "settings": {"a": 1}}
+        return {"_etag": '"r9"', "description": self.desc, "boards": [{"id": "m-2026-10"}],
+                "settings": {"a": 1, "plugins": dict(self.plugins)}, "variables": list(self.variables)}
 
     def replace_project(self, pid, project, etag):
         self.replaced.append((project, etag))
 
 
-class DescriptionTests(unittest.TestCase):
-    def test_same_description_does_not_put(self):
-        api = ProjectApi("一樣")
-        self.assertFalse(ls.sync_description(api, "p", "一樣"))
-        self.assertFalse(ls.sync_description(api, "p", None))
+VAR = {"name": "glitch_chat", "defaultValue": "[]"}
+
+
+class ProjectMetaTests(unittest.TestCase):
+    def test_nothing_to_do_when_already_matching(self):
+        api = ProjectApi("一樣", {"hud": {"v": 1}}, [{"name": "glitch_chat", "defaultValue": "作者改過"}])
+        self.assertFalse(ls.sync_project_meta(api, "p", "一樣", {"hud": {"v": 1}}, [VAR]))
+        self.assertFalse(ls.sync_project_meta(api, "p", None, {}, []))
         self.assertEqual(api.replaced, [])
 
     def test_changed_description_puts_whole_project_with_only_description_changed(self):
         api = ProjectApi("舊的")
-        self.assertTrue(ls.sync_description(api, "p", "新的"))
+        self.assertTrue(ls.sync_project_meta(api, "p", "新的", {}, []))
         project, etag = api.replaced[0]
         self.assertEqual(etag, '"r9"')
-        self.assertEqual(project, {"description": "新的", "boards": [{"id": "m-2026-10"}], "settings": {"a": 1}})
+        self.assertEqual(project, {"description": "新的", "boards": [{"id": "m-2026-10"}],
+                                   "settings": {"a": 1, "plugins": {}}, "variables": []})
+
+    def test_adds_plugin_and_missing_variables_keeping_others(self):
+        api = ProjectApi("一樣", {"other": {"x": 1}}, [{"name": "keep"}])
+        self.assertTrue(ls.sync_project_meta(api, "p", "一樣", {"hud": {"v": 2}}, [VAR]))
+        project, _ = api.replaced[0]
+        self.assertEqual(project["settings"], {"a": 1, "plugins": {"other": {"x": 1}, "hud": {"v": 2}}})
+        self.assertEqual(project["variables"], [{"name": "keep"}, VAR])
+
+    def test_hud_plugin_reads_and_writes_its_two_variables(self):
+        hud = ls.hud_plugin()["playback"]["huds"][0]
+        names = [v["name"] for v in ls.CHAT_VARS]
+        self.assertEqual((hud["readVariables"], hud["writeVariables"]), (names, names))
+        self.assertIn("larch:hud:resize", hud["html"])
+
+
+class CgApi:
+    def __init__(self, urls):
+        self.urls, self.patches = urls, []
+
+    def get(self, path):
+        return {"settings": {"cgGalleryItems": [{"url": u} for u in self.urls]}, "revision": 7}
+
+    def patch_settings(self, pid, changes, summary):
+        self.patches.append(changes)
+
+
+class CgSyncTests(unittest.TestCase):
+    def test_adds_only_missing_illustrations(self):
+        api = CgApi(["https://a/1.webp"])
+        new = ls.sync_cg(api, "p", [{"url": "https://a/1.webp"}, {"url": "https://a/2.webp", "locked": True}])
+        self.assertEqual(api.patches, [{"addCgGalleryItems": [{"url": "https://a/2.webp", "locked": True}]}])
+        self.assertEqual(len(new), 1)
+
+    def test_nothing_new_means_no_write(self):
+        api = CgApi(["https://a/1.webp"])
+        ls.sync_cg(api, "p", [{"url": "https://a/1.webp"}])
+        self.assertEqual(api.patches, [])
 
 
 class ApplyTests(unittest.TestCase):

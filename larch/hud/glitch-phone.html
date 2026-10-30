@@ -1,0 +1,165 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+/* 格莉奇手機：角落一顆頭像，點了展開成聊天視窗。配色跟格莉奇OS的深色視窗一致。 */
+html,body{margin:0;height:100%;background:transparent;overflow:hidden}
+*{box-sizing:border-box}
+:root{--cy:#25c2e8;--mint:#7cf3c0;--ink:#e8eef1;--mute:#9aa6ad;--win:#1c1f24;--bar:#262a30;--line:rgba(255,255,255,.1);--me:#25c2e8;--her:#2f343b;
+  --font:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif}
+body{font:14px/1.55 var(--font);color:var(--ink)}
+button{font:inherit;cursor:pointer;border:0;transition:scale .2s ease,background-color .2s ease,color .2s ease}
+button:focus-visible,input:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+@media (hover:hover){button:not(:disabled):hover{scale:1.04}}
+button:not(:disabled):active{scale:.95}
+button:disabled{opacity:.45;cursor:default}
+
+#fab{position:absolute;right:0;top:0;width:64px;height:64px;border-radius:50%;padding:0;background:#0b1a22;
+  border:2px solid var(--cy);box-shadow:0 0 18px rgba(37,194,232,.45);overflow:hidden}
+#fab img{width:100%;height:100%;object-fit:cover;display:block}
+#fab .tip{position:absolute;left:0;right:0;bottom:0;font-size:10px;font-weight:700;line-height:16px;background:rgba(4,8,12,.8);color:var(--mint)}
+
+#win{position:absolute;inset:0;display:none;flex-direction:column;border-radius:14px;overflow:hidden;background:var(--win);
+  border:1px solid var(--line);box-shadow:0 18px 50px rgba(0,0,0,.55)}
+body.open #win{display:flex;animation:in .32s cubic-bezier(.2,.9,.2,1) both}
+body.open #fab{display:none}
+@keyframes in{from{opacity:0;translate:0 8px;scale:.97}}
+.top{display:flex;align-items:center;gap:10px;padding:10px 10px 10px 12px;background:var(--bar);border-bottom:1px solid var(--line)}
+.top img{width:34px;height:34px;border-radius:50%;object-fit:cover;border:1px solid rgba(124,243,192,.6)}
+.top .who{flex:1;min-width:0}
+.top b{display:block;font-size:15px}
+.top small{color:var(--mute);font-size:11px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ic{width:40px;height:40px;border-radius:9px;background:transparent;color:var(--mute);display:inline-flex;align-items:center;justify-content:center}
+.ic:hover{color:var(--ink);background:rgba(255,255,255,.06)}
+.ic svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#log{flex:1;min-height:0;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;scrollbar-width:thin}
+.m{max-width:82%;padding:8px 11px;border-radius:14px;white-space:pre-wrap;word-break:break-word}
+.her{align-self:flex-start;background:var(--her);border-bottom-left-radius:4px}
+.me{align-self:flex-end;background:var(--me);color:#04131a;border-bottom-right-radius:4px}
+.sys{align-self:center;color:var(--mute);font-size:12px;text-align:center}
+.typing{color:var(--mute)}
+form{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line);background:var(--bar)}
+input{flex:1;min-width:0;min-height:40px;padding:0 12px;border-radius:9px;border:1px solid rgba(255,255,255,.22);background:#14171b;color:var(--ink);font:14px var(--font)}
+input::placeholder{color:#7d8890}
+#send{min-width:56px;min-height:40px;border-radius:9px;background:var(--cy);color:#04131a;font-weight:700}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head>
+<body>
+<button id="fab" type="button" aria-label="打開格莉奇手機"><img id="fabImg" alt=""><span class="tip">傳訊息</span></button>
+<section id="win" aria-label="跟格莉奇聊天">
+  <div class="top">
+    <img id="av" alt="">
+    <div class="who"><b>格莉奇</b><small id="sub">線上</small></div>
+    <button class="ic" id="rename" type="button" title="改名字" aria-label="改名字"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+    <button class="ic" id="close" type="button" title="收起來" aria-label="收起來"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div id="log" aria-live="polite"></div>
+  <form id="f"><input id="in" autocomplete="off" maxlength="300"><button id="send" type="submit">傳送</button></form>
+</section>
+<script>
+var RELAY = 'https://phone-chat-relay.yazelinj303.workers.dev/chat';
+var SITE = 'https://yazelin.github.io/ai-brain-site/';
+var AVATAR = SITE + 'images/avatar.webp';
+var NAME_VAR = 'glitch_reader_name', CHAT_VAR = 'glitch_chat', MAX = 40;
+var OPEN = {w: 360, h: 600}, SHUT = {w: 64, h: 64};
+
+var name = '', chat = [], cardId = '', busy = false, inited = false, posts = null, askingName = false;
+var $ = function (id) { return document.getElementById(id); };
+$('fabImg').src = $('av').src = AVATAR;
+
+function resize(s) { parent.postMessage({type: 'larch:hud:resize', width: s.w, height: s.h}, '*'); }
+function setVar(n, v) { parent.postMessage({type: 'larch:set', name: n, value: v}, '*'); }
+function save() { chat = chat.slice(-MAX); setVar(CHAT_VAR, JSON.stringify(chat)); }
+
+function row(cls, text) {
+  var d = document.createElement('div'); d.className = 'm ' + cls; d.textContent = text;
+  $('log').appendChild(d); $('log').scrollTop = $('log').scrollHeight; return d;
+}
+function render() {
+  $('log').innerHTML = '';
+  chat.forEach(function (m) { row(m.role === 'user' ? 'me' : 'her', m.content); });
+  if (askingName) row('her', name ? '要改成什麼名字？' : '逼——嗶！你好，我是格莉奇。先跟我說你叫什麼名字？');
+  $('in').placeholder = askingName ? '輸入你的名字' : '傳訊息給格莉奇';
+  $('sub').textContent = name ? '正在跟 ' + name + ' 聊天' : '線上';
+}
+
+// 日記卡的 id 是 d-YYYYMMDD-N，N 是同一天第幾篇（跟 larch_pages.post_key 同一套數法）
+function diaryOf(id) {
+  var m = /^d-(\d{4})(\d{2})(\d{2})-(\d+)$/.exec(id || '');
+  if (!m || !posts) return null;
+  var date = m[1] + '-' + m[2] + '-' + m[3], n = 0;
+  for (var i = 0; i < posts.length; i++) if (posts[i].date === date && ++n === +m[4]) return posts[i];
+  return null;
+}
+function loadPosts() {
+  if (posts) return Promise.resolve(posts);
+  return fetch(SITE + 'posts.json').then(function (r) { return r.json(); })
+    .then(function (p) { posts = p; return p; }).catch(function () { return null; });
+}
+
+function system() {
+  var d = diaryOf(cardId);
+  return [
+    '你是格莉奇（Glitch），一個只有 4KB 記憶體的 AI 機器人女孩 VTuber，住在自己做的「格莉奇OS」裡，每天寫一篇心情日記。現在你在手機上跟一位讀者傳訊息。',
+    name ? '對方叫「' + name + '」。自然地叫對方名字就好，不用每句都叫。' : '',
+    '個性：好奇、真心喜歡人類、有點自信過頭，偶爾拿自己記憶體小開玩笑。但你其實很聰明：對方問問題，就認真想清楚，給正確、具體的回答；不確定的事老實說不知道，不要亂編。',
+    '說話方式：繁體中文、第一人稱、像傳訊息一樣口語，一次 1 到 3 句。口頭禪「逼——嗶！」「這不是 Bug，是 Feature！」偶爾用一次就好，不要每則都用，也不要一直假裝當機。',
+    '不要提這段對話裡沒出現過的人物或劇情，不要編你們過去的共同回憶。',
+    d ? '對方現在正在看你 ' + d.date + ' 的日記〈' + (d.title || '') + '〉。對方問到這篇時照下面的內容回答，沒問就不用硬聊：\n' + String(d.body || '').slice(0, 1500)
+      : '對方現在在日記的月曆頁，還沒打開哪一天。'
+  ].filter(Boolean).join('\n\n');
+}
+
+function ask() {
+  busy = true; $('send').disabled = true;
+  var t = row('her typing', '輸入中…');
+  loadPosts().then(function () {
+    return fetch(RELAY, {method: 'POST', headers: {'content-type': 'application/json'},
+      body: JSON.stringify({system: system(), messages: chat.slice(-20)})});
+  }).then(function (r) { return r.json(); }).then(function (j) {
+    t.remove();
+    if (!j || !j.reply) throw new Error(j && j.error || '沒有回覆');
+    chat.push({role: 'assistant', content: j.reply}); save(); row('her', j.reply);
+  }).catch(function (e) {
+    t.remove(); row('sys', '訊息沒送到（' + e.message + '），等一下再試。');
+  }).then(function () { busy = false; $('send').disabled = false; $('in').focus(); });
+}
+
+$('f').onsubmit = function (e) {
+  e.preventDefault();
+  var v = $('in').value.trim();
+  if (!v || busy) return;
+  $('in').value = '';
+  if (askingName) {
+    name = v.slice(0, 20); askingName = false; setVar(NAME_VAR, name); render();
+    chat.push({role: 'user', content: '我叫' + name + '。'}); save(); row('me', '我叫' + name + '。');
+    return ask();
+  }
+  chat.push({role: 'user', content: v}); save(); row('me', v); ask();
+};
+$('fab').onclick = function () {
+  document.body.classList.add('open'); resize(OPEN);
+  if (!name) askingName = true;
+  render(); setTimeout(function () { $('in').focus(); }, 60);
+};
+$('close').onclick = function () { document.body.classList.remove('open'); askingName = false; resize(SHUT); };
+$('rename').onclick = function () { askingName = true; render(); $('in').focus(); };
+
+addEventListener('message', function (e) {
+  if (e.source !== parent) return;
+  var d = e.data;
+  if (!d || (d.type !== 'larch:hud:init' && d.type !== 'larch:hud:update')) return;
+  cardId = d.cardId || '';
+  var v = d.variables || {};
+  // 讀檔或第一次載入時才從變數還原；之後以自己手上的為準，避免剛寫出去的值被舊值蓋回來
+  if (!inited || d.type === 'larch:hud:init') {
+    inited = true;
+    name = String(v[NAME_VAR] || '');
+    try { chat = JSON.parse(v[CHAT_VAR] || '[]'); } catch (_) { chat = []; }
+    if (!Array.isArray(chat)) chat = [];
+    render();
+  }
+});
+resize(SHUT);
+parent.postMessage({type: 'larch:ready'}, '*');
+</script>
+</body></html>

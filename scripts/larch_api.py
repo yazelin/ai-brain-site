@@ -88,6 +88,12 @@ class Larch:
         """整份覆寫。project 必須是剛 GET 回來的整份，只改要改的欄位。"""
         return self.request("PUT", f"/projects/{project_id}", {"project": project}, {"If-Match": etag}, _whole_project=True)
 
+    def patch_settings(self, project_id, changes, summary):
+        """只改帶到的設定。先 GET 拿 revision 放 If-Match；不是最新會回 412。"""
+        rev = self.get(f"/projects/{project_id}/settings")["revision"]
+        return self.request("PATCH", f"/projects/{project_id}/settings",
+                            {"summary": summary, "changes": changes}, {"If-Match": f'"{rev}"'})
+
     def upload_media(self, project_id, path, category="scene"):
         path = Path(path)
         mime = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
