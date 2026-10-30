@@ -35,7 +35,6 @@ CAL_TPL = (ROOT / "larch" / "calendar.html").read_text("utf-8")
 # 〈格莉奇 4KB〉放在格莉奇音樂站上；掛在月曆卡，翻頁時延續播放。音量壓低，玩家可在設定裡再調。
 THEME_SONG = "https://yazelin.github.io/glitch-music/audio/glitch-4kb.mp3"
 SPEAKER = "格莉奇"
-SITE = "https://yazelin.github.io/ai-brain-site/"
 
 
 def _ym(date):
@@ -52,13 +51,8 @@ def _edge(eid, source, target):
 
 
 def _actor(base, face):
-    # 介面 HTML 關在只有 allow-scripts 的框裡，連結開不了；舞台道具的 link 由播放器自己 window.open。
-    # 每一句的 stage 都要帶，不然換句時道具會消失。
     return {"actors": [{"id": "glitch", "url": f"{base}/larch/sprites/{face}.webp", "name": SPEAKER,
-                        "slot": "right", "enter": "none", "scale": 1, "offsetX": 0, "offsetY": 0}],
-            "props": [{"id": "os-link", "url": f"{base}/larch/ui/os-link.webp", "x": 58.4, "y": 9.3, "scale": 0.62,
-                       "depth": "front", "enter": "none",
-                       "clickAction": {"kind": "link", "linkUrl": SITE, "label": "格莉奇OS", "showLabel": False}}]}
+                        "slot": "right", "enter": "none", "scale": 1, "offsetX": 0, "offsetY": 0}]}
 
 
 def cg_items(posts, base):

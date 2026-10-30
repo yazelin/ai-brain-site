@@ -44,10 +44,11 @@ class BuildTests(unittest.TestCase):
         backs = {e["source"] for e in b["edges"] if e["target"] == "cal-2026-10"}
         self.assertEqual(backs, {"d-20261028-1", "d-20261029-1"})
 
-    def test_every_line_has_site_link_prop(self):
+    def test_pages_have_no_link_prop(self):
+        # 道具不隨畫面縮放，跟背景圖的視窗對不上，作者決定拿掉（2026-10-30）
         page = next(n for n in build([post("2026-10-28")])["m-2026-10"]["nodes"] if n["id"] == "d-20261028-1")["data"]
         for stage in [page["stage"]] + [l["stage"] for l in page["dialogueLines"]]:
-            self.assertEqual(stage["props"][0]["clickAction"], {"kind": "link", "linkUrl": ls.SITE, "label": "格莉奇OS", "showLabel": False})
+            self.assertNotIn("props", stage)
 
     def test_image_day_unlocks_its_cg_and_text_day_does_not(self):
         posts = [post("2026-10-28"), post("2026-10-29", type_="image", title="插畫日")]
