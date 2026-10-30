@@ -44,6 +44,19 @@ class BuildTests(unittest.TestCase):
         backs = {e["source"] for e in b["edges"] if e["target"] == "cal-2026-10"}
         self.assertEqual(backs, {"d-20261028-1", "d-20261029-1"})
 
+    def test_every_line_has_site_link_prop(self):
+        page = next(n for n in build([post("2026-10-28")])["m-2026-10"]["nodes"] if n["id"] == "d-20261028-1")["data"]
+        for stage in [page["stage"]] + [l["stage"] for l in page["dialogueLines"]]:
+            self.assertEqual(stage["props"][0]["clickAction"], {"kind": "link", "linkUrl": ls.SITE, "label": "格莉奇OS", "showLabel": False})
+
+    def test_image_day_unlocks_its_cg_and_text_day_does_not(self):
+        posts = [post("2026-10-28"), post("2026-10-29", type_="image", title="插畫日")]
+        nodes = {n["id"]: n["data"] for n in build(posts)["m-2026-10"]["nodes"]}
+        url = BASE + "/images/posts/20261029.webp"
+        self.assertEqual(nodes["d-20261029-1"]["cgOps"], [{"id": "cg-2026-10-29-1", "mode": "unlock", "url": url}])
+        self.assertNotIn("cgOps", nodes["d-20261028-1"])
+        self.assertEqual(ls.cg_items(posts, BASE), [{"url": url, "title": "2026-10-29 插畫日", "locked": True}])
+
     def test_two_posts_same_day_both_added(self):
         b = build([post("2026-08-04"), post("2026-08-04", title="第二篇")])["m-2026-08"]
         self.assertEqual({n["id"] for n in b["nodes"]} - {"cal-2026-08"}, {"d-20260804-1", "d-20260804-2"})

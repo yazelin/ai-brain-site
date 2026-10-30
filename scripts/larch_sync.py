@@ -35,6 +35,7 @@ CAL_TPL = (ROOT / "larch" / "calendar.html").read_text("utf-8")
 # 〈格莉奇 4KB〉放在格莉奇音樂站上；掛在月曆卡，翻頁時延續播放。音量壓低，玩家可在設定裡再調。
 THEME_SONG = "https://yazelin.github.io/glitch-music/audio/glitch-4kb.mp3"
 SPEAKER = "格莉奇"
+SITE = "https://yazelin.github.io/ai-brain-site/"
 
 
 def _ym(date):
@@ -51,8 +52,20 @@ def _edge(eid, source, target):
 
 
 def _actor(base, face):
+    # 介面 HTML 關在只有 allow-scripts 的框裡，連結開不了；舞台道具的 link 由播放器自己 window.open。
+    # 每一句的 stage 都要帶，不然換句時道具會消失。
     return {"actors": [{"id": "glitch", "url": f"{base}/larch/sprites/{face}.webp", "name": SPEAKER,
-                        "slot": "right", "enter": "none", "scale": 1, "offsetX": 0, "offsetY": 0}]}
+                        "slot": "right", "enter": "none", "scale": 1, "offsetX": 0, "offsetY": 0}],
+            "props": [{"id": "os-link", "url": f"{base}/larch/ui/os-link.webp", "x": 8, "y": 4, "scale": 1,
+                       "depth": "front", "enter": "none",
+                       "clickAction": {"kind": "link", "linkUrl": SITE, "label": "格莉奇OS", "showLabel": False}}]}
+
+
+def cg_items(posts, base):
+    """CG 收藏清單：網站日記本來的插畫，先上鎖，讀到那一天的頁面才解鎖。"""
+    return [{"url": f"{base}/{p['image']}", "title": f"{p['date']} {p.get('title', '')}", "locked": True}
+            for _, p in larch_pages.post_key(posts)
+            if p.get("type") == "image" and p.get("image") and str(p.get("body", "")).strip()]
 
 
 def calendar_data(year, month, entries, today, has_prev, has_next, base, start):
@@ -116,6 +129,8 @@ def build(posts, lines_for, today, base):
                           "data": {"type": "dialogue", "title": f"{p['date']} {p.get('title', '')}", "speaker": SPEAKER,
                                    "text": lines[0]["text"], "background": f"{base}/larch/bg/{key}.webp",
                                    "transition": "pageTurn", "transitionMs": 700, "stage": _actor(base, lines[0]["face"]),
+                                   **({"cgOps": [{"id": f"cg-{key}", "mode": "unlock", "url": f"{base}/{p['image']}"}]}
+                                      if p.get("type") == "image" and p.get("image") else {}),
                                    "dialogueLines": [{"id": f"l{k}", "speaker": SPEAKER, "text": l["text"],
                                                       "stage": _actor(base, l["face"])} for k, l in enumerate(lines)]}})
             edges.append(_cond(f"e-{cal_id}-{nid}", cal_id, nid, key))
