@@ -37,7 +37,8 @@ body.open #fab{display:none}
 .me{align-self:flex-end;background:var(--me);color:#04131a;border-bottom-right-radius:4px}
 .sys{align-self:center;color:var(--mute);font-size:12px;text-align:center}
 .typing{color:var(--mute)}
-form{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line);background:var(--bar)}
+/* HUD 的框沒有 allow-forms，<form> 送不出去，所以用 div 自己接 Enter 與點擊 */
+.bar{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line);background:var(--bar)}
 input{flex:1;min-width:0;min-height:40px;padding:0 12px;border-radius:9px;border:1px solid rgba(255,255,255,.22);background:#14171b;color:var(--ink);font:14px var(--font)}
 input::placeholder{color:#7d8890}
 #send{min-width:56px;min-height:40px;border-radius:9px;background:var(--cy);color:#04131a;font-weight:700}
@@ -53,7 +54,7 @@ input::placeholder{color:#7d8890}
     <button class="ic" id="close" type="button" title="收起來" aria-label="收起來"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
   </div>
   <div id="log" aria-live="polite"></div>
-  <form id="f"><input id="in" autocomplete="off" maxlength="300"><button id="send" type="submit">傳送</button></form>
+  <div class="bar"><input id="in" autocomplete="off" maxlength="300" enterkeyhint="send"><button id="send" type="button">傳送</button></div>
 </section>
 <script>
 var RELAY = 'https://phone-chat-relay.yazelinj303.workers.dev/chat';
@@ -124,8 +125,7 @@ function ask() {
   }).then(function () { busy = false; $('send').disabled = false; $('in').focus(); });
 }
 
-$('f').onsubmit = function (e) {
-  e.preventDefault();
+function submit() {
   var v = $('in').value.trim();
   if (!v || busy) return;
   $('in').value = '';
@@ -135,7 +135,9 @@ $('f').onsubmit = function (e) {
     return ask();
   }
   chat.push({role: 'user', content: v}); save(); row('me', v); ask();
-};
+}
+$('send').onclick = submit;
+$('in').onkeydown = function (e) { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); submit(); } };
 $('fab').onclick = function () {
   document.body.classList.add('open'); resize(OPEN);
   if (!name) askingName = true;
