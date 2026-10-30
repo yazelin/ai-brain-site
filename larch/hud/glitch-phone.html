@@ -13,13 +13,14 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--mint);outline-o
 button:not(:disabled):active{scale:.95}
 button:disabled{opacity:.45;cursor:default}
 
-#fab{position:absolute;right:0;top:0;width:64px;height:64px;border-radius:50%;padding:0;background:#0b1a22;
-  border:2px solid var(--cy);box-shadow:0 0 18px rgba(37,194,232,.45);overflow:hidden}
+/* 框比內容每邊多 12px，光暈與陰影才不會被框切掉（框外畫不出來） */
+#fab{position:absolute;right:12px;top:12px;width:64px;height:64px;border-radius:50%;padding:0;background:#0b1a22;
+  border:2px solid var(--cy);box-shadow:0 0 10px 1px rgba(37,194,232,.5);overflow:hidden}
 #fab img{width:100%;height:100%;object-fit:cover;display:block}
 #fab .tip{position:absolute;left:0;right:0;bottom:0;font-size:10px;font-weight:700;line-height:16px;background:rgba(4,8,12,.8);color:var(--mint)}
 
-#win{position:absolute;inset:0;display:none;flex-direction:column;border-radius:14px;overflow:hidden;background:var(--win);
-  border:1px solid var(--line);box-shadow:0 18px 50px rgba(0,0,0,.55)}
+#win{position:absolute;inset:12px;display:none;flex-direction:column;border-radius:14px;overflow:hidden;background:var(--win);
+  border:1px solid var(--line);box-shadow:0 4px 10px rgba(0,0,0,.5)}
 body.open #win{display:flex;animation:in .32s cubic-bezier(.2,.9,.2,1) both}
 body.open #fab{display:none}
 @keyframes in{from{opacity:0;translate:0 8px;scale:.97}}
@@ -61,7 +62,7 @@ var RELAY = 'https://phone-chat-relay.yazelinj303.workers.dev/chat';
 var SITE = 'https://yazelin.github.io/ai-brain-site/';
 var AVATAR = SITE + 'images/avatar.webp';
 var NAME_VAR = 'glitch_reader_name', CHAT_VAR = 'glitch_chat', MAX = 40;
-var OPEN = {w: 360, h: 600}, SHUT = {w: 64, h: 64};
+var PAD = 12, OPEN = {w: 360 + 2 * PAD, h: 600 + 2 * PAD}, SHUT = {w: 64 + 2 * PAD, h: 64 + 2 * PAD};
 
 var name = '', chat = [], cardId = '', busy = false, inited = false, posts = null, askingName = false;
 var $ = function (id) { return document.getElementById(id); };

@@ -201,8 +201,8 @@ def hud_plugin():
     names = [v["name"] for v in CHAT_VARS]
     return {"enabled": True, "playback": {
         "version": "1.0.0", "permissions": ["player:ui", "variables:read", "variables:write"], "defaults": {},
-        "huds": [{"id": "phone", "title": "格莉奇手機", "anchor": "top-right", "width": 64, "height": 64,
-                  "offsetX": 16, "offsetY": 56, "interactive": True, "readVariables": names, "writeVariables": names,
+        "huds": [{"id": "phone", "title": "格莉奇手機", "anchor": "top-right", "width": 88, "height": 88,
+                  "offsetX": 4, "offsetY": 44, "interactive": True, "readVariables": names, "writeVariables": names,
                   "html": (ROOT / "larch" / "hud" / "glitch-phone.html").read_text("utf-8")}]}}
 
 
