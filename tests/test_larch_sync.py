@@ -208,6 +208,17 @@ class ProjectMetaTests(unittest.TestCase):
         self.assertEqual(project["settings"], {"a": 1, "plugins": {"other": {"x": 1}, "hud": {"v": 2}}})
         self.assertEqual(project["variables"], [{"name": "keep"}, VAR])
 
+    def test_existing_variable_gets_persistent_flag_but_keeps_author_default(self):
+        api = ProjectApi("一樣", {}, [{"name": "glitch_chat", "defaultValue": "作者改過"}])
+        want = {"name": "glitch_chat", "defaultValue": "[]", "persistent": True}
+        self.assertTrue(ls.sync_project_meta(api, "p", "一樣", {}, [want]))
+        self.assertEqual(api.replaced[0][0]["variables"], [{"name": "glitch_chat", "defaultValue": "作者改過", "persistent": True}])
+        api2 = ProjectApi("一樣", {}, api.replaced[0][0]["variables"])
+        self.assertFalse(ls.sync_project_meta(api2, "p", "一樣", {}, [want]))
+
+    def test_chat_variables_are_kept_across_playthroughs(self):
+        self.assertTrue(all(v["persistent"] for v in ls.CHAT_VARS))
+
     def test_hud_plugin_reads_and_writes_its_two_variables(self):
         hud = ls.hud_plugin()["playback"]["huds"][0]
         names = [v["name"] for v in ls.CHAT_VARS]

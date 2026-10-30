@@ -190,10 +190,11 @@ def render_backgrounds(posts, bg_dir, root, render):
 # 從編輯器導入插件時 Larch 會把執行內容存進 settings.plugins[id].playback，這裡直接寫同樣的形狀。
 HUD_ID = "glitch-phone"
 CHAT_VARS = [
+    # persistent＝跨週目保留：回到標題、重新開始都不重置，讀者下次來格莉奇還記得名字與上次的對話
     {"id": "glitch_reader_name", "name": "glitch_reader_name", "type": "string", "label": "讀者名字",
-     "description": "格莉奇手機第一次打開時問的名字", "defaultValue": ""},
+     "description": "格莉奇手機第一次打開時問的名字", "defaultValue": "", "persistent": True},
     {"id": "glitch_chat", "name": "glitch_chat", "type": "string", "label": "格莉奇手機對話",
-     "description": "格莉奇手機的對話紀錄（JSON）", "defaultValue": "[]"},
+     "description": "格莉奇手機的對話紀錄（JSON）", "defaultValue": "[]", "persistent": True},
 ]
 
 
@@ -219,10 +220,16 @@ def sync_project_meta(api, project_id, description, plugins, variables):
     current = settings.get("plugins") or {}
     if any(current.get(k) != v for k, v in plugins.items()):
         out["settings"] = {**settings, "plugins": {**current, **plugins}}
-    have = {v.get("name") for v in proj.get("variables") or []}
-    missing = [v for v in variables if v["name"] not in have]
-    if missing:
-        out["variables"] = (proj.get("variables") or []) + missing
+    # 變數只補缺的；已經有的只校正「跨週目保留」（persistent），不動作者改過的預設值與標籤
+    want = {v["name"]: v for v in variables}
+    have = proj.get("variables") or []
+    fixed = [{**v, "persistent": want[v.get("name")]["persistent"]}
+             if v.get("name") in want and "persistent" in want[v.get("name")]
+             and v.get("persistent") != want[v.get("name")]["persistent"] else v for v in have]
+    names = {v.get("name") for v in have}
+    fixed += [v for v in variables if v["name"] not in names]
+    if fixed != have:
+        out["variables"] = fixed
     if out == proj:
         return False
     api.replace_project(project_id, out, etag)
