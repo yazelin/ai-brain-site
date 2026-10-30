@@ -2,48 +2,77 @@
 <html lang="zh-Hant"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-@font-face{font-family:Iansui;src:url(https://cdn.jsdelivr.net/gh/ButTaiwan/iansui@v1.020/fonts/ttf/Iansui-Regular.ttf)}
-html,body{margin:0;height:100%;background:#f7f1e2;font-family:Iansui,"Noto Sans TC",sans-serif;color:#3a3446;overflow:hidden}
-body{background-image:repeating-linear-gradient(#f7f1e2 0 53px,#d6cdb6 53px 55px);display:flex;flex-direction:column;padding:2vh 2vw;box-sizing:border-box}
-.top{display:flex;align-items:center;justify-content:center;gap:3vw;margin-bottom:1.5vh}
-h1{font-size:min(4vw,5.5vh);margin:0;font-weight:normal;letter-spacing:.05em}
-.top button{font:inherit;font-size:min(2.2vw,3.2vh);background:none;border:2px dashed #b9ab8c;border-radius:10px;padding:.2em .8em;color:#3a3446;cursor:pointer}
+:root{--cy:#25c2e8;--mint:#7cf3c0;--mute:#8a9aa3;--hair:rgba(255,255,255,.07);--hair2:rgba(255,255,255,.12);--txt:#e8eef1}
+html,body{margin:0;height:100%;overflow:hidden;font-family:"Noto Sans TC","Noto Sans CJK TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;color:var(--txt)}
+body{background:linear-gradient(rgba(4,8,12,.5),rgba(4,8,12,.5)),var(--wall) center/cover,#04080c;display:flex;flex-direction:column}
+.mb{height:4vh;min-height:24px;display:flex;align-items:center;gap:2.2vw;padding:0 1.4vw;background:rgba(4,8,12,.85);border-bottom:1px solid var(--hair);font-size:min(1.1vw,2vh);color:#9aa6ad}
+.mb b{color:#cdd6db;letter-spacing:1px}
+.mb .os{color:var(--cy);text-decoration:none;border:1px solid rgba(37,194,232,.4);border-radius:6px;padding:.1em .6em}
+.mb .os:hover,.mb .os:focus-visible{color:var(--mint);border-color:var(--mint);outline:none}.mb .sp{flex:1}.mb .k{color:#cdd6db;font-weight:700}
+.win{flex:1;min-height:0;margin:2.2vh 2vw 2.6vh;display:flex;flex-direction:column;background:linear-gradient(180deg,rgba(39,42,47,.96),rgba(25,28,32,.96));border:1px solid rgba(255,255,255,.08);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.06);overflow:hidden}
+.tb{display:flex;align-items:center;gap:.6vw;padding:1.1vh 1vw;background:rgba(255,255,255,.03);border-bottom:1px solid var(--hair)}
+.tb i{width:min(.75vw,1.3vh);height:min(.75vw,1.3vh);border-radius:50%;display:block}
+.tb .r{background:#ff5f57}.tb .y{background:#febc2e}.tb .g{background:#28c840}
+.tb .ttl{flex:1;text-align:center;font-size:min(1.1vw,2vh);color:#b9c4cb;margin-right:4vw}
+.top{display:flex;align-items:center;gap:1.2vw;padding:1.6vh 1.6vw .8vh}
+h1{font-size:min(2.1vw,3.6vh);margin:0;font-weight:700;letter-spacing:.04em;flex:1}
+h1 small{font-size:.55em;color:var(--mute);font-weight:400;margin-left:.8em}
+.top button{font:inherit;font-size:min(1.15vw,2vh);background:rgba(255,255,255,.04);border:1px solid var(--hair2);border-radius:8px;padding:.35em .9em;color:#cdd6db;cursor:pointer}
+.top button:hover{border-color:rgba(37,194,232,.55);color:var(--cy)}
+.top button:focus-visible{outline:2px solid var(--cy);outline-offset:2px}
 .top button:disabled{visibility:hidden}
-.grid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:auto;grid-auto-rows:1fr;gap:min(.6vw,.8vh)}
-.grid .wd{display:flex;align-items:end;justify-content:center;font-size:min(1.8vw,2.6vh);color:#8a7f92}
-.grid .day{position:relative;overflow:hidden;border-radius:10px;background:rgba(255,255,255,.45);font-size:min(1.5vw,2.2vh)}
-.grid .has{cursor:pointer;background:#fff center/cover no-repeat;box-shadow:0 2px 0 #d6cdb6}
-.grid .has:hover{transform:translateY(-2px)}
-.grid .today{outline:4px solid #e0524f;outline-offset:-2px}
-.grid .n{position:absolute;top:.25em;left:.35em;font-size:1.3em;line-height:1;color:#3a3446}
-.grid .none .n{color:#c4b9a3}
-.grid .rest{display:flex;align-items:center;justify-content:center;color:#8f8268;font-size:min(1.9vw,2.8vh);letter-spacing:.2em;background:repeating-linear-gradient(-45deg,rgba(255,255,255,.35) 0 8px,rgba(214,205,182,.25) 8px 16px)}
-.grid .pic .n{background:rgba(255,250,240,.85);border-radius:6px;padding:.1em .3em}
-.grid .tt{position:absolute;left:0;right:0;bottom:0;padding:.3em .45em;line-height:1.3}
+.top .go{color:#04080c;background:var(--cy);border-color:var(--cy);font-weight:700}
+.top .go:hover{background:var(--mint);border-color:var(--mint);color:#04080c}
+.grid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:auto;grid-auto-rows:1fr;gap:min(.6vw,1vh);padding:0 1.6vw 1.6vw}
+.grid .wd{display:flex;align-items:end;justify-content:center;font-size:min(1.1vw,1.9vh);color:var(--mute);padding-bottom:.4vh}
+.grid .day{position:relative;overflow:hidden;border-radius:10px;background:rgba(255,255,255,.025);border:1px solid var(--hair);font-size:min(1.15vw,1.95vh)}
+.grid .has{cursor:pointer;background:#22262b center/cover no-repeat;transition:transform .12s,border-color .12s}
+.grid .has:hover{border-color:rgba(37,194,232,.55);transform:translateY(-2px)}
+.grid .today{border:2px solid var(--cy);box-shadow:0 0 14px rgba(37,194,232,.35)}
+.grid .n{position:absolute;top:.4em;left:.55em;font-size:.95em;line-height:1;color:var(--cy);font-family:ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace}
+.grid .none .n{color:#4d5a62}
+.grid .pic .n{background:rgba(5,10,14,.75);border-radius:5px;padding:.15em .35em}
+.grid .tt{position:absolute;left:0;right:0;bottom:0;padding:.35em .55em .45em;line-height:1.35;font-weight:600}
 .grid .tt span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
-.grid .txt .tt{top:1.8em;bottom:auto}
-.grid .txt .tt span{-webkit-line-clamp:4}
-.grid .pic .tt{background:rgba(255,250,240,.88)}
-.grid .more{position:absolute;top:.3em;right:.35em;font-size:.9em;background:#a0523f;color:#fff;border-radius:6px;padding:.1em .4em}
-.pick{position:fixed;inset:0;background:rgba(58,52,70,.35);display:none;align-items:center;justify-content:center}
+.grid .txt .tt{top:1.75em;bottom:auto;padding-top:.2em}
+.grid .txt .tt span{-webkit-line-clamp:2}
+.grid .txt{background:linear-gradient(160deg,rgba(37,194,232,.07),rgba(183,139,255,.05) 60%,transparent),#22262b}
+.grid .txt .tt .ex{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;margin-top:.35em;font-weight:400;font-size:.82em;line-height:1.45;color:var(--mute)}
+.grid .tag{position:absolute;top:.4em;right:.5em;font-size:.72em;color:var(--mute);border:1px solid var(--hair2);border-radius:5px;padding:0 .4em}
+.grid .pic .tt{padding-top:1.6em;background:linear-gradient(transparent,rgba(5,10,14,.92))}
+.grid .more{position:absolute;top:.35em;right:.45em;font-size:.8em;background:rgba(37,194,232,.18);border:1px solid rgba(37,194,232,.5);color:var(--cy);border-radius:6px;padding:.05em .45em}
+.grid .rest{background:url(https://yazelin.github.io/ai-brain-site/larch/sticker-sleep.webp) right -4% bottom -10%/auto 108% no-repeat,linear-gradient(160deg,rgba(183,139,255,.16),rgba(37,194,232,.06)),#1d2026;border-style:dashed;border-color:rgba(183,139,255,.35)}
+.grid .rest .n{color:#b78bff}
+.grid .rest b{position:absolute;left:.55em;bottom:.45em;font-weight:700;color:#d9c8ff;font-size:1.05em;letter-spacing:.1em;text-shadow:0 1px 6px rgba(0,0,0,.7)}
+.pick{position:fixed;inset:0;background:rgba(4,8,12,.6);display:none;align-items:center;justify-content:center}
 .pick.on{display:flex}
-.pick div{background:#fffaf0;border-radius:16px;padding:3vh 3vw;display:flex;flex-direction:column;gap:2vh;min-width:40vw}
-.pick button{font:inherit;font-size:min(2.6vw,3.6vh);background:#fff;border:2px solid #d6cdb6;border-radius:12px;padding:.5em 1em;cursor:pointer;text-align:left}
+.pick div{background:linear-gradient(180deg,#272a2f,#191c20);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:3vh 2.4vw;display:flex;flex-direction:column;gap:1.6vh;min-width:40vw;box-shadow:0 18px 50px rgba(0,0,0,.6)}
+.pick button{font:inherit;font-size:min(1.5vw,2.6vh);background:rgba(255,255,255,.04);border:1px solid var(--hair2);border-radius:10px;padding:.6em 1em;cursor:pointer;text-align:left;color:var(--txt)}
+.pick button:hover{border-color:rgba(37,194,232,.55);color:var(--cy)}
+@media (prefers-reduced-motion:reduce){.grid .has{transition:none}.grid .has:hover{transform:none}}
 </style></head><body>
-<div class="top"><button id="prev">← 上個月</button><h1 id="t"></h1><button id="next">下個月 →</button></div>
-<div class="grid" id="g"></div>
+<div class="mb"><b>格莉奇OS</b><span class="sp"></span><a class="os" href="https://yazelin.github.io/ai-brain-site/" target="_blank" rel="noopener">打開格莉奇OS ↗</a><span>記憶體 <span class="k">4KB</span></span></div>
+<div class="win"><div class="tb"><i class="r"></i><i class="y"></i><i class="g"></i><span class="ttl">心情日記</span></div>
+<div class="top"><h1 id="t"></h1><button id="prev">← 上個月</button><button id="next">下個月 →</button><button id="today" class="go" hidden></button></div>
+<div class="grid" id="g"></div></div>
 <div class="pick" id="pk"><div id="pkl"></div></div>
 <script>
-// 同步程式把這一行換成那個月的資料：{year, month, today, prev, next, days:{"29":[{key,title,thumb}]}, rest:[沒寫日記的日子]}
-var M = /*DATA*/{"year":2026,"month":10,"today":"2026-10-29","prev":true,"next":false,"days":{"28":[{"key":"2026-10-28-1","title":"文字日","thumb":null}],"29":[{"key":"2026-10-29-1","title":"插畫日","thumb":"../images/posts/thumbs/20260804.webp"}]},"rest":[27]}/*END*/;
+// 同步程式把這一行換成那個月的資料：{year, month, today, prev, next, days:{"29":[{key,title,thumb}]}, rest:[沒寫日記的日子], latest:最新一篇的 key（只有最新的月份有）}
+var M = /*DATA*/{"year":2026,"month":10,"today":"2026-10-29","prev":true,"next":false,"days":{"28":[{"key":"2026-10-28-1","title":"文字日","thumb":null}],"29":[{"key":"2026-10-29-1","title":"插畫日","thumb":"../images/posts/thumbs/20260804.webp"}]},"rest":[27],"latest":"2026-10-29-1"}/*END*/;
+var WP = 'https://yazelin.github.io/ai-brain-site/images/', hr = new Date().getHours();
+// 跟格莉奇OS一樣照看的人的時間換桌布：06–17 白天、17–20 黃昏、20–06 深夜
+var wall = WP + (hr >= 6 && hr < 17 ? 'wallpaper-day.webp' : hr >= 17 && hr < 20 ? 'wallpaper.webp' : 'wallpaper-night.webp');
+document.body.style.setProperty('--wall', 'url(' + wall + ')');
 function go(v){
   parent.postMessage({type:'larch:set',name:'diary_go',value:v},'*');
   setTimeout(function(){parent.postMessage({type:'larch:complete',result:'go',payload:{go:v}},'*')},120);
 }
-document.getElementById('t').textContent = M.year + ' 年 ' + M.month + ' 月・格莉奇日記';
+var t = document.getElementById('t'); t.textContent = M.year + ' 年 ' + M.month + ' 月'; var cnt = Object.keys(M.days).reduce(function(a,k){return a+M.days[k].length},0); var sm = document.createElement('small'); sm.textContent = cnt + ' 篇'; t.appendChild(sm);
 var prev = document.getElementById('prev'), next = document.getElementById('next');
 prev.disabled = !M.prev; next.disabled = !M.next;
 prev.onclick = function(){go('prev')}; next.onclick = function(){go('next')};
+var tb = document.getElementById('today');
+if (M.latest) { tb.hidden = false; tb.textContent = M.latest.slice(0, 10) === M.today ? '看今天 →' : '看最新一篇 →'; tb.onclick = function(){go(M.latest)}; }
 var g = document.getElementById('g');
 '日一二三四五六'.split('').forEach(function(w){var d=document.createElement('div');d.className='wd';d.textContent=w;g.appendChild(d)});
 var first = new Date(M.year, M.month - 1, 1).getDay(), n = new Date(M.year, M.month, 0).getDate();
@@ -55,10 +84,12 @@ for (var day = 1; day <= n; day++) (function(day){
   c.className = 'day' + (posts.length ? ' has' : ' none') + (posts.length ? (thumb ? ' pic' : ' txt') : '') + (iso === M.today ? ' today' : '');
   if (thumb) c.style.backgroundImage = 'url("' + thumb + '")';
   var nn = document.createElement('span'); nn.className = 'n'; nn.textContent = day; c.appendChild(nn);
-  if ((M.rest || []).indexOf(day) >= 0) { c.className += ' rest'; c.appendChild(document.createTextNode('休息')); }
+  if ((M.rest || []).indexOf(day) >= 0) { c.className += ' rest'; var rb = document.createElement('b'); rb.textContent = '休息'; c.appendChild(rb); c.title = '格莉奇這天休息'; }
   if (posts.length) {
     var tt = document.createElement('div'), tx = document.createElement('span');
     tt.className = 'tt'; tx.textContent = posts[0].title; tt.appendChild(tx); c.appendChild(tt);
+    if (!thumb && posts[0].excerpt) { var ex = document.createElement('span'); ex.className = 'ex'; ex.textContent = posts[0].excerpt; tt.appendChild(ex); }
+    if (!thumb && posts.length === 1) { var tg = document.createElement('span'); tg.className = 'tag'; tg.textContent = '文字'; c.appendChild(tg); }
     if (posts.length > 1) { var s = document.createElement('span'); s.className = 'more'; s.textContent = posts.length + ' 篇'; c.appendChild(s); }
   }
   if (posts.length) c.onclick = function(){

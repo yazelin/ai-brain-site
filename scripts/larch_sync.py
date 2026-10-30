@@ -32,6 +32,8 @@ ROOT = Path(__file__).resolve().parent.parent
 TZ = dt.timezone(dt.timedelta(hours=8))
 log = logging.getLogger("larch_sync")
 CAL_TPL = (ROOT / "larch" / "calendar.html").read_text("utf-8")
+# 〈格莉奇 4KB〉放在格莉奇音樂站上；掛在月曆卡，翻頁時延續播放。音量壓低，玩家可在設定裡再調。
+THEME_SONG = "https://yazelin.github.io/glitch-music/audio/glitch-4kb.mp3"
 SPEAKER = "格莉奇"
 
 
@@ -59,13 +61,17 @@ def calendar_data(year, month, entries, today, has_prev, has_next, base, start):
         img = p.get("image") if p.get("type") == "image" else None
         # 月曆格子用網站本來就有的 360px 縮圖，整個月才不會一次載十幾張大圖。
         thumb = f"{base}/images/posts/thumbs/{img.rsplit('/', 1)[-1]}" if img else None
-        days.setdefault(str(int(p["date"][8:])), []).append({"key": key, "title": p.get("title", ""), "thumb": thumb})
+        excerpt = None if thumb else "".join(str(p.get("body", "")).split())[:60]  # 文字日的格子放開頭一小段
+        days.setdefault(str(int(p["date"][8:])), []).append(
+            {"key": key, "title": p.get("title", ""), "thumb": thumb, "excerpt": excerpt})
     # 開始寫日記以後、今天以前，沒有日記的日子是產文失敗那天，月曆標「休息」。
     n = calendar.monthrange(year, month)[1]
     rest = [d for d in range(1, n + 1) if str(d) not in days and start < f"{year}-{month:02d}-{d:02d}" < today]
     # 今天只寫進自己那個月，舊月份的內容才不會每天都變、每天都重送。
     return {"year": year, "month": month, "today": today if _ym(today) == f"{year}-{month:02d}" else None,
-            "prev": has_prev, "next": has_next, "days": days, "rest": rest}
+            "prev": has_prev, "next": has_next, "days": days, "rest": rest,
+            # 「看今天」按鈕只放最新的月份：月曆卡只連得到自己這個月的頁面
+            "latest": None if has_next else (entries[-1][0] if entries else None)}
 
 
 def _cal_html(data):
@@ -99,6 +105,7 @@ def build(posts, lines_for, today, base):
             "type": "miniGame", "title": f"{y} 年 {m} 月", "text": "", "start": True,
             "miniGameHtml": _cal_html(calendar_data(y, m, entries, today, bool(prev_ym), bool(next_ym), base, start)),
             "miniGameReadVars": [], "miniGameWriteVars": ["diary_go"], "miniGamePresentation": "fullscreen",
+            "bgm": THEME_SONG, "bgmVolume": 0.18, "bgmLoop": True,
             "miniGameFrame": {"showButton": False, "showTitle": False},
             "transition": "pageTurn", "transitionMs": 700, "stage": {"actors": []}, "characterLayers": []}}]
         edges = []

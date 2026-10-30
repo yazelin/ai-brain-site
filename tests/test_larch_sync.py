@@ -34,6 +34,7 @@ class BuildTests(unittest.TestCase):
         self.assertTrue(cal["start"])
         self.assertEqual(cal["miniGameWriteVars"], ["diary_go"])
         self.assertEqual(cal["miniGamePresentation"], "fullscreen")
+        self.assertEqual((cal["bgm"], cal["bgmVolume"], cal["bgmLoop"]), (ls.THEME_SONG, 0.18, True))
         page = next(n for n in b["nodes"] if n["id"] == "d-20261028-1")["data"]
         self.assertEqual(page["transition"], "pageTurn")
         self.assertEqual(page["background"], BASE + "/larch/bg/2026-10-28-1.webp")
@@ -53,8 +54,20 @@ class BuildTests(unittest.TestCase):
         days = ls.calendar_data(2026, 10, [("2026-10-28-1", post("2026-10-28", title="文字日")),
                                            ("2026-10-29-1", post("2026-10-29", type_="image", title="插畫日"))],
                                 "2026-10-31", True, False, BASE, "2026-08-01")["days"]
-        self.assertEqual(days["28"], [{"key": "2026-10-28-1", "title": "文字日", "thumb": None}])
+        self.assertEqual(days["28"], [{"key": "2026-10-28-1", "title": "文字日", "thumb": None, "excerpt": "一句。"}])
         self.assertEqual(days["29"][0]["thumb"], BASE + "/images/posts/thumbs/20261029.webp")
+
+    def test_text_day_excerpt_is_short_single_line(self):
+        long = post("2026-10-28", body="第一段" * 30 + "\n\n第二段")
+        cal = ls.calendar_data(2026, 10, [("2026-10-28-1", long)], "2026-10-31", True, False, BASE, "2026-08-01")
+        ex = cal["days"]["28"][0]["excerpt"]
+        self.assertEqual(len(ex), 60)
+        self.assertNotIn("\n", ex)
+
+    def test_latest_post_only_in_newest_month(self):
+        entries = [("2026-10-28-1", post("2026-10-28")), ("2026-10-30-1", post("2026-10-30"))]
+        self.assertEqual(ls.calendar_data(2026, 10, entries, "2026-10-30", True, False, BASE, "2026-08-01")["latest"], "2026-10-30-1")
+        self.assertIsNone(ls.calendar_data(2026, 10, entries, "2026-10-30", True, True, BASE, "2026-08-01")["latest"])
 
     def test_missing_days_between_start_and_today_are_rest(self):
         entries = [("2026-10-02-1", post("2026-10-02")), ("2026-10-04-1", post("2026-10-04"))]

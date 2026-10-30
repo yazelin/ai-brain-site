@@ -1,0 +1,59 @@
+<style>
+:root{color-scheme:dark;--cy:#25c2e8;--mint:#7cf3c0;--purple:#b78bff;--mute:#8a9aa3}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#04080c;overflow:hidden}
+main{position:relative;height:100dvh;font-family:"Noto Sans TC","Noto Sans CJK TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;color:#e8eef1}
+.art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.62) blur(1px)}
+.mb{position:absolute;top:0;left:0;right:0;height:30px;display:flex;align-items:center;gap:18px;padding:0 14px;background:rgba(4,8,12,.82);border-bottom:1px solid rgba(255,255,255,.07);font-size:13px;color:#9aa6ad}
+.mb b{color:#cdd6db;letter-spacing:1px}.mb .sp{flex:1}.mb .k{color:#cdd6db;font-weight:700}
+.win{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:min(560px,88vw);border-radius:14px;overflow:hidden;
+  background:linear-gradient(180deg,rgba(39,42,47,.95),rgba(25,28,32,.95));border:1px solid rgba(255,255,255,.08);box-shadow:0 18px 50px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.06)}
+.tb{display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(255,255,255,.03);border-bottom:1px solid rgba(255,255,255,.07)}
+.tb i{width:11px;height:11px;border-radius:50%;display:block}.tb .r{background:#ff5f57}.tb .y{background:#febc2e}.tb .g{background:#28c840}
+.tb span{flex:1;text-align:center;font-size:13px;color:#b9c4cb;margin-right:44px}
+.body{padding:28px 32px 30px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.av{width:112px;height:112px;border-radius:50%;object-fit:cover;border:2px solid rgba(124,243,192,.55);box-shadow:0 0 28px rgba(37,194,232,.45);background:#0b1a22}
+h1{margin:18px 0 6px;font-size:clamp(26px,3vw,40px);letter-spacing:.08em}
+p{margin:0 0 22px;color:var(--mute);font-size:15px;line-height:1.6}
+nav{display:flex;flex-direction:column;gap:10px;width:min(280px,70vw)}
+button{font:inherit;font-size:16px;letter-spacing:.2em;padding:11px 18px;border-radius:9px;cursor:pointer;color:#cdd6db;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);transition:border-color .15s,color .15s,background .15s}
+button[data-larch-action="start"]{color:#04080c;background:var(--cy);border-color:var(--cy);font-weight:700}
+button:hover,button:focus-visible{border-color:var(--cy);color:var(--cy);outline:none;background:rgba(37,194,232,.08)}
+button[data-larch-action="start"]:hover,button[data-larch-action="start"]:focus-visible{background:var(--mint);border-color:var(--mint);color:#04080c}
+button:focus-visible{box-shadow:0 0 0 2px var(--mint)}
+button:active{transform:scale(.98)}
+button:disabled{opacity:.45;cursor:default}
+.os{display:block;text-align:center;font-size:14px;color:var(--cy);text-decoration:none;padding:6px;border-radius:8px}
+.os:hover,.os:focus-visible{color:var(--mint);outline:none;background:rgba(124,243,192,.08)}button[hidden]{display:none}
+.boot{position:absolute;inset:0;background:#04080c;display:flex;align-items:center;justify-content:center;animation:off .5s 2.6s forwards}
+.boot pre{margin:0;font:14px/1.75 ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;color:var(--mint)}
+.boot pre span{display:block;opacity:0;animation:on .01s forwards}
+.boot pre span:nth-child(2n){color:var(--purple)}
+.boot pre span:nth-child(1){animation-delay:.1s}.boot pre span:nth-child(2){animation-delay:.45s}.boot pre span:nth-child(3){animation-delay:.8s}
+.boot pre span:nth-child(4){animation-delay:1.15s}.boot pre span:nth-child(5){animation-delay:1.5s}.boot pre span:nth-child(6){animation-delay:1.85s}
+@keyframes on{to{opacity:1}}@keyframes off{to{opacity:0;visibility:hidden}}
+@media (prefers-reduced-motion:reduce){.boot{display:none}button{transition:none}}
+</style>
+<main>
+  <img class="art" id="wall" alt="">
+  <div class="mb"><b>格莉奇OS</b><span class="sp"></span><span>記憶體 <span class="k">4KB</span></span></div>
+  <div class="win">
+    <div class="tb"><i class="r"></i><i class="y"></i><i class="g"></i><span>心情日記</span></div>
+    <div class="body">
+      <img class="av" src="https://yazelin.github.io/ai-brain-site/images/avatar.webp" alt="">
+      <h1 data-larch-slot="title"></h1>
+      <p data-larch-slot="description"></p>
+      <nav aria-label="遊戲選單">
+        <button data-larch-action="start">打開日記</button>
+        <a class="os" href="https://yazelin.github.io/ai-brain-site/" target="_blank" rel="noopener">打開格莉奇OS ↗</a>
+      </nav>
+    </div>
+  </div>
+  <div class="boot" aria-hidden="true"><pre><span>格莉奇OS BIOS v4.0.4 · 4KB 記憶體</span><span>CPU 單核想像力 .........</span><span>記憶體 4096B .........</span><span>載入 過度自信.dll .........</span><span>bug 引擎 ......... 這是 Feature</span><span>開啟 心情日記 .........</span></pre></div>
+</main>
+<script>
+var WP = 'https://yazelin.github.io/ai-brain-site/images/', hr = new Date().getHours();
+// 跟格莉奇OS一樣照看的人的時間換桌布：06–17 白天、17–20 黃昏、20–06 深夜
+var wall = WP + (hr >= 6 && hr < 17 ? 'wallpaper-day.webp' : hr >= 17 && hr < 20 ? 'wallpaper.webp' : 'wallpaper-night.webp');
+document.getElementById('wall').src = wall;
+</script>
