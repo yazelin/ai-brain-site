@@ -25,7 +25,7 @@ button:focus-visible{box-shadow:0 0 0 2px var(--mint)}
 button:active{transform:scale(.98)}
 button:disabled{opacity:.45;cursor:default}
 button[hidden]{display:none}
-/* Larch 的介面框擋掉新分頁，連結點不開，只能顯示網址讓人自己輸入 */
+/* 介面框擋掉新分頁，這裡的網址只能顯示；能點的連結放在日記頁的舞台道具上 */
 .os{margin-top:18px;font-size:13px;color:var(--mute);user-select:text}
 .os b{color:var(--cy);font-weight:500;letter-spacing:.02em}
 .boot{position:absolute;inset:0;background:#04080c;display:flex;align-items:center;justify-content:center;animation:off .5s 2.6s forwards}
@@ -52,6 +52,7 @@ main,main *:not(pre):not(pre span),.box,.box *{font-family:"Noto Sans TC","Noto 
       <p data-larch-slot="description"></p>
       <nav aria-label="遊戲選單">
         <button data-larch-action="start">打開日記</button>
+        <button data-larch-action="gallery">插畫收藏</button>
       </nav>
       <div class="os">格莉奇OS　<b>yazelin.github.io/ai-brain-site</b></div>
     </div>
