@@ -41,6 +41,13 @@ body.open #fab{display:none}
 .dots{display:inline-flex;gap:3px}
 .dots i{width:5px;height:5px;border-radius:50%;background:var(--mint);animation:hop 1s infinite ease-in-out}
 .dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}
+.write{position:relative;display:inline-block;width:34px;height:18px}
+.write .ink{position:absolute;left:2px;bottom:2px;height:2px;border-radius:2px;background:var(--mint);animation:ink 1.6s infinite ease-in-out}
+.write .pen{position:absolute;left:0;bottom:2px;width:16px;height:16px;fill:none;stroke:var(--mint);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
+  transform-origin:2px 14px;animation:pen 1.6s infinite ease-in-out}
+@keyframes ink{0%{width:0;opacity:1}75%{width:26px;opacity:1}100%{width:26px;opacity:0}}
+@keyframes pen{0%{translate:0 0;rotate:0deg}15%{translate:5px -2px;rotate:-8deg}30%{translate:10px 0;rotate:4deg}45%{translate:15px -2px;rotate:-8deg}
+  60%{translate:20px 0;rotate:4deg}75%{translate:24px -1px;rotate:0deg}100%{translate:0 0;rotate:0deg}}
 @keyframes hop{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}
 /* HUD 的框沒有 allow-forms，<form> 送不出去，所以用 div 自己接 Enter 與點擊 */
 .bar{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line);background:var(--bar)}
@@ -150,7 +157,12 @@ function ask() {
   var t = row('her typing', ''), label = document.createElement('span'), dots = document.createElement('span');
   label.textContent = '思考中'; dots.className = 'dots'; dots.innerHTML = '<i></i><i></i><i></i>';
   t.appendChild(label); t.appendChild(dots);
-  var later = setTimeout(function () { label.textContent = '回應中'; }, 5000);
+  var later = setTimeout(function () {
+    // 回應中換成一枝筆在寫字：筆左右移動、筆尖下面的墨線跟著長出來
+    label.textContent = '回應中';
+    dots.className = 'write';
+    dots.innerHTML = '<span class="ink"></span><svg class="pen" viewBox="0 0 24 24"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+  }, 5000);
   loadPosts().then(function () {
     return fetch(RELAY, {method: 'POST', headers: {'content-type': 'application/json'},
       body: JSON.stringify({system: system(), messages: recent()})});
