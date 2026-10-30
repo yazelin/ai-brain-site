@@ -251,6 +251,24 @@ class CgSyncTests(unittest.TestCase):
         self.assertEqual(api.patches, [])
 
 
+class PublishTests(unittest.TestCase):
+    def test_body_lists_all_boards_and_todays_titles(self):
+        posts = [post("2026-09-30"), post("2026-10-30", title="大鳥鳥")]
+        b = ls.publish_body(build(posts), posts, "2026-10-30", "介紹")
+        self.assertEqual(b["publishedBoardIds"], ["board-main", "m-2026-09", "m-2026-10"])
+        self.assertEqual((b["startBoardId"], b["description"]), ("board-main", "介紹"))
+        self.assertEqual(b["updateNote"], "新增 10/30 的日記〈大鳥鳥〉")
+        self.assertEqual(ls.publish_body(build(posts), posts, "2026-10-31", "介紹")["updateNote"], "更新日記內容")
+
+    def test_published_today_uses_taipei_date(self):
+        class Api:
+            def get(self, path):
+                return {"works": [{"projectId": "p", "updatedAt": "2026-10-29T17:30:00.000Z"}]}  # 台北 10/30 01:30
+        self.assertTrue(ls.published_today(Api(), "p", "2026-10-30"))
+        self.assertFalse(ls.published_today(Api(), "p", "2026-10-31"))
+        self.assertFalse(ls.published_today(Api(), "other", "2026-10-30"))
+
+
 class ApplyTests(unittest.TestCase):
     def test_share_refreshes_every_run_even_with_nothing_to_put(self):
         # 上一班 board 都寫好了、只有刷新分享連結失敗：同一天重跑也要補刷。

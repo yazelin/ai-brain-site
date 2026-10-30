@@ -241,6 +241,26 @@ def sync_cg(api, project_id, items):
     return new
 
 
+def publish_body(boards, posts, today, description):
+    """每晚重新上架帶的內容。介紹每次都要帶：沒帶的話商店頁會換成專案簡介（標題畫面那段短版）。
+    公開白板帶全部，下個月的新白板才會自動公開。其他商店欄位（封面、標籤、AI 揭露）沿用上一次。"""
+    new = [p for _, p in larch_pages.post_key(posts) if p["date"] == today and str(p.get("body", "")).strip()]
+    note = "、".join(f"〈{p.get('title', '')}〉" for p in new)
+    return {"description": description,
+            "publishedBoardIds": ["board-main"] + sorted(b for b in boards if b != "board-main"),
+            "startBoardId": "board-main",
+            "updateNote": f"新增 {int(today[5:7])}/{int(today[8:])} 的日記{note}" if new else "更新日記內容"}
+
+
+def published_today(api, project_id, today):
+    """市集版今天（台北時間）已經更新過就不再上架，手動重跑同步也只會上架一次。"""
+    for w in api.get("/published").get("works") or []:
+        if w.get("projectId") == project_id:
+            at = dt.datetime.fromisoformat(w["updatedAt"].replace("Z", "+00:00")).astimezone(TZ)
+            return at.date().isoformat() == today
+    return False
+
+
 def remote_descriptions(api, project_id):
     proj = api.get(f"/projects/{project_id}")
     return {b["id"]: b.get("description") or "" for b in proj.get("boards", [])}
@@ -264,7 +284,8 @@ def main():
 
     render_backgrounds(posts, bg_dir, ROOT, larch_page_image.render_page)
 
-    boards = build(posts, lines_for, dt.datetime.now(TZ).date().isoformat(), cfg["base_url"])
+    today = dt.datetime.now(TZ).date().isoformat()
+    boards = build(posts, lines_for, today, cfg["base_url"])
     api = Larch(os.environ["LARCH_AGENT_KEY"])
     pid = cfg["project_id"]
     if args.dry_run:
@@ -282,6 +303,13 @@ def main():
             raise SystemExit(f"整份推回後少了白板：{sorted(missing)}")
     if url:
         print(f"分享連結：{url}", flush=True)
+    # 市集版是上架當下的快照，白板有變才重新上架，一天最多一次
+    if cfg.get("publish") and todo:
+        if published_today(api, pid, today):
+            print("市集版今天已經更新過，不再上架", flush=True)
+        else:
+            api.publish(pid, publish_body(boards, posts, today, (ROOT / "larch" / "listing.md").read_text("utf-8").strip()))
+            print("已重新上架市集", flush=True)
 
 
 if __name__ == "__main__":

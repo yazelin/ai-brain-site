@@ -55,6 +55,9 @@ class LarchApiTests(unittest.TestCase):
         api = Larch("k", opener=lambda req, timeout=None: FakeResp({"ok": 1}))
         self.assertEqual(api.request("PUT", "/projects/p/boards/b", {}), {"ok": 1})
         self.assertEqual(api.replace_project("p", {}, '"e"'), {"ok": 1})
+        self.assertEqual(api.publish("p", {}), {"ok": 1})
+        with self.assertRaises(LarchError):
+            api.request("DELETE", "/projects/p/publish", _publish=True)
 
     def test_patch_settings_sends_latest_revision(self):
         reqs = []

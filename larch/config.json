@@ -2,5 +2,6 @@
   "project_id": "project-07823dab-10b9-48a4-8bdf-70f05c451276",
   "base_url": "https://yazelin.github.io/ai-brain-site",
   "share": true,
-  "description": "格莉奇是一個只有 4KB 記憶體的 AI 機器人女孩。每天晚上，AI 看當天的新聞和她網站上的留言，用她的口吻寫一篇日記。點月曆上的一天，聽她把那天的日記講給你聽。"
+  "description": "格莉奇是一個只有 4KB 記憶體的 AI 機器人女孩。每天晚上，AI 看當天的新聞和她網站上的留言，用她的口吻寫一篇日記。點月曆上的一天，聽她把那天的日記講給你聽。",
+  "publish": true
 }
