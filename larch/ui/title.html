@@ -18,14 +18,15 @@ h1{margin:18px 0 6px;font-size:clamp(26px,3vw,40px);letter-spacing:.08em}
 p{margin:0 0 22px;color:var(--mute);font-size:15px;line-height:1.6}
 nav{display:flex;flex-direction:column;gap:10px;width:min(280px,70vw)}
 button{font:inherit;font-size:16px;letter-spacing:.2em;padding:11px 18px;border-radius:9px;cursor:pointer;color:#cdd6db;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);transition:border-color .15s,color .15s,background .15s}
-button[data-larch-action="start"]{color:#04080c;background:var(--cy);border-color:var(--cy);font-weight:700}
+/* 主按鈕跟格莉奇手機、封面「每日更新」同一套：透明底、薄荷綠外框與字 */
+button[data-larch-action="start"]{color:var(--mint);background:rgba(124,243,192,.08);border:2px solid var(--mint);font-weight:700}
 button:hover,button:focus-visible{border-color:var(--cy);color:var(--cy);outline:none;background:rgba(37,194,232,.08)}
-button[data-larch-action="start"]:hover,button[data-larch-action="start"]:focus-visible{background:var(--mint);border-color:var(--mint);color:#04080c}
+button[data-larch-action="start"]:hover,button[data-larch-action="start"]:focus-visible{background:rgba(124,243,192,.18);border-color:var(--mint);color:var(--mint)}
 button:focus-visible{box-shadow:0 0 0 2px var(--mint)}
 button:active{transform:scale(.98)}
 button:disabled{opacity:.45;cursor:default}
 button[hidden]{display:none}
-/* 介面框擋掉新分頁，這裡的網址只能顯示；能點的連結放在日記頁的舞台道具上 */
+/* 介面框擋掉新分頁，這裡的網址只能顯示，讓讀者自己打開 */
 .os{margin-top:18px;font-size:13px;color:var(--mute);user-select:text}
 .os b{color:var(--cy);font-weight:500;letter-spacing:.02em}
 .boot{position:absolute;inset:0;background:#04080c;display:flex;align-items:center;justify-content:center;animation:off .5s 2.6s forwards}
