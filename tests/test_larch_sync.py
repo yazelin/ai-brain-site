@@ -171,6 +171,32 @@ class FakeApi:
         return "https://larch.ink/play/x"
 
 
+class ProjectApi:
+    def __init__(self, desc):
+        self.desc, self.replaced = desc, []
+
+    def get(self, path):
+        return {"_etag": '"r9"', "description": self.desc, "boards": [{"id": "m-2026-10"}], "settings": {"a": 1}}
+
+    def replace_project(self, pid, project, etag):
+        self.replaced.append((project, etag))
+
+
+class DescriptionTests(unittest.TestCase):
+    def test_same_description_does_not_put(self):
+        api = ProjectApi("一樣")
+        self.assertFalse(ls.sync_description(api, "p", "一樣"))
+        self.assertFalse(ls.sync_description(api, "p", None))
+        self.assertEqual(api.replaced, [])
+
+    def test_changed_description_puts_whole_project_with_only_description_changed(self):
+        api = ProjectApi("舊的")
+        self.assertTrue(ls.sync_description(api, "p", "新的"))
+        project, etag = api.replaced[0]
+        self.assertEqual(etag, '"r9"')
+        self.assertEqual(project, {"description": "新的", "boards": [{"id": "m-2026-10"}], "settings": {"a": 1}})
+
+
 class ApplyTests(unittest.TestCase):
     def test_share_refreshes_every_run_even_with_nothing_to_put(self):
         # 上一班 board 都寫好了、只有刷新分享連結失敗：同一天重跑也要補刷。

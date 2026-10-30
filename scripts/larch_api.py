@@ -5,7 +5,8 @@
 
 這裡直接拒絕兩種請求：
 - 發佈到市集（/publish）：第一階段只用分享連結，發佈一次就是一個新版本。
-- PUT /projects/<id>：整包覆寫會靜默洗掉沒帶到的欄位。
+- PUT /projects/<id>：整包覆寫會靜默洗掉沒帶到的欄位。只有 replace_project 能走，
+  而它只給「先讀整份、改一個欄位、原樣推回」用（專案簡介沒有別的寫法）。
 """
 import base64
 import json
@@ -34,10 +35,10 @@ class Larch:
         self.sleep = sleep
         self.opener = opener
 
-    def request(self, method, path, body=None, headers=None):
+    def request(self, method, path, body=None, headers=None, _whole_project=False):
         if "/publish" in path:
             raise LarchError(0, f"拒絕呼叫發佈端點：{method} {path}")
-        if method == "PUT" and re.fullmatch(r"/projects/[^/]+/?", path):
+        if method == "PUT" and re.fullmatch(r"/projects/[^/]+/?", path) and not _whole_project:
             raise LarchError(0, f"拒絕整包覆寫專案：{path}")
         h = {"Authorization": f"Bearer {self.key}", "Accept": "application/json"}
         data = None
@@ -82,6 +83,10 @@ class Larch:
         """整張白板覆寫。條件邊與同一出口的多條邊只有這條路保得住。"""
         return self.request("PUT", f"/projects/{project_id}/boards/{board_id}", body,
                             {"If-Match": etag} if etag else None)
+
+    def replace_project(self, project_id, project, etag):
+        """整份覆寫。project 必須是剛 GET 回來的整份，只改要改的欄位。"""
+        return self.request("PUT", f"/projects/{project_id}", project, {"If-Match": etag}, _whole_project=True)
 
     def upload_media(self, project_id, path, category="scene"):
         path = Path(path)

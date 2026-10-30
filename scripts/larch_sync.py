@@ -186,6 +186,19 @@ def render_backgrounds(posts, bg_dir, root, render):
             render(p, out, None)
 
 
+def sync_description(api, project_id, description):
+    """專案簡介（標題畫面也顯示它）只有整份 PUT 改得到，所以只在跟設定檔不同時才做：
+    讀整份、只換簡介、帶 If-Match 推回。整份 PUT 會清掉白板（larch-vn 筆記），
+    回傳 True 時呼叫端要把白板全部重推。"""
+    proj = api.get(f"/projects/{project_id}")
+    if not description or proj.get("description") == description:
+        return False
+    etag = proj.pop("_etag")
+    api.replace_project(project_id, {**proj, "description": description}, etag)
+    log.info("已更新專案簡介")
+    return True
+
+
 def remote_descriptions(api, project_id):
     proj = api.get(f"/projects/{project_id}")
     return {b["id"]: b.get("description") or "" for b in proj.get("boards", [])}
@@ -211,11 +224,19 @@ def main():
 
     boards = build(posts, lines_for, dt.datetime.now(TZ).date().isoformat(), cfg["base_url"])
     api = Larch(os.environ["LARCH_AGENT_KEY"])
-    todo = plan(boards, remote_descriptions(api, cfg["project_id"]))
-    print(f"要更新 {len(todo)} 張 board：{', '.join(todo) or '（沒有）'}", flush=True)
+    pid = cfg["project_id"]
     if args.dry_run:
+        todo = plan(boards, remote_descriptions(api, pid))
+        print(f"要更新 {len(todo)} 張 board：{', '.join(todo) or '（沒有）'}", flush=True)
         return
-    url = apply(todo, boards, api, cfg["project_id"], cfg.get("share", False))
+    replaced = sync_description(api, pid, cfg.get("description"))
+    todo = plan(boards, {} if replaced else remote_descriptions(api, pid))
+    print(f"要更新 {len(todo)} 張 board：{', '.join(todo) or '（沒有）'}", flush=True)
+    url = apply(todo, boards, api, pid, cfg.get("share", False))
+    if replaced:  # 整份推過，讀回來確認白板都在
+        missing = set(boards) - set(remote_descriptions(api, pid))
+        if missing:
+            raise SystemExit(f"整份推回後少了白板：{sorted(missing)}")
     if url:
         print(f"分享連結：{url}", flush=True)
 

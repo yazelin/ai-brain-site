@@ -54,6 +54,7 @@ class LarchApiTests(unittest.TestCase):
     def test_board_put_is_allowed(self):
         api = Larch("k", opener=lambda req, timeout=None: FakeResp({"ok": 1}))
         self.assertEqual(api.request("PUT", "/projects/p/boards/b", {}), {"ok": 1})
+        self.assertEqual(api.replace_project("p", {}, '"e"'), {"ok": 1})
 
     def test_gives_up_after_5_429s(self):
         def fake(req, timeout=None):
