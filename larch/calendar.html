@@ -40,6 +40,9 @@ h1 small{font-size:.55em;color:var(--mute);font-weight:400;margin-left:.8em}
 .grid .pic .tt{padding-top:1.6em;background:linear-gradient(transparent,rgba(5,10,14,.92))}
 .grid .more{position:absolute;top:.35em;right:.45em;font-size:.8em;background:rgba(37,194,232,.18);border:1px solid rgba(37,194,232,.5);color:var(--cy);border-radius:6px;padding:.05em .45em}
 .grid .rest{background:url(https://yazelin.github.io/ai-brain-site/larch/sticker-sleep.webp) right -4% bottom -10%/auto 108% no-repeat,linear-gradient(160deg,rgba(183,139,255,.16),rgba(37,194,232,.06)),#1d2026;border-style:dashed;border-color:rgba(183,139,255,.35)}
+/* 背景只畫到邊框內側，半透明邊框底下才不會露出 1px 沒壓暗的縮圖 */
+.grid .day{background-clip:padding-box}
+.grid .has,.grid .rest{background-clip:padding-box}
 .grid .rest .n{color:#b78bff}
 .grid .rest b{position:absolute;left:.55em;bottom:.45em;font-weight:700;color:#d9c8ff;font-size:1.05em;letter-spacing:.1em;text-shadow:0 1px 6px rgba(0,0,0,.7)}
 .pick{position:fixed;inset:0;background:rgba(4,8,12,.6);display:none;align-items:center;justify-content:center}
