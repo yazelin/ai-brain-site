@@ -56,7 +56,7 @@ def _actor(base, face):
     # 每一句的 stage 都要帶，不然換句時道具會消失。
     return {"actors": [{"id": "glitch", "url": f"{base}/larch/sprites/{face}.webp", "name": SPEAKER,
                         "slot": "right", "enter": "none", "scale": 1, "offsetX": 0, "offsetY": 0}],
-            "props": [{"id": "os-link", "url": f"{base}/larch/ui/os-link.webp", "x": 8, "y": 4, "scale": 1,
+            "props": [{"id": "os-link", "url": f"{base}/larch/ui/os-link.webp", "x": 4.6, "y": 2, "scale": 0.62,
                        "depth": "front", "enter": "none",
                        "clickAction": {"kind": "link", "linkUrl": SITE, "label": "格莉奇OS", "showLabel": False}}]}
 
