@@ -36,7 +36,8 @@ class Larch:
         self.opener = opener
 
     def request(self, method, path, body=None, headers=None, _whole_project=False, _publish=False):
-        if "/publish" in path and not (_publish and method == "POST"):
+        # 只認結尾的 /publish：/published（列出已上架作品）是唯讀的，不能一起擋
+        if re.search(r"/publish/?$", path) and not (_publish and method == "POST"):
             raise LarchError(0, f"拒絕呼叫發佈端點：{method} {path}")
         if method == "PUT" and re.fullmatch(r"/projects/[^/]+/?", path) and not _whole_project:
             raise LarchError(0, f"拒絕整包覆寫專案：{path}")

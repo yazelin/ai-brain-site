@@ -51,6 +51,10 @@ class LarchApiTests(unittest.TestCase):
         with self.assertRaises(LarchError):
             api.request("PUT", "/projects/p", {})
 
+    def test_listing_published_works_is_allowed(self):
+        api = Larch("k", opener=lambda req, timeout=None: FakeResp({"works": []}))
+        self.assertEqual(api.get("/published"), {"works": []})
+
     def test_board_put_is_allowed(self):
         api = Larch("k", opener=lambda req, timeout=None: FakeResp({"ok": 1}))
         self.assertEqual(api.request("PUT", "/projects/p/boards/b", {}), {"ok": 1})
