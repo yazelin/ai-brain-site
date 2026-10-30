@@ -86,7 +86,7 @@ class Larch:
 
     def replace_project(self, project_id, project, etag):
         """整份覆寫。project 必須是剛 GET 回來的整份，只改要改的欄位。"""
-        return self.request("PUT", f"/projects/{project_id}", project, {"If-Match": etag}, _whole_project=True)
+        return self.request("PUT", f"/projects/{project_id}", {"project": project}, {"If-Match": etag}, _whole_project=True)
 
     def upload_media(self, project_id, path, category="scene"):
         path = Path(path)
