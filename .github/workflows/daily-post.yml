@@ -9,6 +9,10 @@ on:
         description: '強制畫圖（忽略奇偶日規則）'
         type: boolean
         default: false
+      larch_only:
+        description: '只同步到 Larch，不產新日記'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -40,6 +44,7 @@ jobs:
           fi
 
       - name: 產出今日文章
+        if: github.event.inputs.larch_only != 'true'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_WEB_BASE_URL: ${{ secrets.GEMINI_WEB_BASE_URL }}
