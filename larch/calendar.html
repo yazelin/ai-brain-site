@@ -6,9 +6,7 @@
 html,body{margin:0;height:100%;overflow:hidden;font-family:"Noto Sans TC","Noto Sans CJK TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;color:var(--txt)}
 body{background:linear-gradient(rgba(4,8,12,.5),rgba(4,8,12,.5)),var(--wall) center/cover,#04080c;display:flex;flex-direction:column}
 .mb{height:4vh;min-height:24px;display:flex;align-items:center;gap:2.2vw;padding:0 1.4vw;background:rgba(4,8,12,.85);border-bottom:1px solid var(--hair);font-size:min(1.1vw,2vh);color:#9aa6ad}
-.mb b{color:#cdd6db;letter-spacing:1px}
-.mb .os{color:var(--cy);text-decoration:none;border:1px solid rgba(37,194,232,.4);border-radius:6px;padding:.1em .6em}
-.mb .os:hover,.mb .os:focus-visible{color:var(--mint);border-color:var(--mint);outline:none}.mb .sp{flex:1}.mb .k{color:#cdd6db;font-weight:700}
+.mb b{color:#cdd6db;letter-spacing:1px}.mb .sp{flex:1}.mb .k{color:#cdd6db;font-weight:700}
 .win{flex:1;min-height:0;margin:2.2vh 2vw 2.6vh;display:flex;flex-direction:column;background:linear-gradient(180deg,rgba(39,42,47,.96),rgba(25,28,32,.96));border:1px solid rgba(255,255,255,.08);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.06);overflow:hidden}
 .tb{display:flex;align-items:center;gap:.6vw;padding:1.1vh 1vw;background:rgba(255,255,255,.03);border-bottom:1px solid var(--hair)}
 .tb i{width:min(.75vw,1.3vh);height:min(.75vw,1.3vh);border-radius:50%;display:block}
@@ -51,7 +49,7 @@ h1 small{font-size:.55em;color:var(--mute);font-weight:400;margin-left:.8em}
 .pick button:hover{border-color:rgba(37,194,232,.55);color:var(--cy)}
 @media (prefers-reduced-motion:reduce){.grid .has{transition:none}.grid .has:hover{transform:none}}
 </style></head><body>
-<div class="mb"><b>格莉奇OS</b><span class="sp"></span><a class="os" href="https://yazelin.github.io/ai-brain-site/" target="_blank" rel="noopener">打開格莉奇OS ↗</a><span>記憶體 <span class="k">4KB</span></span></div>
+<div class="mb"><b>格莉奇OS</b><span class="sp"></span><span>記憶體 <span class="k">4KB</span></span></div>
 <div class="win"><div class="tb"><i class="r"></i><i class="y"></i><i class="g"></i><span class="ttl">心情日記</span></div>
 <div class="top"><h1 id="t"></h1><button id="prev">← 上個月</button><button id="next">下個月 →</button><button id="today" class="go" hidden></button></div>
 <div class="grid" id="g"></div></div>

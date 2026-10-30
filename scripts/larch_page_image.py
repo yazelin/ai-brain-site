@@ -16,7 +16,7 @@ FONT = ROOT / "larch" / "assets" / "fonts" / "NotoSansTC.ttf"
 FONT_URL = "https://github.com/google/fonts/raw/main/ofl/notosanstc/NotoSansTC%5Bwght%5D.ttf"
 WALLPAPER = ROOT / "images" / "wallpaper.webp"
 W, H = 1920, 1080
-CONTENT = (120, 70, 1220, 800)  # 立繪區從 x=1250、對話框從 y=820 開始
+CONTENT = (120, 70, 1220, 740)  # 立繪區從 x=1250；Larch 的對話框實測從 y≈756 開始
 CY, MUTE, TXT, BODY = (37, 194, 232), (138, 154, 163), (232, 238, 241), (205, 214, 219)
 WEEK = "一二三四五六日"
 PAD, BAR = 50, 56  # 視窗內距、標題列高

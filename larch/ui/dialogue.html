@@ -1,9 +1,10 @@
 <style>
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap");
 :root{--cy:#25c2e8;--mint:#7cf3c0;--hair:rgba(255,255,255,.08)}
 *{box-sizing:border-box}
 html,body{margin:0;background:transparent;overflow:hidden}
 body{padding:8px 12px;font-family:"Noto Sans TC","Noto Sans CJK TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif}
-.box{position:relative;min-height:150px;border-radius:14px;overflow:hidden;color:#e8eef1;
+.box{position:relative;min-height:128px;border-radius:14px;overflow:hidden;color:#e8eef1;
   background:linear-gradient(180deg,rgba(39,42,47,.93),rgba(25,28,32,.93));border:1px solid var(--hair);
   box-shadow:0 18px 50px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .tb{padding:14px clamp(22px,3vw,48px) 0}
@@ -17,6 +18,9 @@ body{padding:8px 12px;font-family:"Noto Sans TC","Noto Sans CJK TC","PingFang TC
 @keyframes blink{50%{opacity:.25}}
 @media (max-width:720px){.text{font-size:var(--larch-text-size,18px);padding:12px 16px 18px}}
 @media (prefers-reduced-motion:reduce){.next::before{animation:none}}
+
+/* 播放器會替標題與台詞套明體，這裡強制換回網站的黑體 */
+main,main *:not(pre):not(pre span),.box,.box *{font-family:"Noto Sans TC","Noto Sans CJK TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif!important}
 </style>
 <section class="box" aria-label="對話">
   <div class="tb"><span class="name" data-larch-slot="speaker"></span></div>

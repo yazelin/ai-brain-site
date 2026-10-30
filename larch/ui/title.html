@@ -1,4 +1,5 @@
 <style>
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap");
 :root{color-scheme:dark;--cy:#25c2e8;--mint:#7cf3c0;--purple:#b78bff;--mute:#8a9aa3}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:#04080c;overflow:hidden}
@@ -23,8 +24,7 @@ button[data-larch-action="start"]:hover,button[data-larch-action="start"]:focus-
 button:focus-visible{box-shadow:0 0 0 2px var(--mint)}
 button:active{transform:scale(.98)}
 button:disabled{opacity:.45;cursor:default}
-.os{display:block;text-align:center;font-size:14px;color:var(--cy);text-decoration:none;padding:6px;border-radius:8px}
-.os:hover,.os:focus-visible{color:var(--mint);outline:none;background:rgba(124,243,192,.08)}button[hidden]{display:none}
+button[hidden]{display:none}
 .boot{position:absolute;inset:0;background:#04080c;display:flex;align-items:center;justify-content:center;animation:off .5s 2.6s forwards}
 .boot pre{margin:0;font:14px/1.75 ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;color:var(--mint)}
 .boot pre span{display:block;opacity:0;animation:on .01s forwards}
@@ -33,6 +33,9 @@ button:disabled{opacity:.45;cursor:default}
 .boot pre span:nth-child(4){animation-delay:1.15s}.boot pre span:nth-child(5){animation-delay:1.5s}.boot pre span:nth-child(6){animation-delay:1.85s}
 @keyframes on{to{opacity:1}}@keyframes off{to{opacity:0;visibility:hidden}}
 @media (prefers-reduced-motion:reduce){.boot{display:none}button{transition:none}}
+
+/* 播放器會替標題與台詞套明體，這裡強制換回網站的黑體 */
+main,main *:not(pre):not(pre span),.box,.box *{font-family:"Noto Sans TC","Noto Sans CJK TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif!important}
 </style>
 <main>
   <img class="art" id="wall" alt="">
@@ -45,7 +48,6 @@ button:disabled{opacity:.45;cursor:default}
       <p data-larch-slot="description"></p>
       <nav aria-label="遊戲選單">
         <button data-larch-action="start">打開日記</button>
-        <a class="os" href="https://yazelin.github.io/ai-brain-site/" target="_blank" rel="noopener">打開格莉奇OS ↗</a>
       </nav>
     </div>
   </div>
