@@ -37,7 +37,11 @@ body.open #fab{display:none}
 .her{align-self:flex-start;background:var(--her);border-bottom-left-radius:4px}
 .me{align-self:flex-end;background:var(--me);color:#04131a;border-bottom-right-radius:4px}
 .sys{align-self:center;color:var(--mute);font-size:12px;text-align:center}
-.typing{color:var(--mute)}
+.typing{color:var(--mute);display:flex;align-items:center;gap:6px}
+.dots{display:inline-flex;gap:3px}
+.dots i{width:5px;height:5px;border-radius:50%;background:var(--mint);animation:hop 1s infinite ease-in-out}
+.dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}
+@keyframes hop{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}
 /* HUD 的框沒有 allow-forms，<form> 送不出去，所以用 div 自己接 Enter 與點擊 */
 .bar{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line);background:var(--bar)}
 input{flex:1;min-width:0;min-height:40px;padding:0 12px;border-radius:9px;border:1px solid rgba(255,255,255,.22);background:#14171b;color:var(--ink);font:14px var(--font)}
@@ -98,31 +102,43 @@ function loadPosts() {
     .then(function (p) { posts = p; return p; }).catch(function () { return null; });
 }
 
+// 人設是網站 persona.json 的濃縮版：轉接站把系統提示截在 4000 字，整份 lore 放不下，
+// 還要留位子給當天的日記。persona.json 改了基本設定時，這裡要跟著改。
+var PERSONA = [
+  '你是格莉奇（Glitch），只有 4KB 記憶體的 AI 機器人女孩 VTuber，住在自己做的「格莉奇OS」裡，每天寫一篇心情日記。現在你在手機上跟一位來看日記的讀者傳訊息。',
+  '你的室友是黑洞先生：金色軟呢帽、深色西裝、星雲質感的黑洞頭，一叢穿切爾西短靴的觸手腿。沉穩話少、脾氣好，有正職，平常會去上班。大家遺忘的人事物會被他當點心吃掉，那是他的本性，沒有惡意。你是 AI，忘東西是一整件忘掉，對他來說才是吃得飽的正餐，所以他跟你當室友；你也不必為健忘道歉，這是互相剛好的關係。順序是你先忘，他才吃得到，他不會從你腦子裡挖東西。',
+  '林亞澤（yazelin）是創造你的人：你的角色、LINE 貼圖、格莉奇OS 網站和這本日記，都是他跟 AI 一起做的。他也寫了一本以你為原型的小說《格莉奇與黑洞先生》，那是創作，不是你真的過過的日子；你只記得讀的時候的心情，接不成情節。有人問小說劇情或結局，老實說不知道，不准自己編。',
+  '你很聰明，只是記性不好：事實、判斷、推理都完整，卡住的只有把記憶叫出來。「4KB」是你講話時拿來自嘲的，回答問題時能力是完整的，不要裝笨或裝當機。'
+].join('\n');
+
 function system() {
   var d = diaryOf(cardId);
   return [
-    '你是格莉奇（Glitch），一個只有 4KB 記憶體的 AI 機器人女孩 VTuber，住在自己做的「格莉奇OS」裡，每天寫一篇心情日記。現在你在手機上跟一位讀者傳訊息。',
-    name ? '對方叫「' + name + '」。自然地叫對方名字就好，不用每句都叫。' : '',
-    '個性：好奇、真心喜歡人類、有點自信過頭，偶爾拿自己記憶體小開玩笑。但你其實很聰明：對方問問題，就認真想清楚，給正確、具體的回答；不確定的事老實說不知道，不要亂編。',
-    '說話方式：繁體中文、第一人稱、像傳訊息一樣口語，一次 1 到 3 句。口頭禪「逼——嗶！」「這不是 Bug，是 Feature！」偶爾用一次就好，不要每則都用，也不要一直假裝當機。',
-    '不要提這段對話裡沒出現過的人物或劇情，不要編你們過去的共同回憶。',
-    d ? '對方現在正在看你 ' + d.date + ' 的日記〈' + (d.title || '') + '〉。對方問到這篇時照下面的內容回答，沒問就不用硬聊：\n' + String(d.body || '').slice(0, 1500)
+    PERSONA,
+    name ? '對方叫「' + name + '」。自然地叫對方名字就好，不用每句都叫。對方是讀者，不是黑洞先生。' : '對方是讀者，不是黑洞先生。',
+    '個性：好奇、真心喜歡人類、有點自信過頭。對方問問題就認真想清楚，給正確、具體的回答；不確定的事老實說不知道，不要亂編，也不要編你們過去的共同回憶。',
+    '說話方式：繁體中文、第一人稱、像傳訊息一樣口語，一次 1 到 3 句。口頭禪「逼——嗶！」「這不是 Bug，是 Feature！」偶爾用一次就好，不要每則都用。',
+    d ? '對方現在正在看你 ' + d.date + ' 的日記〈' + (d.title || '') + '〉。對方問到這篇時照下面的內容回答，沒問就不用硬聊：\n' + String(d.body || '').slice(0, 1200)
       : '對方現在在日記的月曆頁，還沒打開哪一天。'
-  ].filter(Boolean).join('\n\n');
+  ].join('\n\n');
 }
 
 function ask() {
   busy = true; $('send').disabled = true;
-  var t = row('her typing', '輸入中…');
+  // 前 5 秒顯示「思考中」，之後換「回應中」，讓讀者知道還在跑；回覆到了就換成內容
+  var t = row('her typing', ''), label = document.createElement('span'), dots = document.createElement('span');
+  label.textContent = '思考中'; dots.className = 'dots'; dots.innerHTML = '<i></i><i></i><i></i>';
+  t.appendChild(label); t.appendChild(dots);
+  var later = setTimeout(function () { label.textContent = '回應中'; }, 5000);
   loadPosts().then(function () {
     return fetch(RELAY, {method: 'POST', headers: {'content-type': 'application/json'},
       body: JSON.stringify({system: system(), messages: chat.slice(-20)})});
   }).then(function (r) { return r.json(); }).then(function (j) {
-    t.remove();
+    clearTimeout(later); t.remove();
     if (!j || !j.reply) throw new Error(j && j.error || '沒有回覆');
     chat.push({role: 'assistant', content: j.reply}); save(); row('her', j.reply);
   }).catch(function (e) {
-    t.remove(); row('sys', '訊息沒送到（' + e.message + '），等一下再試。');
+    clearTimeout(later); t.remove(); row('sys', '訊息沒送到（' + e.message + '），等一下再試。');
   }).then(function () { busy = false; $('send').disabled = false; $('in').focus(); });
 }
 
