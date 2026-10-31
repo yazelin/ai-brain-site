@@ -243,13 +243,15 @@ def sync_cg(api, project_id, items):
 
 def publish_body(boards, posts, today, description):
     """每晚重新上架帶的內容。介紹每次都要帶：沒帶的話商店頁會換成專案簡介（標題畫面那段短版）。
-    公開白板帶全部，下個月的新白板才會自動公開。其他商店欄位（封面、標籤、AI 揭露）沿用上一次。"""
+    公開白板帶全部，下個月的新白板才會自動公開。其他商店欄位（封面、標籤、AI 揭露）沿用上一次。
+    只有當天日記有插畫才通知追蹤者，平常的日子靜靜更新（作者 2026-10-31 決定）。"""
     new = [p for _, p in larch_pages.post_key(posts) if p["date"] == today and str(p.get("body", "")).strip()]
     note = "、".join(f"〈{p.get('title', '')}〉" for p in new)
     return {"description": description,
             "publishedBoardIds": ["board-main"] + sorted(b for b in boards if b != "board-main"),
             "startBoardId": "board-main",
-            "updateNote": f"新增 {int(today[5:7])}/{int(today[8:])} 的日記{note}" if new else "更新日記內容"}
+            "updateNote": f"新增 {int(today[5:7])}/{int(today[8:])} 的日記{note}" if new else "更新日記內容",
+            "notifyFollowers": any(p.get("type") == "image" and p.get("image") for p in new)}
 
 
 def published_today(api, project_id, today):

@@ -260,6 +260,12 @@ class PublishTests(unittest.TestCase):
         self.assertEqual(b["updateNote"], "新增 10/30 的日記〈大鳥鳥〉")
         self.assertEqual(ls.publish_body(build(posts), posts, "2026-10-31", "介紹")["updateNote"], "更新日記內容")
 
+    def test_only_illustrated_days_notify_followers(self):
+        posts = [post("2026-10-30"), post("2026-10-31", type_="image")]
+        self.assertFalse(ls.publish_body(build(posts), posts, "2026-10-30", "介紹")["notifyFollowers"])
+        self.assertTrue(ls.publish_body(build(posts), posts, "2026-10-31", "介紹")["notifyFollowers"])
+        self.assertFalse(ls.publish_body(build(posts), posts, "2026-11-01", "介紹")["notifyFollowers"])
+
     def test_published_today_uses_taipei_date(self):
         class Api:
             def get(self, path):
