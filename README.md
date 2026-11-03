@@ -263,6 +263,14 @@ npx wrangler deploy
 
 **耗電。** 桌寵是常駐的，所以畫面更新壓在 32fps，捲出視窗或分頁切走就不畫；`prefers-reduced-motion` 會關掉待機晃動與當機抖動。
 
+## Larch 版《格莉奇日記》
+
+日記每晚也同步成 Larch 作品《格莉奇日記》（`larch/config.json` 的 `project_id`）：一個月一章，打開是月曆，點一天，格莉奇把那天的日記一句一句講給你聽。
+
+- **每晚同步**：`daily-post.yml` 發完日記後跑 `scripts/larch_sync.py`，先產日記頁背景（`larch/bg/`）和月曆的 200px 縮圖（`larch/thumbs/`）推上去，等 Pages 部署好再更新 Larch 的白板、標題畫面與對話框（`larch/ui/`）、月曆（`larch/calendar.html`）。有新日記的晚上自動更新市集版，版號是日期（`v26.11.04`）。
+- **介面**：格莉奇OS 的全息桌面。四個畫面共用一張生圖的全息壓克力視窗框（`larch/ui/window.webp`，CSS 與 Pillow 都照 `130 77 82 75` 切九格）。標題畫面先跑 BIOS 開機；月曆是「記憶體磁區」，文字日放一張貼圖；日記頁左欄是標題、右邊是插畫，文字日的內文交給對話框逐句講。
+- **本機預覽**：`python3 scripts/larch_sync.py --local _preview.json`，再用 larch-preview 開 `_preview.json`，不會連 Larch。
+
 ## 回報問題與交流
 
 - Bug 或功能建議：[GitHub Issues](https://github.com/yazelin/ai-brain-site/issues)

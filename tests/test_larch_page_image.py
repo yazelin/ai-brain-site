@@ -38,10 +38,11 @@ class RenderPageTests(unittest.TestCase):
                     diff = ImageChops.difference(im.crop(box), blank.crop(box)).convert("L")
                     self.assertLess(diff.getextrema()[1], 24, (post["title"], box))
 
-    def test_text_page_shows_body(self):
-        # 文字日的視窗要放內文：內文區跟只有標題的頁面要不一樣。
+    def test_text_page_shows_sticker_not_body(self):
+        # 文字日的內文交給對話框逐句講，視窗右邊放一張貼圖：內文不同不影響畫面，右邊不是空的玻璃。
         with tempfile.TemporaryDirectory() as d:
             a = Image.open(pi.render_page(TEXT, Path(d) / "a.webp")).convert("L")
-            b = Image.open(pi.render_page({**TEXT, "body": ""}, Path(d) / "b.webp")).convert("L")
-        box = (170, 330, 1100, 420)
-        self.assertGreater(ImageChops.difference(a.crop(box), b.crop(box)).getextrema()[1], 80)
+            b = Image.open(pi.render_page({**TEXT, "body": "完全不同的一段內文。"}, Path(d) / "b.webp")).convert("L")
+        self.assertIsNone(ImageChops.difference(a, b).getbbox())
+        right = a.crop((700, 200, 1150, 650))
+        self.assertGreater(right.getextrema()[1] - right.getextrema()[0], 120)

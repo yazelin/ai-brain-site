@@ -1,97 +1,131 @@
 <!doctype html>
 <html lang="zh-Hant"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Silkscreen&display=swap" rel="stylesheet">
 <style>
-:root{--cy:#25c2e8;--mint:#7cf3c0;--mute:#8a9aa3;--hair:rgba(255,255,255,.07);--hair2:rgba(255,255,255,.12);--txt:#e8eef1}
+/* 格莉奇OS 的「記憶體磁區」：她房間的桌面上開著一個全息視窗，一天是一塊記憶體 */
+:root{--cy:#25c2e8;--mint:#7cf3c0;--purple:#b78bff;--pink:#ff8fd0;--mute:#9fb0b8;--txt:#e8eef1;--glass:rgba(11,26,34,.72)}
+*{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;font-family:"Noto Sans TC","Noto Sans CJK TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;color:var(--txt)}
-body{background:linear-gradient(rgba(4,8,12,.5),rgba(4,8,12,.5)),var(--wall) center/cover,#04080c;display:flex;flex-direction:column}
-.mb{height:4vh;min-height:24px;display:flex;align-items:center;gap:2.2vw;padding:0 1.4vw;background:rgba(4,8,12,.85);border-bottom:1px solid var(--hair);font-size:min(1.1vw,2vh);color:#9aa6ad}
-.mb b{color:#cdd6db;letter-spacing:1px}.mb .sp{flex:1}.mb .k{color:#cdd6db;font-weight:700}
-.win{flex:1;min-height:0;margin:2.2vh 2vw 2.6vh;display:flex;flex-direction:column;background:linear-gradient(180deg,rgba(39,42,47,.96),rgba(25,28,32,.96));border:1px solid rgba(255,255,255,.08);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.06);overflow:hidden}
-.tb{display:flex;align-items:center;gap:.6vw;padding:1.1vh 1vw;background:rgba(255,255,255,.03);border-bottom:1px solid var(--hair)}
-.tb i{width:min(.75vw,1.3vh);height:min(.75vw,1.3vh);border-radius:50%;display:block}
-.tb .r{background:#ff5f57}.tb .y{background:#febc2e}.tb .g{background:#28c840}
-.tb .ttl{flex:1;text-align:center;font-size:min(1.1vw,2vh);color:#b9c4cb;margin-right:4vw}
-.top{display:flex;align-items:center;gap:1.2vw;padding:1.6vh 1.6vw .8vh}
-h1{font-size:min(2.1vw,3.6vh);margin:0;font-weight:700;letter-spacing:.04em;flex:1}
-h1 small{font-size:.55em;color:var(--mute);font-weight:400;margin-left:.8em}
-.top button{font:inherit;font-size:min(1.15vw,2vh);background:rgba(255,255,255,.04);border:1px solid var(--hair2);border-radius:8px;padding:.35em .9em;color:#cdd6db;cursor:pointer}
-.top button:hover{border-color:rgba(37,194,232,.55);color:var(--cy)}
-.top button:focus-visible{outline:2px solid var(--cy);outline-offset:2px}
+body{background:#04080c;display:flex;flex-direction:column}
+/* 桌布載完才淡入 */
+.im{position:absolute;inset:0;background:center/cover no-repeat;opacity:0;transition:opacity .6s ease}
+.im.on{opacity:1}.im.now{transition:none}
+#wall{position:fixed;z-index:-2;filter:brightness(.6) saturate(1.05);transition-duration:.9s}
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(ellipse at 50% 40%,transparent 40%,rgba(4,8,12,.55))}
+.mb{flex:none;height:4vh;min-height:24px;display:flex;align-items:center;gap:2.2vw;padding:0 1.4vw;background:rgba(4,8,12,.82);
+  border-bottom:1px solid rgba(124,243,192,.18);font:min(1vw,1.8vh)/1 "Silkscreen",monospace;letter-spacing:.06em;color:var(--mute)}
+.mb b{color:var(--mint);font-weight:400}.mb .sp{flex:1}.mb .k{color:var(--purple)}
+/* 生圖的全息壓克力視窗（larch/ui/window.webp）切九格 */
+.win{position:relative;flex:1;min-height:0;margin:2vh 5vw 2.6vh;display:flex;flex-direction:column;border-style:solid;
+  border-width:min(5.6vh,3.4vw) min(3.2vh,2vw) min(3.4vh,2vw) min(3.2vh,2vw);
+  border-image:url("https://yazelin.github.io/ai-brain-site/larch/ui/window.webp") 130 77 82 75 fill / min(5.6vh,3.4vw) min(3.2vh,2vw) min(3.4vh,2vw) min(3.2vh,2vw) stretch;
+  clip-path:inset(0 round 14px);filter:drop-shadow(0 18px 40px rgba(0,0,0,.6))}
+.ttl{position:absolute;top:calc(-1 * min(4.2vh,2.6vw));left:0;right:0;text-align:center;font:min(1.1vw,2vh)/1 "Silkscreen",monospace;letter-spacing:.12em;
+  color:#16283a;text-shadow:0 1px 0 rgba(255,255,255,.35)}
+.top{display:flex;align-items:center;gap:1.2vw;padding:.6vh .6vw 1.4vh}
+h1{margin:0;flex:1;font:700 min(2.3vw,4vh)/1.1 "Noto Sans TC",sans-serif;letter-spacing:.04em;
+  background:linear-gradient(90deg,var(--mint),var(--cy) 50%,var(--purple));-webkit-background-clip:text;background-clip:text;color:transparent}
+h1 small{display:block;margin-top:.5vh;font:min(.95vw,1.7vh)/1 "Silkscreen",monospace;letter-spacing:.1em;color:var(--mute);-webkit-text-fill-color:var(--mute)}
+.top button{font:500 min(1.1vw,2vh)/1 "Noto Sans TC",sans-serif;letter-spacing:.08em;background:rgba(124,243,192,.05);border:1px solid rgba(183,139,255,.45);
+  border-radius:8px;padding:.6em 1em;color:var(--txt);cursor:pointer;transition:border-color .15s,color .15s,background .15s}
+.top button:hover,.top button:focus-visible{outline:none;border-color:var(--mint);color:var(--mint);background:rgba(124,243,192,.12)}
+.top button:focus-visible{box-shadow:0 0 0 3px var(--purple)}
 .top button:disabled{visibility:hidden}
-.top .go{color:var(--mint);background:rgba(124,243,192,.08);border:2px solid var(--mint);font-weight:700}
-.top .go:hover{background:rgba(124,243,192,.18);border-color:var(--mint);color:var(--mint)}
-.grid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:auto;grid-auto-rows:1fr;gap:min(.6vw,1vh);padding:0 1.6vw 1.6vw}
-.grid .wd{display:flex;align-items:end;justify-content:center;font-size:min(1.1vw,1.9vh);color:var(--mute);padding-bottom:.4vh}
-.grid .day{position:relative;overflow:hidden;border-radius:10px;background:rgba(255,255,255,.025);border:1px solid var(--hair);font-size:min(1.15vw,1.95vh)}
-.grid .has{cursor:pointer;background:#22262b center/cover no-repeat;transition:transform .12s,border-color .12s}
-.grid .has:hover{border-color:rgba(37,194,232,.55);transform:translateY(-2px)}
-.grid .today{border:2px solid var(--cy);box-shadow:0 0 14px rgba(37,194,232,.35)}
-.grid .n{position:absolute;top:.4em;left:.55em;font-size:.95em;line-height:1;color:var(--cy);font-family:ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace}
-.grid .none .n{color:#4d5a62}
-.grid .pic .n{background:rgba(5,10,14,.75);border-radius:5px;padding:.15em .35em}
-.grid .tt{position:absolute;left:0;right:0;bottom:0;padding:.35em .55em .45em;line-height:1.35;font-weight:600}
+.top .go{color:#06221a;font-weight:700;border:0;background:linear-gradient(90deg,var(--mint),var(--cy));box-shadow:0 0 14px rgba(124,243,192,.4)}
+.top .go:hover,.top .go:focus-visible{color:#06221a;background:linear-gradient(90deg,var(--mint),var(--cy));box-shadow:0 0 22px rgba(124,243,192,.7)}
+.grid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:auto;grid-auto-rows:1fr;gap:min(.6vw,1vh);padding:0 .6vw .6vw}
+.grid .wd{display:flex;align-items:end;justify-content:center;font:min(.95vw,1.7vh)/1 "Silkscreen",monospace;color:var(--mute);padding-bottom:.6vh;letter-spacing:.1em}
+/* 一天一塊記憶體：玻璃底、細邊，有日記的才亮 */
+.grid .day{position:relative;overflow:hidden;border-radius:8px;background:rgba(11,26,34,.35);border:1px dashed rgba(124,243,192,.12);font-size:min(1.1vw,1.9vh)}
+.grid .has{cursor:pointer;border:1px solid rgba(124,243,192,.35);background:var(--glass);box-shadow:inset 0 0 0 1px rgba(255,255,255,.03);
+  transition:transform .12s,border-color .12s,box-shadow .12s}
+.grid .has:hover,.grid .has:focus-visible{outline:none;border-color:var(--mint);transform:translateY(-2px);box-shadow:0 0 16px rgba(124,243,192,.35)}
+.grid .today{border:2px solid var(--mint);animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 20px rgba(124,243,192,.55)}}
+.grid .n{position:absolute;z-index:2;top:.45em;left:.5em;font:min(.95vw,1.7vh)/1 "Silkscreen",monospace;color:var(--mint);background:rgba(4,10,16,.78);border-radius:4px;padding:.2em .35em}
+.grid .none .n{background:none;color:rgba(159,176,184,.35)}
+/* 插畫日：縮圖載完才淡入；字疊在下方的漸層上 */
+.grid .pic .im{background-size:cover}
+.grid .tt{position:absolute;z-index:2;left:0;right:0;bottom:0;padding:1.6em .55em .45em;line-height:1.35;font-weight:600;background:linear-gradient(transparent,rgba(4,10,16,.92))}
 .grid .tt span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
-.grid .txt .tt{top:1.75em;bottom:auto;padding-top:.2em}
-.grid .txt .tt span{-webkit-line-clamp:2}
-.grid .txt{background:linear-gradient(160deg,rgba(37,194,232,.07),rgba(183,139,255,.05) 60%,transparent),#22262b}
-.grid .txt .tt .ex{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;margin-top:.35em;font-weight:400;font-size:.82em;line-height:1.45;color:var(--mute)}
-.grid .tag{position:absolute;top:.4em;right:.5em;font-size:.72em;color:var(--mute);border:1px solid var(--hair2);border-radius:5px;padding:0 .4em}
-.grid .pic .tt{padding-top:1.6em;background:linear-gradient(transparent,rgba(5,10,14,.92))}
-.grid .more{position:absolute;top:.35em;right:.45em;font-size:.8em;background:rgba(37,194,232,.18);border:1px solid rgba(37,194,232,.5);color:var(--cy);border-radius:6px;padding:.05em .45em}
-.grid .rest{background:url(https://yazelin.github.io/ai-brain-site/larch/sticker-sleep.webp) right -4% bottom -10%/auto 108% no-repeat,linear-gradient(160deg,rgba(183,139,255,.16),rgba(37,194,232,.06)),#1d2026;border-style:dashed;border-color:rgba(183,139,255,.35)}
-/* 背景只畫到邊框內側，半透明邊框底下才不會露出 1px 沒壓暗的縮圖 */
-.grid .day{background-clip:padding-box}
-.grid .has,.grid .rest{background-clip:padding-box}
-.grid .rest .n{color:#b78bff}
-.grid .rest b{position:absolute;left:.55em;bottom:.45em;font-weight:700;color:#d9c8ff;font-size:1.05em;letter-spacing:.1em;text-shadow:0 1px 6px rgba(0,0,0,.7)}
+/* 文字日：沒有插畫，放一張格莉奇的貼圖，字在上方 */
+.grid .txt .tt{top:1.9em;bottom:auto;right:0;padding:.1em .55em;background:none;text-shadow:0 1px 4px rgba(4,10,16,.9)}
+/* 貼圖本身有字，縮小收在右下角，標題的位置空出來 */
+.grid .txt .st{position:absolute;right:-3%;bottom:-6%;height:52%;opacity:0;transition:opacity .6s ease;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 35%);mask-image:linear-gradient(90deg,transparent,#000 35%)}
+.grid .txt .st.on{opacity:.9}
+.grid .more{position:absolute;z-index:2;top:.45em;right:.45em;font:min(.85vw,1.5vh)/1 "Silkscreen",monospace;background:rgba(183,139,255,.2);border:1px solid rgba(183,139,255,.55);color:#e2d4ff;border-radius:5px;padding:.25em .4em}
+.grid .rest{border:1px dashed rgba(183,139,255,.4);background:url(https://yazelin.github.io/ai-brain-site/larch/sticker-sleep.webp) right -4% bottom -10%/auto 100% no-repeat,rgba(30,22,48,.55)}
+.grid .rest .n{color:var(--purple)}
+.grid .rest b{position:absolute;left:.55em;bottom:.45em;font-weight:700;color:#d9c8ff;letter-spacing:.1em;text-shadow:0 1px 6px rgba(0,0,0,.7)}
 .pick{position:fixed;inset:0;background:rgba(4,8,12,.6);display:none;align-items:center;justify-content:center}
 .pick.on{display:flex}
-.pick div{background:linear-gradient(180deg,#272a2f,#191c20);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:3vh 2.4vw;display:flex;flex-direction:column;gap:1.6vh;min-width:40vw;box-shadow:0 18px 50px rgba(0,0,0,.6)}
-.pick button{font:inherit;font-size:min(1.5vw,2.6vh);background:rgba(255,255,255,.04);border:1px solid var(--hair2);border-radius:10px;padding:.6em 1em;cursor:pointer;text-align:left;color:var(--txt)}
-.pick button:hover{border-color:rgba(37,194,232,.55);color:var(--cy)}
-@media (prefers-reduced-motion:reduce){.grid .has{transition:none}.grid .has:hover{transform:none}}
+.pick div{background:rgba(11,26,34,.95);border:1px solid rgba(124,243,192,.4);border-radius:12px;padding:3vh 2.4vw;display:flex;flex-direction:column;gap:1.6vh;min-width:40vw;box-shadow:0 18px 50px rgba(0,0,0,.6)}
+.pick button{font:inherit;font-size:min(1.5vw,2.6vh);background:rgba(124,243,192,.05);border:1px solid rgba(183,139,255,.45);border-radius:8px;padding:.6em 1em;cursor:pointer;text-align:left;color:var(--txt)}
+.pick button:hover{border-color:var(--mint);color:var(--mint)}
+/* 直式：視窗貼邊，格子正方形，字變少 */
+@media (max-aspect-ratio:1/1){
+  .win{margin:1.2vh 2vw 1.6vh;border-width:4vh 2.4vw 2.4vw 2.4vw;border-image-width:4vh 2.4vw 2.4vw 2.4vw}
+  .ttl{top:-3vh;font-size:1.4vh}.top{flex-wrap:wrap;gap:1.2vh 2vw}h1{flex-basis:100%;font-size:3.4vh}h1 small{font-size:1.4vh}
+  .top button{font-size:1.7vh}.grid{flex:none;grid-auto-rows:auto;gap:1vw}.grid .day{aspect-ratio:1/1;font-size:1.5vh}.grid .wd{font-size:1.4vh}
+  .grid .n{font-size:1.3vh}.grid .tt{display:none}.grid .txt .st{height:86%;right:-4%;bottom:-6%}
+}
+@media (prefers-reduced-motion:reduce){.im,.grid .txt .st,.grid .has{transition:none}.grid .has:hover{transform:none}.grid .today{animation:none}}
 </style></head><body>
-<div class="mb"><b>格莉奇OS</b><span class="sp"></span><span>記憶體 <span class="k">4KB</span></span></div>
-<div class="win"><div class="tb"><i class="r"></i><i class="y"></i><i class="g"></i><span class="ttl">心情日記</span></div>
+<div class="im" id="wall"></div>
+<div class="mb"><b>GLITCH OS</b><span class="sp"></span><span>MEMORY <span class="k">4KB</span></span></div>
+<div class="win"><div class="ttl" id="wt">MOOD_DIARY.EXE</div>
 <div class="top"><h1 id="t"></h1><button id="prev">← 上個月</button><button id="next">下個月 →</button><button id="today" class="go" hidden></button></div>
 <div class="grid" id="g"></div></div>
 <div class="pick" id="pk"><div id="pkl"></div></div>
 <script>
 // 同步程式把這一行換成那個月的資料：{year, month, today, prev, next, days:{"29":[{key,title,thumb}]}, rest:[沒寫日記的日子], latest:最新一篇的 key（只有最新的月份有）}
 var M = /*DATA*/{"year":2026,"month":10,"today":"2026-10-29","prev":true,"next":false,"days":{"28":[{"key":"2026-10-28-1","title":"文字日","thumb":null}],"29":[{"key":"2026-10-29-1","title":"插畫日","thumb":"../images/posts/thumbs/20260804.webp"}]},"rest":[27],"latest":"2026-10-29-1"}/*END*/;
-var WP = 'https://yazelin.github.io/ai-brain-site/images/', hr = new Date().getHours();
+var BASE = 'https://yazelin.github.io/ai-brain-site/', hr = new Date().getHours();
+// 圖先在背景載，載好才淡入；已經在快取裡的（同步就 complete）直接顯示
+function fadeIn(el, url, prop){
+  var img = new Image(), set = function(){ if (prop) el.src = url; else el.style.backgroundImage = 'url("' + url + '")'; };
+  img.onload = function(){ set(); el.classList.add('on'); };
+  img.src = url;
+  if (img.complete && img.naturalWidth) { set(); el.classList.add('on', 'now'); }
+}
 // 跟格莉奇OS一樣照看的人的時間換桌布：06–17 白天、17–20 黃昏、20–06 深夜
-var wall = WP + (hr >= 6 && hr < 17 ? 'wallpaper-day.webp' : hr >= 17 && hr < 20 ? 'wallpaper.webp' : 'wallpaper-night.webp');
-document.body.style.setProperty('--wall', 'url(' + wall + ')');
+fadeIn(document.getElementById('wall'), BASE + 'images/' + (hr >= 6 && hr < 17 ? 'wallpaper-day.webp' : hr >= 17 && hr < 20 ? 'wallpaper.webp' : 'wallpaper-night.webp'));
 function go(v){
   parent.postMessage({type:'larch:set',name:'diary_go',value:v},'*');
   setTimeout(function(){parent.postMessage({type:'larch:complete',result:'go',payload:{go:v}},'*')},120);
 }
-var t = document.getElementById('t'); t.textContent = M.year + ' 年 ' + M.month + ' 月'; var cnt = Object.keys(M.days).reduce(function(a,k){return a+M.days[k].length},0); var sm = document.createElement('small'); sm.textContent = cnt + ' 篇'; t.appendChild(sm);
+var cnt = Object.keys(M.days).reduce(function(a,k){return a+M.days[k].length},0), mm = String(M.month).padStart(2,'0');
+var t = document.getElementById('t'); t.textContent = M.year + ' 年 ' + M.month + ' 月';
+var sm = document.createElement('small'); sm.textContent = 'SECTOR ' + M.year + '-' + mm + ' · ' + cnt + ' FILES'; t.appendChild(sm);
+document.getElementById('wt').textContent = 'MOOD_DIARY.EXE — ' + M.year + '.' + mm;
 var prev = document.getElementById('prev'), next = document.getElementById('next');
 prev.disabled = !M.prev; next.disabled = !M.next;
 prev.onclick = function(){go('prev')}; next.onclick = function(){go('next')};
+document.addEventListener('keydown', function(e){ if (e.key === 'ArrowLeft' && M.prev) go('prev'); else if (e.key === 'ArrowRight' && M.next) go('next'); });
 var tb = document.getElementById('today');
 if (M.latest) { tb.hidden = false; tb.textContent = M.latest.slice(0, 10) === M.today ? '看今天 →' : '看最新一篇 →'; tb.onclick = function(){go(M.latest)}; }
 var g = document.getElementById('g');
-'日一二三四五六'.split('').forEach(function(w){var d=document.createElement('div');d.className='wd';d.textContent=w;g.appendChild(d)});
+'SUN MON TUE WED THU FRI SAT'.split(' ').forEach(function(w){var d=document.createElement('div');d.className='wd';d.textContent=w;g.appendChild(d)});
 var first = new Date(M.year, M.month - 1, 1).getDay(), n = new Date(M.year, M.month, 0).getDate();
 for (var i = 0; i < first; i++) g.appendChild(document.createElement('span'));
 for (var day = 1; day <= n; day++) (function(day){
   var c = document.createElement('div'), posts = M.days[day] || [];
-  var iso = M.year + '-' + String(M.month).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+  var iso = M.year + '-' + mm + '-' + String(day).padStart(2,'0');
   var thumb = (posts.filter(function(p){return p.thumb})[0] || {}).thumb;
   c.className = 'day' + (posts.length ? ' has' : ' none') + (posts.length ? (thumb ? ' pic' : ' txt') : '') + (iso === M.today ? ' today' : '');
-  if (thumb) c.style.backgroundImage = 'url("' + thumb + '")';
-  var nn = document.createElement('span'); nn.className = 'n'; nn.textContent = day; c.appendChild(nn);
+  var nn = document.createElement('span'); nn.className = 'n'; nn.textContent = String(day).padStart(2,'0'); c.appendChild(nn);
   if ((M.rest || []).indexOf(day) >= 0) { c.className += ' rest'; var rb = document.createElement('b'); rb.textContent = '休息'; c.appendChild(rb); c.title = '格莉奇這天休息'; }
   if (posts.length) {
+    if (thumb) { var im = document.createElement('div'); im.className = 'im'; c.appendChild(im); fadeIn(im, thumb); }
+    else { var st = document.createElement('img'); st.className = 'st'; st.alt = ''; c.appendChild(st);
+      fadeIn(st, BASE + 'images/sticker-0' + (day % 9 + 1) + '.webp', true); }  // 文字日放一張貼圖，同一天每次都是同一張
     var tt = document.createElement('div'), tx = document.createElement('span');
     tt.className = 'tt'; tx.textContent = posts[0].title; tt.appendChild(tx); c.appendChild(tt);
-    if (!thumb && posts[0].excerpt) { var ex = document.createElement('span'); ex.className = 'ex'; ex.textContent = posts[0].excerpt; tt.appendChild(ex); }
-    if (!thumb && posts.length === 1) { var tg = document.createElement('span'); tg.className = 'tag'; tg.textContent = '文字'; c.appendChild(tg); }
-    if (posts.length > 1) { var s = document.createElement('span'); s.className = 'more'; s.textContent = posts.length + ' 篇'; c.appendChild(s); }
+    if (posts.length > 1) { var s = document.createElement('span'); s.className = 'more'; s.textContent = posts.length + ' FILES'; c.appendChild(s); }
+    c.tabIndex = 0; c.setAttribute('role', 'button'); c.setAttribute('aria-label', M.month + ' 月 ' + day + ' 日：' + posts[0].title);
+    c.onkeydown = function(e){ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); c.onclick(); } };
   }
   if (posts.length) c.onclick = function(){
     if (posts.length === 1) return go(posts[0].key);

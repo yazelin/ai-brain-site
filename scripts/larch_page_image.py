@@ -19,7 +19,6 @@ W, H = 1920, 1080
 CONTENT = (120, 70, 1220, 740)  # 立繪區從 x=1250；Larch 的對話框實測從 y≈756 開始
 CY, MUTE, TXT, BODY = (37, 194, 232), (138, 154, 163), (232, 238, 241), (205, 214, 219)
 WEEK = "一二三四五六日"
-PAD, BAR = 50, 56  # 視窗內距、標題列高
 
 
 def ensure_font():
@@ -60,102 +59,126 @@ def _desktop():
     return im
 
 
+FRAME = ROOT / "larch" / "ui" / "window.webp"   # 生圖的全息壓克力視窗，月曆與介面共用
+SLICE = (130, 77, 82, 75)                          # 上右下左：標題列與四角像素括號不拉伸
+PIXEL = ROOT / "larch" / "assets" / "fonts" / "Silkscreen-Regular.ttf"
+PIXEL_URL = "https://github.com/google/fonts/raw/main/ofl/silkscreen/Silkscreen-Regular.ttf"
+STICKERS = [ROOT / "images" / f"sticker-0{i}.webp" for i in range(1, 10)]
+
+
+def _pixel(size):
+    if not PIXEL.exists():
+        PIXEL.parent.mkdir(parents=True, exist_ok=True)
+        with urllib.request.urlopen(PIXEL_URL, timeout=120) as r:
+            PIXEL.write_bytes(r.read())
+    return ImageFont.truetype(str(PIXEL), size)
+
+
+def _nine(size, scale):
+    """把視窗框切九格拉到 size；scale 是邊框縮放（原圖 1536 寬，畫在 1100 寬的視窗上約 0.72）。"""
+    src = Image.open(FRAME).convert("RGBA")
+    W0, H0 = src.size
+    t, r, b, l = SLICE
+    tw, rw, bw, lw = (round(v * scale) for v in SLICE)
+    w, h = size
+    out = Image.new("RGBA", size)
+    xs = [(0, l, 0, lw), (l, W0 - r, lw, w - rw), (W0 - r, W0, w - rw, w)]
+    ys = [(0, t, 0, tw), (t, H0 - b, tw, h - bw), (H0 - b, H0, h - bw, h)]
+    for sx0, sx1, dx0, dx1 in xs:
+        for sy0, sy1, dy0, dy1 in ys:
+            out.paste(src.crop((sx0, sy0, sx1, sy1)).resize((dx1 - dx0, dy1 - dy0), Image.LANCZOS), (dx0, dy0))
+    mask = Image.new("L", size)
+    ImageDraw.Draw(mask).rounded_rectangle([0, 0, w - 1, h - 1], round(26 * scale), fill=255)
+    out.putalpha(mask)
+    return out, tw, rw, bw, lw
+
+
 def _window(im, box, title):
     x0, y0, x1, y1 = box
     shadow = Image.new("RGBA", im.size)
-    ImageDraw.Draw(shadow).rounded_rectangle([x0, y0 + 16, x1, y1 + 16], 18, fill=(0, 0, 0, 150))
-    im.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(24)))
-    grad = Image.new("RGBA", (x1 - x0, y1 - y0))
-    gg = ImageDraw.Draw(grad)
-    for y in range(y1 - y0):  # 跟網站 .win 一樣，淺上深下的深灰
-        t = y / (y1 - y0)
-        gg.line([0, y, x1 - x0, y], fill=tuple(round(a + (b - a) * t) for a, b in zip((39, 42, 47), (25, 28, 32))) + (250,))
-    mask = Image.new("L", grad.size)
-    ImageDraw.Draw(mask).rounded_rectangle([0, 0, x1 - x0 - 1, y1 - y0 - 1], 18, fill=255)
-    im.paste(grad, (x0, y0), mask)
-    lines = Image.new("RGBA", im.size)
-    lg = ImageDraw.Draw(lines)
-    lg.rounded_rectangle([x0, y0, x1, y1], 18, outline=(255, 255, 255, 26), width=2)
-    lg.rectangle([x0 + 2, y0 + 2, x1 - 2, y0 + BAR - 1], fill=(255, 255, 255, 8))
-    lg.line([x0, y0 + BAR, x1, y0 + BAR], fill=(255, 255, 255, 20), width=2)
-    im.alpha_composite(lines)
+    ImageDraw.Draw(shadow).rounded_rectangle([x0, y0 + 18, x1, y1 + 18], 20, fill=(0, 0, 0, 160))
+    im.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(26)))
+    frame, tw, rw, bw, lw = _nine((x1 - x0, y1 - y0), .72)
+    im.alpha_composite(frame, (x0, y0))
     g = ImageDraw.Draw(im)
-    for i, c in enumerate([(255, 95, 87), (254, 188, 46), (40, 200, 64)]):
-        g.ellipse([x0 + 22 + i * 30, y0 + 20, x0 + 38 + i * 30, y0 + 36], fill=c)
-    f = _font(22, 500)
-    g.text(((x0 + x1) / 2 - g.textlength(title, font=f) / 2, y0 + 13), title, font=f, fill=(185, 196, 203))
-    return g
+    f = _pixel(22)
+    g.text(((x0 + x1) / 2 - g.textlength(title, font=f) / 2, y0 + tw * .3), title, font=f, fill=(22, 40, 58))  # 標題列是淺色壓克力，字用深色
+    return g, (x0 + lw, y0 + tw, x1 - rw, y1 - bw)
 
 
-def _wrap(g, text, font, width):
-    lines, cur = [], ""
-    for ch in text.replace("\n", ""):
-        if g.textlength(cur + ch, font=font) > width:
-            lines.append(cur)
-            cur = ""
-        cur += ch
-    return lines + ([cur] if cur else [])
+PUNCT = set("，。、；：！？）」』》 ")
+SOFT = set("的了再先就要把讓和與也還才在是到")  # 斷在這些字後面，讀起來比較順
 
 
-def _paragraphs(g, body, font, width):
-    """內文照段落換行，段落之間空半行。回傳 [(行, 段落開頭?)]。"""
-    out = []
-    for para in [p.strip() for p in body.split("\n") if p.strip()]:
-        out += [(l, i == 0 and bool(out)) for i, l in enumerate(_wrap(g, para, font, width))]
-    return out
+def _wrap_title(text, font, maxw):
+    """行數最少、斷點盡量落在標點、空格或虛字後面、各行長度接近。英文單字不拆，標點不放行首。"""
+    n = len(text)
 
+    def cut_cost(i):
+        a, b = text[i - 1], text[i]
+        if b in PUNCT or (a.isascii() and a.isalnum() and b.isascii() and b.isalnum()):
+            return None
+        return 0 if a in PUNCT or a == "—" and b != "—" else 1 if a in SOFT or a.isascii() or b.isascii() else 4
 
-def _fit_body(g, body, width, height):
-    for size in range(32, 19, -2):
-        f = _font(size, 400)
-        lines = _paragraphs(g, body, f, width)
-        lh = round(size * 1.6)
-        need = len(lines) * lh + sum(gap for _, gap in lines) * lh // 2
-        if need <= height:
-            return f, lines, lh
-    return f, lines[: height // lh], lh  # ponytail: 32→20 號都塞不下就截斷，目前最長的內文遠低於這個量
+    best = {0: (0, 0, [])}
+    for i in range(n):
+        if i not in best:
+            continue
+        rows, cost, lines = best[i]
+        for j in range(i + 1, n + 1):
+            ln = text[i:j].strip()
+            if font.getlength(ln.rstrip("".join(PUNCT))) > maxw:
+                break
+            c = 0 if j == n else cut_cost(j)
+            if c is None or (j < n and text[j - 1] == "—" and text[j] == "—"):
+                continue
+            cand = (rows + 1, cost + c, lines + [ln])
+            key = lambda x: (x[0], x[1], max(map(len, x[2])) - min(map(len, x[2])))
+            if j not in best or key(cand) < key(best[j]):
+                best[j] = cand
+    if n not in best:
+        return [text[i:i + 7] for i in range(0, n, 7)]
+    return best[n][2]
 
 
 def render_page(post, out, illustration=None):
+    """左欄：日期、類型、標題；右邊：插畫，文字日放一張格莉奇的貼圖（內文交給對話框逐句講）。"""
     im = _desktop()
-    g = ImageDraw.Draw(im)
-    x0, y0, x1, y1 = CONTENT
-    inner = x1 - x0 - 2 * PAD
-    title_font = _font(56, 700)
-    title = _wrap(g, post.get("title", ""), title_font, inner)[:2]
-    top = y0 + BAR + 36
-    head = 46 + len(title) * 74  # 日期列＋標題
-    room = y1 - 40 - (top + head + 20)
-    if illustration:
-        side = min(room, 560)
-        right = min(x1, x0 + 2 * PAD + max([round(g.textlength(l, font=title_font)) for l in title] + [side, 520]))
-        bottom, body = y1, None
-    else:
-        bf, body, lh = _fit_body(g, post.get("body", ""), inner, room)
-        right = x1
-        bottom = min(y1, top + head + 20 + len(body) * lh + sum(gap for _, gap in body) * lh // 2 + 40) if body else top + head + 30
-    g = _window(im, (x0, y0, right, bottom), f"心情日記 — {post['date']}.txt")
-    y = top
+    g, (ix0, iy0, ix1, iy1) = _window(im, CONTENT, f"MOOD_DIARY  {post['date']}.TXT")
+    side = min(iy1 - iy0 - 40, 560)
+    px = ix1 - 24 - side
+    py = iy0 + (iy1 - iy0 - side) // 2
+    col = (ix0 + 30, px - 34)  # 左欄的左右邊界
+    y = iy0 + 26
     label = date_label(post["date"])
-    g.text((x0 + PAD, y), label, font=_font(26, 500), fill=CY)
-    tx = x0 + PAD + g.textlength(label, font=_font(26, 500)) + 20
-    g.rounded_rectangle([tx, y + 2, tx + 70, y + 36], 8, outline=(70, 78, 86), width=2)
-    g.text((tx + 13, y + 3), "插畫" if illustration else "文字", font=_font(22, 500), fill=MUTE)
-    y += 46
-    for line in title:
-        g.text((x0 + PAD, y), line, font=title_font, fill=TXT)
-        y += 74
-    y += 20
+    g.text((col[0], y), label, font=_font(26, 500), fill=CY)
+    tag = "插畫" if illustration else "文字"
+    tf = _font(20, 500)
+    ty = y + 44
+    tw = g.textlength(tag, font=tf)
+    g.rounded_rectangle([col[0], ty, col[0] + tw + 24, ty + 32], 6, outline=(124, 243, 192), width=2)
+    g.text((col[0] + 12, ty + 2), tag, font=tf, fill=(124, 243, 192))
+    y = ty + 56
+    title_font = _font(50, 700)
+    for line in _wrap_title(post.get("title", ""), title_font, col[1] - col[0])[:5]:
+        g.text((col[0], y), line.rstrip("，、；"), font=title_font, fill=TXT)
+        y += 68
+    g.text((col[0], iy1 - 46), "GLITCH OS · 4KB", font=_pixel(18), fill=(159, 176, 184))
     if illustration:
         pic = Image.open(illustration).convert("RGB").resize((side, side), Image.LANCZOS)
+        glow = Image.new("RGBA", im.size)
+        ImageDraw.Draw(glow).rounded_rectangle([px - 6, py - 6, px + side + 6, py + side + 6], 16, fill=(124, 243, 192, 90))
+        im.alpha_composite(glow.filter(ImageFilter.GaussianBlur(14)))
         mask = Image.new("L", (side, side))
-        ImageDraw.Draw(mask).rounded_rectangle([0, 0, side - 1, side - 1], 14, fill=255)
-        im.paste(pic, (x0 + PAD, y), mask)
+        ImageDraw.Draw(mask).rounded_rectangle([0, 0, side - 1, side - 1], 12, fill=255)
+        im.paste(pic, (px, py), mask)
+        ImageDraw.Draw(im).rounded_rectangle([px - 2, py - 2, px + side + 1, py + side + 1], 13, outline=(124, 243, 192, 200), width=2)
     else:
-        for line, gap in body:
-            y += lh // 2 if gap else 0
-            g.text((x0 + PAD, y), line, font=bf, fill=BODY)
-            y += lh
+        # 同一天每次都是同一張貼圖（跟月曆上那格一樣）
+        st = Image.open(STICKERS[int(post["date"][8:]) % 9]).convert("RGBA")
+        k = side * .9 / max(st.size)  # 原圖只有 370×320，放大到視窗高度的九成
+        st = st.resize((round(st.width * k), round(st.height * k)), Image.LANCZOS)
+        im.alpha_composite(st, (px + (side - st.width) // 2, py + (side - st.height) // 2))
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
     im.convert("RGB").save(out, "WEBP", quality=82, method=6)

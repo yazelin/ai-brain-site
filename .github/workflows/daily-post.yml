@@ -66,9 +66,15 @@ jobs:
           git pull --ff-only
           # 先切句、產背景圖並推上去，Larch 的卡片才讀得到 GitHub Pages 上的背景
           python scripts/larch_sync.py --dry-run
-          git add -- larch/pages/*.json larch/bg/*.webp
+          git add -- larch/pages/*.json larch/bg/*.webp larch/thumbs/*.webp
           if ! git diff --cached --quiet; then
             git commit -m "larch: $(TZ=Asia/Taipei date +%F) 同步"
             git push
+            # 等 GitHub Pages 部署好剛推的圖再同步，不然卡片指到的新背景會有一兩分鐘是 404
+            f=$(git diff --name-only --diff-filter=AM HEAD~1 HEAD -- larch/bg larch/thumbs | head -1)
+            for i in $(seq 1 40); do
+              [ "$(curl -s -o /dev/null -w '%{http_code}' "https://yazelin.github.io/ai-brain-site/$f")" = 200 ] && break
+              sleep 15
+            done
           fi
           python scripts/larch_sync.py || { echo "::warning::Larch 同步失敗，下一班會自動補上"; exit 1; }

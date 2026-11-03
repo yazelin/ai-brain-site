@@ -69,7 +69,7 @@ class BuildTests(unittest.TestCase):
                                            ("2026-10-29-1", post("2026-10-29", type_="image", title="插畫日"))],
                                 "2026-10-31", True, False, BASE, "2026-08-01")["days"]
         self.assertEqual(days["28"], [{"key": "2026-10-28-1", "title": "文字日", "thumb": None, "excerpt": "一句。"}])
-        self.assertEqual(days["29"][0]["thumb"], BASE + "/images/posts/thumbs/20261029.webp")
+        self.assertEqual(days["29"][0]["thumb"], BASE + "/larch/thumbs/20261029.webp")  # 月曆專用的 200px 縮圖
 
     def test_text_day_excerpt_is_short_single_line(self):
         long = post("2026-10-28", body="第一段" * 30 + "\n\n第二段")
