@@ -67,7 +67,7 @@ def calendar_data(year, month, entries, today, has_prev, has_next, base, start):
     for key, p in entries:
         img = p.get("image") if p.get("type") == "image" else None
         # 月曆格子用網站本來就有的 360px 縮圖，整個月才不會一次載十幾張大圖。
-        thumb = f"{base}/images/posts/thumbs/{img.rsplit('/', 1)[-1]}" if img else None
+        thumb = f"{base}/larch/thumbs/{Path(img).stem}.webp" if img else None  # 200px 的月曆專用縮圖，見 make_thumbs
         excerpt = None if thumb else "".join(str(p.get("body", "")).split())[:60]  # 文字日的格子放開頭一小段
         days.setdefault(str(int(p["date"][8:])), []).append(
             {"key": key, "title": p.get("title", ""), "thumb": thumb, "excerpt": excerpt})
@@ -162,6 +162,20 @@ def apply(todo, boards, api, project_id, share):
     if share:
         return api.refresh_share_link(project_id)
     return None
+
+
+def make_thumbs(posts, root):
+    """月曆格子用的 200px 縮圖（網站的縮圖是 360px，格子只顯示約 100px）。已經有的不重產。"""
+    from PIL import Image
+    out_dir = root / "larch" / "thumbs"
+    for p in posts:
+        img = p.get("image") if p.get("type") == "image" else None
+        out = out_dir / f"{Path(img).stem}.webp" if img else None
+        if out and not out.exists() and (root / img).exists():
+            out_dir.mkdir(parents=True, exist_ok=True)
+            im = Image.open(root / img).convert("RGB")
+            im.thumbnail((200, 200), Image.LANCZOS)
+            im.save(out, "WEBP", quality=80, method=6)
 
 
 def render_backgrounds(posts, bg_dir, root, render):
@@ -281,10 +295,41 @@ def remote_descriptions(api, project_id):
     return {b["id"]: b.get("description") or "" for b in proj.get("boards", [])}
 
 
+UI_SURFACES = ("title", "dialogue")
+
+
+def ui_settings(base):
+    """標題畫面、縮圖與播放設定。stageFit 用 contain：背景是一整張桌面，直式手機上也要看得到整個視窗。"""
+    return {"titleScreenEnabled": True, "backgroundShade": 0, "stageFit": "contain",
+            "cgGalleryEnabled": True, "cgGallerySource": "picked"}
+
+
+def ui_html(surface):
+    return (ROOT / "larch" / "ui" / f"{surface}.html").read_text("utf-8")
+
+
+def sync_ui(api, project_id, base):
+    """跟線上不同才寫。現在的介面只能從 GET /projects/<id> 讀（/settings 不帶 customInterfaces）。"""
+    settings = api.get(f"/projects/{project_id}/settings")["settings"]
+    proj = api.get(f"/projects/{project_id}")
+    ci = ((proj.get("project") or proj).get("settings") or {}).get("customInterfaces") or {}
+    for surface in UI_SURFACES:
+        have = ci.get(surface) or {}
+        if have.get("html") != ui_html(surface) or not have.get("enabled"):
+            api.request("PUT", f"/projects/{project_id}/interface", {"surface": surface, "html": ui_html(surface), "enabled": True,
+                                                                      "expectedHtml": have.get("html") or "", "summary": f"更新{surface}介面"})
+            log.info("已更新 %s 介面", surface)
+    changes = {k: v for k, v in ui_settings(base).items() if settings.get(k) != v}
+    if changes:
+        api.patch_settings(project_id, changes, "播放設定")
+        log.info("已更新設定：%s", ", ".join(changes))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default=str(ROOT / "larch" / "config.json"))
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--local", help="只寫專案 JSON 到這個路徑給 larch-preview 看（放在 repo 根目錄），不連 Larch")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     cfg = json.loads(Path(args.config).read_text("utf-8"))
@@ -295,12 +340,26 @@ def main():
     pages_dir, bg_dir = ROOT / "larch" / "pages", ROOT / "larch" / "bg"
 
     def lines_for(key, p):
+        if args.local:  # 本機預覽不問模型：有快取用快取，沒有就照標點切
+            return larch_pages.load_or_split(key, p, lambda _: (_ for _ in ()).throw(ValueError("本機預覽")), pages_dir)
         return larch_pages.load_or_split(key, p, ask, pages_dir)
 
     render_backgrounds(posts, bg_dir, ROOT, larch_page_image.render_page)
+    make_thumbs(posts, ROOT)
 
     today = dt.datetime.now(TZ).date().isoformat()
     boards = build(posts, lines_for, today, cfg["base_url"])
+    if args.local:
+        proj = {"name": "格莉奇日記", "description": cfg.get("description"),
+                "boards": [{"id": k, **v} for k, v in sorted(boards.items(), key=lambda kv: kv[0] != "board-main")],
+                "variables": CHAT_VARS,
+                "settings": {**ui_settings(cfg["base_url"]), "cgGalleryItems": cg_items(posts, cfg["base_url"]),
+                             "plugins": {HUD_ID: hud_plugin()},
+                             "customInterfaces": {s: {"enabled": True, "html": ui_html(s)} for s in UI_SURFACES}}}
+        # 預覽伺服器把 /files/ 對到 JSON 所在的資料夾（repo 根），Pages 網址換成它，還沒推上去的素材也看得到
+        Path(args.local).write_text(json.dumps(proj, ensure_ascii=False).replace(cfg["base_url"], "/files"), "utf-8")
+        print(len(posts), "篇", sorted(boards))
+        return
     api = Larch(os.environ["LARCH_AGENT_KEY"])
     pid = cfg["project_id"]
     if args.dry_run:
@@ -308,6 +367,7 @@ def main():
         print(f"要更新 {len(todo)} 張 board：{', '.join(todo) or '（沒有）'}", flush=True)
         return
     replaced = sync_project_meta(api, pid, cfg.get("description"), {HUD_ID: hud_plugin()}, CHAT_VARS)
+    sync_ui(api, pid, cfg["base_url"])
     sync_cg(api, pid, cg_items(posts, cfg["base_url"]))
     todo = plan(boards, {} if replaced else remote_descriptions(api, pid))
     print(f"要更新 {len(todo)} 張 board：{', '.join(todo) or '（沒有）'}", flush=True)
