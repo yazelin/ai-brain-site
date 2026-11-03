@@ -268,6 +268,16 @@ class PublishTests(unittest.TestCase):
         self.assertTrue(ls.publish_body(build(posts), posts, "2026-10-31", "介紹")["notifyFollowers"])
         self.assertFalse(ls.publish_body(build(posts), posts, "2026-11-01", "介紹")["notifyFollowers"])
 
+    def test_same_day_republish_bumps_version(self):
+        class Api:
+            def __init__(self, v): self.v = v
+            def get(self, path): return {"works": [{"projectId": "p", "version": self.v}]}
+        self.assertEqual(ls.next_version(Api("v26.11.02"), "p", "v26.11.03"), "v26.11.03")
+        self.assertEqual(ls.next_version(Api("v26.11.03"), "p", "v26.11.03"), "v26.11.03.2")
+        self.assertEqual(ls.next_version(Api("v26.11.03.2"), "p", "v26.11.03"), "v26.11.03.3")
+        self.assertEqual(ls.next_version(Api("7"), "p", "v26.11.03"), "v26.11.03")
+        self.assertEqual(ls.next_version(Api("v26.11.03"), "other", "v26.11.03"), "v26.11.03")
+
     def test_published_today_uses_taipei_date(self):
         class Api:
             def get(self, path):
