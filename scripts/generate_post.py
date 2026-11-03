@@ -85,7 +85,7 @@ TEXT_PROMPT = (
 
 IMAGE_PROMPT_TPL = (
     persona.BASE + "\n\n"
-    "REFERENCE IMAGES:\n- image 1: " + persona.REF_DESC + "\n\n"
+    "REFERENCE IMAGES:\n- image 1: " + persona.REF_DESC + "\n- image 2: " + persona.REF_SHEET_DESC + "\n\n"
     + persona.SHEET + "\n\n"
     "SCENE (turn this into a single vivid 1:1 illustration):\n{scene}\n\n"
     "Captions/text in the image (if any) MUST be Traditional Chinese or English only.\n\n"
@@ -356,7 +356,7 @@ def gen_image_post(inspiration, scene, stickers=None):
 
 
 def generate_image(prompt):
-    """Gemini 影像模型 + 一張參考圖（inline_data）。回傳相對路徑或 None。"""
+    """Gemini 影像模型 + 兩張參考圖（inline_data：畫風錨、三視圖）。回傳相對路徑或 None。"""
     key = os.getenv("GEMINI_API_KEY", "")
     if not key:
         print("  沒有 GEMINI_API_KEY，跳過出圖。", flush=True)
@@ -375,9 +375,11 @@ def generate_image(prompt):
         i += 1
 
     parts = [{"text": prompt}]
-    parts.append({"inline_data": {
-        "mime_type": mimetypes.guess_type(ref.name)[0] or "image/png",
-        "data": base64.b64encode(ref.read_bytes()).decode()}})
+    # 順序要對上 prompt 的 image 1（畫風錨）、image 2（三視圖）
+    for r in (ref, ROOT / persona.REF_SHEET):
+        parts.append({"inline_data": {
+            "mime_type": mimetypes.guess_type(r.name)[0] or "image/png",
+            "data": base64.b64encode(r.read_bytes()).decode()}})
     body = {"contents": [{"parts": parts}],
             "generationConfig": {"responseModalities": ["IMAGE", "TEXT"]}}
     base_url = (_GEMINI_WEB_BASE_URL or "https://generativelanguage.googleapis.com").rstrip("/")

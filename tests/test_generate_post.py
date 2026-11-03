@@ -152,6 +152,7 @@ class PersonaTests(unittest.TestCase):
         from scripts import persona
 
         self.assertEqual(persona.REF_IMAGE, "images/sticker-01.webp")
+        self.assertTrue((persona.ROOT / persona.REF_SHEET).exists())
         # 三視圖畫的是條狀天線裝置。舊斷言鎖的是 "CAT-EAR ANTENNAS",
         # 那句跟設定稿對不上,等於用測試把錯誤釘住。
         self.assertIn("ANTENNA DEVICES", persona.SHEET)
