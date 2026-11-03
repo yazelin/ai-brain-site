@@ -18,6 +18,11 @@ _P = json.loads((ROOT / "persona.json").read_text(encoding="utf-8"))
 # 注意這不是 characters.glitch.ref（那張三視圖是聊天畫自畫像用的）。
 REF_IMAGE = _P["styleAnchor"]
 REF_DESC = "the official character art / style anchor for Glitch"
+# 角色設計以三視圖為準（髮型、臉、整套衣服），日記插畫當 image 2 一起送。
+# 只送貼圖時，模型常照文字把頭髮畫成整齊的漸層鮑伯頭，看起來就不是她。
+REF_SHEET = _P["modelSheet"]
+REF_SHEET_DESC = ("the three-view model sheet of Glitch (front, side, back). It is the authority for her "
+                  "hair shape, face, antennas and the full outfit; match it exactly")
 
 _G = _P["characters"]["glitch"]
 IDENTITY = _G["identity"]
