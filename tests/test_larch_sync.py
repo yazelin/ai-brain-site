@@ -258,6 +258,8 @@ class PublishTests(unittest.TestCase):
         self.assertEqual(b["publishedBoardIds"], ["board-main", "m-2026-09", "m-2026-10"])
         self.assertEqual((b["startBoardId"], b["description"]), ("board-main", "介紹"))
         self.assertEqual(b["updateNote"], "新增 10/30 的日記〈大鳥鳥〉")
+        self.assertEqual(b["version"], "v26.10.30")
+        self.assertEqual(ls.publish_body(build(posts), posts, "2027-01-05", "介紹")["version"], "v27.01.05")
         self.assertEqual(ls.publish_body(build(posts), posts, "2026-10-31", "介紹")["updateNote"], "更新日記內容")
 
     def test_only_illustrated_days_notify_followers(self):
