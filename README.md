@@ -73,7 +73,7 @@ flowchart LR
 1. 確認允許的 Origin，處理 CORS。
 2. 以記憶體內計數器限制每個 IP 每分鐘最多 12 次請求。
 3. 為聊天注入格莉奇的繁體中文人設與本機記憶摘要。
-4. 將 `/chat`、`/summarize`、`/img` 轉送到自架 `gemini-web`。
+4. 將 `/chat`、`/summarize`、`/img` 轉送到自架 `gemini-web`；`POST /img` 每人每天限 `IMG_DAILY_LIMIT` 張（存 D1），`GET /img/file?job=` 把畫好的圖當附件下載。
 5. 從 Cloudflare secret 注入 `GEMINI_API_KEY`；key 不會進入前端或 Git 歷史。
 
 目前文字模型預設為 `gemini-2.5-flash`，圖片模型預設為 `gemini-2.5-flash-image`，都可透過 Worker vars 覆寫。
@@ -177,9 +177,24 @@ npx wrangler deploy
 | `GEMINI_WEB_BASE_URL` | `gemini-web` 的 Google GenAI 相容端點 | `https://ching-tech.ddns.net/gemini-web` |
 | `MODEL` | 聊天與摘要模型 | `gemini-2.5-flash` |
 | `IMAGE_MODEL` | 聊天生圖模型；未設定時使用程式預設 | `gemini-2.5-flash-image` |
-| `ALLOWED_ORIGINS` | 可呼叫 Worker 的完整 Origin，逗號分隔 | 正式 GitHub Pages Origin；本機測試時加入精確 port |
+| `ALLOWED_ORIGINS` | 可呼叫 Worker 的完整 Origin，逗號分隔；`null` 代表 sandbox iframe（Larch 的 HUD 與小遊戲卡） | `https://yazelin.github.io,http://localhost:*,https://localhost:*,null` |
+| `IMG_DAILY_LIMIT` | 每人（同 IP）每天（台北日期）能送幾次 `POST /img`；0 或負數＝不限 | `3` |
 
-若 Worker 網址改變，也要同步修改 `index.html` 中的 `CHAT_URL`、`SUM_URL` 與 `IMG_URL`。
+若 Worker 網址改變，也要同步修改 `index.html` 中的 `CHAT_URL`、`SUM_URL` 與 `IMG_URL`，以及 `larch/hud/glitch-phone.html` 的 `IMG`。
+
+每日出圖額度存在 D1（跟語音節點同一個庫 `glitch-nodes`，表 `img_quota`、`img_jobs`）。第一次部署或新增 migration 後要先套用：
+
+```bash
+cd worker
+npx wrangler d1 migrations apply glitch-nodes --remote
+npx wrangler deploy
+```
+
+沒套 migration 時 Worker 會退回記憶體計數（isolate 回收就歸零、各機房各算各的），不會壞掉，但額度等於沒擋。
+
+**白名單與 `null`。** Larch 的 HUD 與小遊戲卡是 `srcdoc` 加 `sandbox="allow-scripts"`、`referrerpolicy="no-referrer"` 的 iframe，送出的 Origin 是字串 `null`，沒有 Referer（2026-11-16 用 Chrome 照同樣的框實測）。`null` 鎖不到 larch.ink，任何網站的 sandbox iframe 都長這樣，所以真正擋濫用的是每人每天的出圖額度與每分鐘限流。舊版 Worker 對白名單外的 Origin 回 `access-control-allow-origin: null`，瀏覽器會拿它比對 sandbox 的 `Origin: null`，等於一直放行所有 sandbox iframe；現在白名單外不給這個標頭，`null` 要明寫才放行，拿掉就真的關掉。
+
+**額度怎麼算。** 「每人」是同一個 `CF-Connecting-IP`（先做 SHA-256 才存，D1 裡沒有原始 IP），「每天」是台北日期。網站與 Larch 共用同一份額度：只對某個 Origin 設限沒有用，`curl` 可以自己填 Origin。送單前先佔一格（一句 SQL 完成，同時兩個請求不會一起擠過最後一格），上游送單失敗或 job 最後畫失敗就把那格還回去。同一個學校或公司網路的人共用一份；手機換基地台換了 IP 會多拿到額度。
 
 ### GitHub Actions secrets 與 variables
 
@@ -205,7 +220,7 @@ npx wrangler deploy
 - 使用 AI 功能時，最近 16 則文字訊息與記憶摘要會送往 Cloudflare Worker，再交由 `gemini-web` 處理。
 - 清除網站資料會一併刪除本機聊天歷史、記憶、桌布與虛擬下載檔案；目前沒有雲端復原機制。
 - Giscus 只在開啟「留言」視窗時載入，留言會公開保存於本 repo 的 GitHub Discussions。
-- Worker 的每 IP 限流保存在 isolate 記憶體中，isolate 回收後會重置；它是輕量防連點，不是持久配額系統。
+- Worker 的每 IP 每分鐘限流保存在 isolate 記憶體中，isolate 回收後會重置；它是輕量防連點，不是持久配額系統。每天的出圖額度另外存在 D1，不受 isolate 回收影響。
 - PWA 快取不包含跨域聊天／生圖 API，因此離線時只能使用已快取內容與本機資料。
 - 被別的網站用 sandbox iframe 嵌入時（例如 Larch 的小遊戲卡），瀏覽器不給 localStorage、IndexedDB 與 Service Worker：站會以「網路模式」開機，聊天、日記等照常運作（資料改存在記憶體），但那個環境裡什麼都不會被記住。
 
@@ -243,7 +258,8 @@ npx wrangler deploy
 │   └── remove_chroma_key.py    # 去背工具
 ├── tests/
 │   ├── test_generate_post.py   # 日記產線與人設載入的單元測試
-│   └── test_tags.mjs           # 標記解析（parseTags）的單元測試
+│   ├── test_tags.mjs           # 標記解析（parseTags）的單元測試
+│   └── hud_draw_e2e.mjs        # 格莉奇手機畫圖的端到端測試（本機 wrangler＋假上游＋Chrome，不在 CI 跑）
 └── .github/workflows/          # 每日與手動素材自動化，以及 CI 檢查
 ```
 
@@ -270,6 +286,10 @@ npx wrangler deploy
 - **每晚同步**：`daily-post.yml` 發完日記後跑 `scripts/larch_sync.py`，先產日記頁背景（`larch/bg/`）和月曆的 200px 縮圖（`larch/thumbs/`）推上去，等 Pages 部署好再更新 Larch 的白板、標題畫面與對話框（`larch/ui/`）、月曆（`larch/calendar.html`）。有新日記的晚上自動更新市集版，版號是日期（`v26.11.04`）。
 - **介面**：格莉奇OS 的全息桌面。四個畫面共用一張生圖的全息壓克力視窗框（`larch/ui/window.webp`，CSS 與 Pillow 都照 `130 77 82 75` 切九格）。標題畫面先跑 BIOS 開機；月曆是「記憶體磁區」，文字日放一張貼圖；日記頁左欄是標題、右邊是插畫，文字日的內文交給對話框逐句講。
 - **本機預覽**：`python3 scripts/larch_sync.py --local _preview.json`，再用 larch-preview 開 `_preview.json`，不會連 Larch。
+- **格莉奇手機**（右上角 HUD，`larch/hud/glitch-phone.html`）：聊天走 phone-chat-relay；讀者請她畫圖時，她在回覆裡放跟格莉奇OS 同一套的 `[draw:glitch|英文 prompt]` 或 `[draw:none|…]` 標記（手機版不疊貼圖），HUD 照網站的先打後查：`POST /img` 拿 jobId，每 3 秒 `GET /img?job=` 查到完成或失敗，最多等 10 分鐘。
+  - **jobId 存在對話紀錄裡**（跨週目保留的 `glitch_chat` 變數），圖本身只放記憶體：一張圖的 data URL 動輒上 MB，Larch 的字串變數超過 10 萬字會整筆丟掉。重新整理或關掉再來時，畫到一半的馬上接著查，畫好的等打開手機才用 jobId 回 Worker 重新載入。收起手機時輪詢照跑。網路斷了連續 5 次就先停，狀態留著，下次打開再接。gemini-web 目前不清舊 job，所以畫好的圖之後也載得回來；哪天上游開始清，就會顯示「這張圖已經找不到了」。
+  - **下載**：Larch 的框沒有 `allow-downloads`，框裡的 `<a download>` 會被瀏覽器靜默擋掉（拿掉 sandbox 的同一個 HUD 就下載得到，測試裡有這組對照）。所以按「下載」時同時攤開另存方法：電腦右鍵「另存圖片」、手機長按圖片，或複製 `…/img/file?job=` 直連網址到瀏覽器打開，那個網址回的是附件。
+  - **測試**：`node tests/hud_draw_e2e.mjs`，起本機 `wrangler dev`（本機 D1、假 gemini-web、假轉接站）和一個照 Larch 播放器建框的假宿主，涵蓋送出、輪詢、完成、失敗、額度用完、下載、重新整理與收起後接回，以及 Worker 重開後額度仍在。把白名單的 `null` 拿掉再跑（`E2E_ALLOWED_ORIGINS=https://yazelin.github.io`）畫圖相關項目應該全部失敗。
 
 ## 回報問題與交流
 

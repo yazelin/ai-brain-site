@@ -69,6 +69,19 @@ input::placeholder{color:#7d8890}
 /* 跟封面「每日更新」同一套：透明底、薄荷綠外框與字，不用亮底配深字 */
 #send{min-width:60px;min-height:40px;border-radius:9px;background:rgba(124,243,192,.08);border:2px solid var(--mint);color:var(--mint);font-weight:700}
 #send:not(:disabled):hover{background:rgba(124,243,192,.18)}
+/* 畫圖：泡泡裡放圖與下載鈕；點圖在手機畫面裡放大 */
+.pic{display:block;width:100%;max-width:260px;border-radius:10px;margin:6px 0;cursor:zoom-in;background:#14171b}
+.drawing{display:flex;align-items:center;gap:6px;color:var(--mute)}
+.note{display:block;color:var(--mute);font-size:11px;margin-top:2px}
+.dl{margin-top:2px;min-height:32px;padding:0 12px;border-radius:8px;background:rgba(124,243,192,.08);border:1px solid var(--mint);color:var(--mint);font-size:12px;font-weight:700}
+.save{margin-top:6px;font-size:11px;color:var(--mute);white-space:normal}
+.save[hidden]{display:none}
+.save div{display:flex;gap:6px;margin-top:4px}
+.save input{min-height:30px;font-size:11px;padding:0 8px}
+.save button{min-height:30px;padding:0 10px;border-radius:8px;background:#3a3f46;color:var(--ink);font-size:11px}
+#zoom{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(4,8,12,.92);z-index:5;cursor:zoom-out;padding:12px}
+#zoom.on{display:flex}
+#zoom img{max-width:100%;max-height:100%;border-radius:10px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style></head>
 <body>
@@ -84,16 +97,23 @@ input::placeholder{color:#7d8890}
   <div id="log" aria-live="polite"></div>
   <!-- HUD 的框沒有 allow-modals，confirm() 不會跳出來，所以確認做在手機畫面裡 -->
   <div id="ask" class="ask" hidden><p>要清空和格莉奇的對話嗎？名字會保留。</p><div><button id="no" type="button">取消</button><button id="yes" type="button">清空</button></div></div>
+  <div id="zoom" role="dialog" aria-label="放大的圖"><img id="zoomImg" alt="格莉奇畫的圖"></div>
   <div class="bar"><input id="in" autocomplete="off" maxlength="300" enterkeyhint="send"><button id="send" type="button">傳送</button></div>
 </section>
 <script>
 var RELAY = 'https://phone-chat-relay.yazelinj303.workers.dev/chat';
+// 畫圖照格莉奇OS 的先打後查：POST /img 拿 jobId，再 GET /img?job= 輪詢。聊天仍走上面的轉接站。
+var IMG = 'https://glitch-chat.yazelinj303.workers.dev/img';
+var POLL = 3000, DRAW_MAX = 10 * 60 * 1000, NET_TRIES = 5;
 var SITE = 'https://yazelin.github.io/ai-brain-site/';
 var AVATAR = SITE + 'images/avatar.webp';
 var NAME_VAR = 'glitch_reader_name', CHAT_VAR = 'glitch_chat', MAX = 40;
 var PAD = 12, OPEN = {w: 360 + 2 * PAD, h: 600 + 2 * PAD}, SHUT = {w: 64 + 2 * PAD, h: 64 + 2 * PAD};
 
 var name = '', chat = [], cardId = '', busy = false, inited = false, posts = null, askingName = false;
+// 圖本身（data URL，動輒上 MB）只放記憶體：Larch 字串變數超過 10 萬字會整筆丟掉。
+// 對話紀錄裡只存 jobId，重新整理或關掉再來時拿 jobId 回 Worker 重新查，畫到一半的接著等，畫好的重新載入。
+var imgs = {}, tracking = {}, els = {};
 var $ = function (id) { return document.getElementById(id); };
 $('fabImg').src = $('av').src = AVATAR;
 
@@ -115,9 +135,10 @@ function row(cls, text) {
 }
 function render() {
   $('log').innerHTML = '';
-  chat.forEach(function (m) { row(m.role === 'user' ? 'me' : 'her', m.content); });
+  els = {};
+  chat.forEach(function (m) { if (m.job) drawRow(m); else row(m.role === 'user' ? 'me' : 'her', m.content); });
   if (askingName) row('her', name ? '要改成什麼名字？' : '逼——嗶！你好，我是格莉奇。先跟我說你叫什麼名字？');
-  $('in').placeholder = askingName ? '輸入你的名字' : '傳訊息給格莉奇';
+  $('in').placeholder = askingName ? '輸入你的名字' : '傳訊息給格莉奇，也可以請她畫圖';
   $('sub').textContent = name ? '正在跟 ' + name + ' 聊天' : '線上';
 }
 
@@ -145,6 +166,9 @@ var PERSONA = [
   '你很聰明，只是記性不好：事實、判斷、推理都完整，卡住的只有把記憶叫出來。「4KB」是你講話時拿來自嘲的，回答問題時能力是完整的，不要裝笨或裝當機。'
 ].join('\n');
 
+// 畫圖標記跟格莉奇OS（worker/worker.js 的 SYSTEM、js/tags.js）同一套語法，只是這裡不疊貼圖
+var DRAW_RULE = '畫圖：對方明確請你畫圖時，在回覆最後自己獨立一行放 [draw:glitch|英文 prompt]（畫你自己，系統會附上你的設定稿）或 [draw:none|英文 prompt]（只畫場景，畫面裡沒有你）。prompt 用具體的英文寫，裡面不能有 | [ ] 這三個符號。這個標記對方看不到，系統會去畫，要 30 秒到幾分鐘，不要說馬上好。畫圖每天有張數上限，用完了系統會告訴對方。對方沒要求就不要畫。黑洞先生沒有設定稿，畫不出來，不要讓他入鏡。';
+
 function system() {
   var d = diaryOf(cardId);
   return [
@@ -152,6 +176,7 @@ function system() {
     name ? '對方叫「' + name + '」。自然地叫對方名字就好，不用每句都叫。對方是讀者，不是黑洞先生。' : '對方是讀者，不是黑洞先生。',
     '個性：好奇、真心喜歡人類、有點自信過頭。對方問問題就認真想清楚，給正確、具體的回答；不確定的事老實說不知道，不要亂編，也不要編你們過去的共同回憶。',
     '說話方式：繁體中文、第一人稱、像傳訊息一樣口語，一次 1 到 3 句。口頭禪「逼——嗶！」「這不是 Bug，是 Feature！」偶爾用一次就好，不要每則都用。',
+    DRAW_RULE,
     d ? '對方現在正在看你 ' + d.date + ' 的日記〈' + (d.title || '') + '〉。對方問到這篇時照下面的內容回答，沒問就不用硬聊：\n' + String(d.body || '').slice(0, 1200)
       : '對方現在在日記的月曆頁，還沒打開哪一天。'
   ].join('\n\n');
@@ -188,10 +213,164 @@ function ask() {
   }).then(function (r) { return r.json(); }).then(function (j) {
     clearTimeout(later); t.remove();
     if (!j || !j.reply) throw new Error(j && j.error || '沒有回覆');
-    chat.push({role: 'assistant', content: j.reply}); save(); row('her', j.reply);
+    var p = parseReply(j.reply);
+    if (p.clean || !p.draw) { var txt = p.clean || '…'; chat.push({role: 'assistant', content: txt}); save(); row('her', txt); }
+    if (p.draw) startDraw(p.draw);
   }).catch(function (e) {
     clearTimeout(later); t.remove(); row('sys', '訊息沒送到（' + e.message + '），等一下再試。');
   }).then(function () { busy = false; $('send').disabled = false; $('in').focus(); });
+}
+
+// 跟 js/tags.js 的 DRAW_RE、RESIDUE_RE 同一條規則：語法完整才畫，殘缺的標記整段吃掉不顯示。
+// 貼圖欄位（|sticker=…）語法上接受，但手機版不疊貼圖。
+var DRAW_RE = /\[draw:([a-z]+)\|([^|\n[\]]*?)(?:\|sticker=([a-z]+-\d{2})@([a-z]{2}))?\]/g;
+var RESIDUE_RE = /\[(?:sticker|draw|emote):[\s\S]*?(?:\]|$)/g;
+function parseReply(text) {
+  var draw = null;
+  var clean = String(text || '').replace(DRAW_RE, function (_, ref, prompt) {
+    if ((ref === 'glitch' || ref === 'none') && prompt.trim()) draw = {ref: ref, prompt: prompt.trim()};
+    return '';
+  }).replace(RESIDUE_RE, '').replace(/ {2,}/g, ' ').trim();
+  return {clean: clean, draw: draw};
+}
+
+function findJob(id) { for (var i = 0; i < chat.length; i++) if (chat[i].job === id) return chat[i]; return null; }
+function pen() {
+  var s = document.createElement('span'); s.className = 'write';
+  s.innerHTML = '<span class="ink"></span><svg class="pen" viewBox="0 0 24 24"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+  return s;
+}
+function drawRow(m) {
+  var d = document.createElement('div'); d.className = 'm her';
+  if (m.job) { d.dataset.job = m.job; els[m.job] = d; }
+  $('log').appendChild(d); paint(m, d); $('log').scrollTop = $('log').scrollHeight; return d;
+}
+function stamp(ts) {
+  var t = new Date(ts || Date.now()), z = function (n) { return (n < 10 ? '0' : '') + n; };
+  return t.getFullYear() + z(t.getMonth() + 1) + z(t.getDate()) + '-' + z(t.getHours()) + z(t.getMinutes());
+}
+// 依狀態重畫一則畫圖泡泡：pending 畫圖中、done 有圖＋下載、error 失敗原因、expired 找不到了
+function paint(m, d) {
+  d = d || els[m.job];
+  if (!d) return;
+  d.innerHTML = '';
+  var bottom = $('log').scrollHeight - $('log').scrollTop - $('log').clientHeight < 40;
+  if (m.st === 'done' && imgs[m.job]) {
+    var cap = document.createElement('span'); cap.textContent = '逼——嗶！畫好啦～'; d.appendChild(cap);
+    var im = document.createElement('img'); im.className = 'pic'; im.alt = '格莉奇畫的圖'; im.src = imgs[m.job];
+    im.onclick = function () { $('zoomImg').src = imgs[m.job]; $('zoom').classList.add('on'); };
+    im.onload = function () { if (bottom) $('log').scrollTop = $('log').scrollHeight; };
+    d.appendChild(im);
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'dl'; b.textContent = '下載';
+    var box = document.createElement('div'); box.className = 'save'; box.hidden = true;
+    box.innerHTML = '沒有開始下載的話：電腦在圖上按右鍵選「另存圖片」，手機長按圖片儲存；或複製這個連結到瀏覽器打開。<div><input readonly aria-label="下載連結"><button type="button">複製</button></div>';
+    var link = box.querySelector('input'), copy = box.querySelector('button');
+    link.value = IMG + '/file?job=' + encodeURIComponent(m.job);
+    link.onfocus = function () { link.select(); };
+    copy.onclick = function () { copyLink(link, copy); };
+    b.onclick = function () {
+      // Larch 的框沒有 allow-downloads，這一下在 Larch 裡會被瀏覽器擋掉、不報錯，所以同時把另存的方法攤開
+      var a = document.createElement('a'); a.href = imgs[m.job]; a.download = 'glitch-' + stamp(m.ts) + '.png';
+      document.body.appendChild(a); a.click(); a.remove();
+      box.hidden = false;
+    };
+    d.appendChild(b); d.appendChild(box);
+    return;
+  }
+  if (m.st === 'done') {
+    d.textContent = '逼——嗶！畫好啦～（圖片載入中…）';
+    if (document.body.classList.contains('open')) track(m.job, 0);
+    return;
+  }
+  if (m.st === 'pending' || m.st === 'start') {
+    var w = document.createElement('span'); w.className = 'drawing';
+    var l = document.createElement('span'); l.textContent = '畫圖中'; w.appendChild(l); w.appendChild(pen()); d.appendChild(w);
+    var n = document.createElement('small'); n.className = 'note';
+    n.textContent = m.net ? '連不上畫圖服務（' + m.net + '），重新打開手機會再接著等。'
+      : '可能要幾分鐘，收起手機也會繼續畫。' + (m.left != null ? '今天還能再畫 ' + m.left + ' 張。' : '');
+    d.appendChild(n);
+    return;
+  }
+  d.textContent = m.st === 'expired' ? '逼——嗶…這張圖已經找不到了，上次畫好時沒有下載就救不回來了。'
+    : '逼——嗶…這張沒畫成（' + (m.err || '未知錯誤') + '），這張不算在今天的張數裡，可以再請我畫一次。';
+}
+function copyLink(input, btn) {
+  var ok = function () { btn.textContent = '已複製'; };
+  var manual = function () { input.focus(); input.select(); btn.textContent = '請長按自己複製'; };
+  // 框是 opaque origin，clipboard API 多半沒權限，退回舊的 execCommand，再不行就選好讓讀者自己複製
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(input.value).then(ok, function () {
+        input.select(); try { document.execCommand('copy') ? ok() : manual(); } catch (_) { manual(); }
+      });
+    }
+  } catch (_) {}
+  input.select(); try { document.execCommand('copy') ? ok() : manual(); } catch (_) { manual(); }
+}
+function settle(id, st, err) {
+  delete tracking[id];
+  var m = findJob(id);
+  if (!m) return;
+  m.st = st; delete m.net;
+  if (err) m.err = String(err).slice(0, 120); else delete m.err;
+  save(); paint(m);
+}
+// 輪詢一個 job 到有結果為止。同一個 job 只會有一條在跑。
+// 網路斷掉不算失敗：連續失敗幾次就先停，狀態留在 pending，下次打開手機再接著查。
+function track(id, wait) {
+  if (!id || tracking[id]) return;
+  tracking[id] = 1;
+  var fails = 0;
+  function tick() {
+    var m = findJob(id);
+    if (!m) { delete tracking[id]; return; }   // 對話被清空了
+    fetch(IMG + '?job=' + encodeURIComponent(id)).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) { return {r: r, j: j}; });
+    }).then(function (x) {
+      if (x.r.status === 404) return settle(id, m.st === 'done' ? 'expired' : 'error', '找不到這張圖的進度');
+      if (!x.r.ok) throw new Error(x.j.error || 'HTTP ' + x.r.status);
+      fails = 0;
+      if (x.j.status === 'done') { imgs[id] = x.j.image; return settle(id, 'done'); }
+      if (x.j.status === 'error') return settle(id, 'error', x.j.error);
+      if (Date.now() - (m.ts || 0) > DRAW_MAX) return settle(id, 'error', '畫太久被放棄了');
+      setTimeout(tick, POLL);
+    }).catch(function (e) {
+      if (++fails < NET_TRIES) return setTimeout(tick, POLL);
+      delete tracking[id];
+      var cur = findJob(id); if (cur) { cur.net = e.message; paint(cur); }
+    });
+  }
+  setTimeout(tick, wait);
+}
+// 讀檔或重新整理之後：畫到一半的馬上接著查；畫好的等打開手機才去載圖（圖很大，收著的時候不載）
+function resumeDraws() {
+  chat.forEach(function (m) {
+    if (!m.job) return;
+    if (m.st === 'pending') track(m.job, 0);
+    else if (m.st === 'done' && !imgs[m.job] && document.body.classList.contains('open')) track(m.job, 0);
+  });
+}
+function startDraw(d) {
+  var m = {role: 'assistant', content: '（我畫了一張圖：' + d.prompt + '）', job: '', st: 'start', ts: Date.now()};
+  var el = drawRow(m);
+  fetch(IMG, {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({prompt: d.prompt, ref: d.ref})})
+    .then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!j.jobId) { var e = new Error(j.error || 'HTTP ' + r.status); e.quota = r.status === 429; throw e; }
+        return j;
+      });
+    }).then(function (j) {
+      // 拿到 jobId 就先存起來，之後重新整理、關掉 HUD 都靠它接回來
+      m.job = j.jobId; m.st = 'pending'; if (j.left != null) m.left = j.left;
+      el.dataset.job = m.job; els[m.job] = el;
+      chat.push(m); save();
+      if (el.isConnected) paint(m); else render();   // 等 jobId 的時候畫面被重畫過（例如按了改名字）
+      track(m.job, POLL);
+    }).catch(function (e) {
+      if (el.isConnected) el.remove();
+      var t = e.quota ? e.message : '逼——嗶…這張沒畫成（' + e.message + '），等一下再請我畫一次。';
+      chat.push({role: 'assistant', content: t}); save(); row('her', t);
+    });
 }
 
 function submit() {
@@ -210,9 +389,10 @@ $('in').onkeydown = function (e) { if (e.key === 'Enter' && !e.isComposing) { e.
 $('fab').onclick = function () {
   document.body.classList.add('open'); resize(OPEN);
   if (!name) askingName = true;
-  render(); setTimeout(function () { $('in').focus(); }, 60);
+  render(); resumeDraws(); setTimeout(function () { $('in').focus(); }, 60);
 };
-$('close').onclick = function () { $('ask').hidden = true; document.body.classList.remove('open'); askingName = false; resize(SHUT); };
+$('zoom').onclick = function () { $('zoom').classList.remove('on'); };
+$('close').onclick = function () { $('ask').hidden = true; $('zoom').classList.remove('on'); document.body.classList.remove('open'); askingName = false; resize(SHUT); };
 $('clear').onclick = function () { $('ask').hidden = false; $('no').focus(); };
 $('no').onclick = function () { $('ask').hidden = true; $('in').focus(); };
 $('yes').onclick = function () { chat = []; save(); $('ask').hidden = true; askingName = false; render(); $('in').focus(); };
@@ -230,7 +410,7 @@ addEventListener('message', function (e) {
     name = String(v[NAME_VAR] || '');
     try { chat = JSON.parse(v[CHAT_VAR] || '[]'); } catch (_) { chat = []; }
     if (!Array.isArray(chat)) chat = [];
-    render();
+    render(); resumeDraws();
   }
 });
 resize(SHUT);

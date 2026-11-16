@@ -2,9 +2,11 @@
    前端不用帶 key。Worker 注入 GEMINI_API_KEY，把對話轉到 .11 的 gemini-web，
    並塞入格莉奇人設 system instruction。輕量限流（每 IP 每分鐘 12 次）。
    路由：POST /chat 聊天（可帶 memory 摘要注入人設）；POST /summarize 把舊對話壓成記憶摘要；
-   POST /img 轉送出圖 job 給 gemini-web；GET /img 查 job 進度。
-   Secret: GEMINI_API_KEY。Var: GEMINI_WEB_BASE_URL、ALLOWED_ORIGINS、MODEL、IMAGE_MODEL。
-   ponytail: in-memory 限流，isolate 回收即歸零——聊天機器人夠用。 */
+   POST /img 轉送出圖 job 給 gemini-web（每人每天限 IMG_DAILY_LIMIT 張）；GET /img 查 job 進度；
+   GET /img/file 把畫好的圖當附件下載。
+   Secret: GEMINI_API_KEY。Var: GEMINI_WEB_BASE_URL、ALLOWED_ORIGINS、MODEL、IMAGE_MODEL、IMG_DAILY_LIMIT。
+   ponytail: 每分鐘限流是 in-memory，isolate 回收即歸零——聊天機器人夠用。
+   每日出圖額度要撐過 isolate 回收，存在 D1（NODES_DB 那個庫的 img_quota 表）。 */
 
 import PERSONA from "../persona.json";
 
@@ -75,18 +77,24 @@ export default {
     const origin = req.headers.get("Origin") || "";
     const allowed = (env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
     const allow = originAllowed(origin, allowed);
+    // 不在白名單就不給 allow-origin。舊版這裡回字串 "null"，但瀏覽器會拿它去比對
+    // sandbox iframe 送來的 Origin: null，結果等於放行所有 opaque origin（任何網站的
+    // sandbox iframe、file://、data:），白名單形同虛設。現在要放行 Larch 的 HUD 與
+    // 小遊戲卡，就在 ALLOWED_ORIGINS 明寫 null，拿掉那一項就真的關掉。
     const cors = {
-      "access-control-allow-origin": allow ? origin : "null",
       "access-control-allow-methods": "GET, POST, OPTIONS",
       "access-control-allow-headers": "content-type",
       "access-control-max-age": "86400",
+      "vary": "Origin",
     };
+    if (allow) cors["access-control-allow-origin"] = origin;
     const err = (s, m) => new Response(JSON.stringify({ error: m }), { status: s, headers: { "content-type": "application/json", ...cors } });
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
 
     // 輪詢查進度：只是轉查一個 SQLite 欄位，不會觸發生成，所以不計限流。
     // 前端每 3 秒問一次＝每分鐘 20 次，計進去會把使用者自己鎖死（連聊天一起）。
     if (req.method === "GET" && path.endsWith("/img")) return imgStatus(env, url, cors, err);
+    if (req.method === "GET" && path.endsWith("/img/file")) return imgFile(env, url, cors, err);
 
     // 格莉奇語音節點註冊中心（支援開源社群多節點自動發現）
     if (req.method === "GET" && path.endsWith("/voice/nodes")) return handleGetVoiceNodes(env, cors);
@@ -111,7 +119,7 @@ export default {
     try { body = await req.json(); } catch { return err(400, "bad json"); }
 
     if (path.endsWith("/summarize")) return summarize(env, body, cors, err);
-    if (path.endsWith("/img")) return imgStart(env, body, cors, err);
+    if (path.endsWith("/img")) return imgStart(env, body, cors, err, ip);
     return chat(env, body, cors, err);
   },
 };
@@ -274,11 +282,39 @@ function toBase64(buf) {
   return btoa(s);
 }
 
-async function imgStart(env, body, cors, err) {
+async function imgStart(env, body, cors, err, ip) {
   const prompt = String(body.prompt || "").trim();
   if (!prompt) return err(400, "empty");
   const ref = body.ref === "glitch" ? "glitch" : "none";
 
+  // 先佔一格額度再送單：兩個請求同時進來也不會一起擠過最後一格。
+  // 送單失敗（上游掛掉、參考圖抓不到）就把那格還回去，讀者不會白白被扣。
+  const limit = dailyLimit(env);
+  const who = await whoIs(ip);
+  const day = taipeiDay();
+  let left = null;
+  if (limit > 0) {
+    const used = await quotaTake(env, day, who, limit);
+    if (used === null) {
+      return new Response(JSON.stringify({
+        error: `逼——嗶！今天的 ${limit} 張圖已經畫完了，明天再來找我畫（台北時間 0 點重置）。`,
+        left: 0, limit,
+      }), { status: 429, headers: { "content-type": "application/json", ...cors } });
+    }
+    left = limit - used;
+  }
+  let out;
+  try { out = await imgSubmit(env, prompt, ref); }
+  catch (e) { out = { error: `upstream unreachable: ${String(e && e.message || e).slice(0, 120)}` }; }
+  if (out.error) {
+    if (limit > 0) await quotaGive(env, day, who);
+    return err(502, out.error);
+  }
+  if (limit > 0) await jobRemember(env, out.jobId, day, who);
+  return json(limit > 0 ? { jobId: out.jobId, left, limit } : { jobId: out.jobId }, cors);
+}
+
+async function imgSubmit(env, prompt, ref) {
   const parts = [];
   // 角色表只在畫她自己時才附上——ref="none" 代表她明確說了「畫面裡不要有我」，
   // 這時還把她的外觀描述塞給生圖模型，等於承諾（system prompt）跟實作對不上，
@@ -286,7 +322,7 @@ async function imgStart(env, body, cors, err) {
   let sheet = "";
   if (ref === "glitch") {
     const r = await fetch(REF_URL);
-    if (!r.ok) return err(502, `ref image ${r.status}`);
+    if (!r.ok) return { error: `ref image ${r.status}` };
     parts.push({ inlineData: { mimeType: "image/webp", data: toBase64(await r.arrayBuffer()) } });
     const g = PERSONA.characters.glitch;
     sheet = `\n\n${g.identity}\n\n${g.outfits[g.defaultOutfit]}`;
@@ -304,8 +340,8 @@ async function imgStart(env, body, cors, err) {
     }),
   });
   const d = await r.json().catch(() => ({}));
-  if (!r.ok || !d.id) return err(502, `upstream ${r.status}: ${JSON.stringify(d).slice(0, 160)}`);
-  return json({ jobId: d.id }, cors);
+  if (!r.ok || !d.id) return { error: `upstream ${r.status}: ${JSON.stringify(d).slice(0, 160)}` };
+  return { jobId: d.id };
 }
 
 async function imgStatus(env, url, cors, err) {
@@ -320,11 +356,148 @@ async function imgStatus(env, url, cors, err) {
   if (!r.ok) return err(502, `upstream ${r.status}`);
 
   if (d.status === "queued" || d.status === "running") return json({ status: "pending" }, cors);
-  if (d.status === "failed") return json({ status: "error", error: d.error || "未知錯誤" }, cors);
+  if (d.status === "failed") {
+    await jobRefund(env, jobId);
+    return json({ status: "error", error: d.error || "未知錯誤" }, cors);
+  }
 
   const image = firstInlineImage(d.response);
-  if (!image) return json({ status: "error", error: "no image in upstream response" }, cors);
+  if (!image) {
+    await jobRefund(env, jobId);
+    return json({ status: "error", error: "no image in upstream response" }, cors);
+  }
   return json({ status: "done", image }, cors);
+}
+
+// 下載用：Larch 的 HUD 是只有 allow-scripts 的 sandbox iframe，框裡的 <a download> 會被瀏覽器擋掉
+// （2026-11-16 用 Chrome 實測：同一個連結拿掉 sandbox 就下載得到）。所以給一個真正的網址，
+// 讀者複製到瀏覽器分頁打開就會直接下載。只吃 jobId，跟 GET /img 一樣不計限流、不觸發生成。
+async function imgFile(env, url, cors, err) {
+  const jobId = url.searchParams.get("job");
+  if (!jobId) return err(400, "missing job");
+  const base = (env.GEMINI_WEB_BASE_URL || "").replace(/\/+$/, "");
+  const r = await fetch(`${base}/api/jobs/${encodeURIComponent(jobId)}`, {
+    headers: { "x-goog-api-key": env.GEMINI_API_KEY || "" },
+  });
+  if (r.status === 404) return err(404, "job not found or expired");
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) return err(502, `upstream ${r.status}`);
+  if (d.status !== "succeeded") return err(409, "image not ready");
+  const image = firstInlineImage(d.response);
+  if (!image) return err(502, "no image in upstream response");
+  const [, mime, b64] = /^data:([^;]+);base64,(.*)$/.exec(image) || [];
+  const ext = (mime || "image/png").split("/")[1].replace("jpeg", "jpg");
+  const bin = Uint8Array.from(atob(b64 || ""), (c) => c.charCodeAt(0));
+  const name = `glitch-${String(jobId).replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 12)}.${ext}`;
+  return new Response(bin, { headers: {
+    "content-type": mime || "image/png",
+    "content-disposition": `attachment; filename="${name}"`,
+    "cache-control": "private, max-age=86400",
+    ...cors,
+  } });
+}
+
+/* ---- 每日出圖額度 ----
+   「每人」＝同一個 IP（CF-Connecting-IP），跟每分鐘限流同一套認人法；IP 先做 SHA-256 再存，D1 裡沒有原始 IP。
+   「每天」＝台北日期，0 點換日。
+   有 NODES_DB（D1）就存 D1：isolate 回收、換機房都不會歸零。沒有（本機沒綁、或 migration 沒跑）
+   就退回記憶體版，那個版本 isolate 回收會歸零、每個機房各算各的，只能當防連點。
+   job 畫失敗（上游回 failed 或沒有圖）會把那格還回去，同一個 job 只還一次。 */
+function dailyLimit(env) {
+  const n = parseInt(env.IMG_DAILY_LIMIT ?? "3", 10);
+  return Number.isFinite(n) ? n : 3;
+}
+
+function taipeiDay(now = Date.now()) {
+  return new Date(now + 8 * 3600_000).toISOString().slice(0, 10);
+}
+
+async function whoIs(ip) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`glitch-img:${ip}`));
+  return [...new Uint8Array(buf)].slice(0, 16).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+const memQuota = new Map();   // `${day}|${who}` -> 已用張數
+const memJobs = new Map();    // jobId -> { day, who }
+
+function d1(env) { return env.NODES_DB || null; }
+
+// 回傳佔完之後今天已用幾張；額度滿了回 null。
+async function quotaTake(env, day, who, limit) {
+  const db = d1(env);
+  if (db) {
+    let row;
+    try {
+      row = await db.prepare(
+        "INSERT INTO img_quota (day, who, n) VALUES (?1, ?2, 1) " +
+        "ON CONFLICT(day, who) DO UPDATE SET n = n + 1 WHERE n < ?3 RETURNING n"
+      ).bind(day, who, limit).first();
+    } catch (e) {
+      console.error("img_quota D1 error, falling back to memory", e);
+      row = undefined;
+    }
+    if (row !== undefined) {
+      // 舊日期順手收掉，D1 沒有 TTL。一天最多幾十次，不值得另開排程。
+      try {
+        await db.prepare("DELETE FROM img_quota WHERE day < ?1").bind(taipeiDay(Date.now() - 7 * 86400_000)).run();
+      } catch (e) { console.error("img_quota cleanup error", e); }
+      return row ? row.n : null;
+    }
+  }
+  const k = `${day}|${who}`;
+  const n = memQuota.get(k) || 0;
+  if (n >= limit) return null;
+  if (memQuota.size > 5000) memQuota.clear();
+  memQuota.set(k, n + 1);
+  return n + 1;
+}
+
+async function quotaGive(env, day, who) {
+  const db = d1(env);
+  if (db) {
+    try {
+      await db.prepare("UPDATE img_quota SET n = n - 1 WHERE day = ?1 AND who = ?2 AND n > 0").bind(day, who).run();
+      return;
+    } catch (e) {
+      console.error("img_quota D1 error", e);
+    }
+  }
+  const k = `${day}|${who}`;
+  if (memQuota.get(k) > 0) memQuota.set(k, memQuota.get(k) - 1);
+}
+
+async function jobRemember(env, jobId, day, who) {
+  const db = d1(env);
+  if (db) {
+    try {
+      await db.batch([
+        db.prepare("INSERT OR IGNORE INTO img_jobs (job_id, day, who, refunded) VALUES (?1, ?2, ?3, 0)").bind(jobId, day, who),
+        db.prepare("DELETE FROM img_jobs WHERE day < ?1").bind(taipeiDay(Date.now() - 7 * 86400_000)),
+      ]);
+      return;
+    } catch (e) {
+      console.error("img_jobs D1 error", e);
+    }
+  }
+  if (memJobs.size > 5000) memJobs.clear();
+  memJobs.set(jobId, { day, who });
+}
+
+async function jobRefund(env, jobId) {
+  const db = d1(env);
+  if (db) {
+    try {
+      const row = await db.prepare(
+        "UPDATE img_jobs SET refunded = 1 WHERE job_id = ?1 AND refunded = 0 RETURNING day, who"
+      ).bind(jobId).first();
+      if (row) await quotaGive(env, row.day, row.who);
+      return;
+    } catch (e) {
+      console.error("img_jobs D1 error", e);
+    }
+  }
+  const j = memJobs.get(jobId);
+  if (j) { memJobs.delete(jobId); await quotaGive(env, j.day, j.who); }
 }
 
 // gemini-web 回的就是 generateContent 原本那包，圖在 inlineData 裡。
