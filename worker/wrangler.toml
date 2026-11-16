@@ -11,7 +11,7 @@ GEMINI_WEB_BASE_URL = "https://ching-tech.ddns.net/gemini-web"
 # 鎖不到 larch.ink（任何網站的 sandbox iframe 都長這樣），所以出圖另有每人每天額度（IMG_DAILY_LIMIT）擋。
 ALLOWED_ORIGINS = "https://yazelin.github.io,http://localhost:*,https://localhost:*,null"
 # 每人（同 IP）每天（台北日期）能叫 POST /img 幾次，0 或負數＝不限。計數存在下面的 D1（img_quota 表）。
-IMG_DAILY_LIMIT = "3"
+IMG_DAILY_LIMIT = "10"
 # GEMINI_API_KEY 用 wrangler secret put 注入，不寫在這裡
 
 # 語音節點註冊表。原本走 KV，但節點每 60 秒心跳一次、KV 免費額度是一天 1000 次寫入，

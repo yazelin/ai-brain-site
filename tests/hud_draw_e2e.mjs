@@ -153,9 +153,7 @@ addEventListener('message', function (e) {
 const HOST = `http://localhost:${port(host)}/`;
 
 const browser = await chromium.launch({ executablePath: CHROME, headless: true });
-const page = await browser.newPage({ acceptDownloads: true, viewport: { width: 900, height: 760 } });
-let downloads = 0;
-page.on("download", () => downloads++);
+const page = await browser.newPage({ viewport: { width: 900, height: 760 } });
 page.on("pageerror", (e) => console.error("pageerror:", e.message));
 const hud = () => page.frameLocator("#hud");
 const store = () => page.evaluate(() => JSON.parse(window.store.glitch_chat || "[]"));
@@ -166,6 +164,7 @@ async function remount(sandboxed = true) {
 }
 // 打開手機。偶爾第一下點在框剛建好的那一刻沒反應（負控制第一輪碰過一次），沒展開就再點一次。
 async function openHud() {
+  if (await hud().locator("#win").isVisible()) return;
   for (let i = 0; i < 3; i++) {
     await hud().locator("#fab").click();
     try { await hud().locator("#win").waitFor({ state: "visible", timeout: 3000 }); return; } catch {}
@@ -222,32 +221,33 @@ try {
     assert.equal(j.length, 1); assert.equal(j[0].st, "done"); assert.equal(j[0].left, LIMIT - 1);
   });
 
-  await step("下載：Larch 的 sandbox 框擋掉 <a download>，改顯示另存說明與直連網址；直連網址下載得到原圖", async () => {
-    downloads = 0;
-    await hud().locator("button.dl").first().click();
-    await page.waitForTimeout(1500);
-    assert.equal(downloads, 0, "sandbox 框裡居然下載得到，Larch 可能已開 allow-downloads，可以簡化");
-    await hud().locator(".save").first().waitFor({ state: "visible" });
-    const link = await hud().locator(".save input").first().inputValue();
-    const job = (await jobMsgs())[0].job;
-    assert.equal(link, `${WORKER}/img/file?job=${job}`);
-    const r = await fetch(link);
-    assert.equal(r.status, 200);
-    assert.equal(r.headers.get("content-type"), "image/png");
-    assert.match(r.headers.get("content-disposition") || "", /^attachment; filename="glitch-.+\.png"$/);
-    assert.deepEqual(Buffer.from(await r.arrayBuffer()), Buffer.from(PNG_B64, "base64"));
-    assert.equal((await fetch(`${WORKER}/img/file?job=nope`)).status, 404);
+  await step("燈箱：點圖把框撐到 640、圖保持比例放大、有另存提示；點圖本身不關，點背景或 Esc 關回原尺寸", async () => {
+    const size = () => page.evaluate(() => { const f = document.getElementById("hud"); return [f.style.width, f.style.height]; });
+    const open = await size();
+    await hud().locator("img.pic").first().click();
+    await hud().locator("#zoom").waitFor({ state: "visible" });
+    assert.deepEqual(await size(), ["640px", "640px"]);
+    assert.ok((await hud().locator("#zoom").innerText()).includes("按右鍵或長按可以另存"));
+    assert.equal(await hud().locator("button.dl").count(), 0, "下載鈕應該已經拿掉");
+    const fit = await hud().locator("#zoomImg").evaluate((i) => getComputedStyle(i).objectFit);
+    assert.equal(fit, "contain");
+    await hud().locator("#zoomImg").click();
+    assert.ok(await hud().locator("#zoom").isVisible(), "點圖本身不該關掉（右鍵另存要能用）");
+    await hud().locator("#zoom").click({ position: { x: 5, y: 5 } });
+    await hud().locator("#zoom").waitFor({ state: "hidden" });
+    assert.deepEqual(await size(), open);
+    await hud().locator("img.pic").first().click();
+    await hud().locator("#zoom").waitFor({ state: "visible" });
+    await hud().locator("#zoom").press("Escape");
+    await hud().locator("#zoom").waitFor({ state: "hidden" });
+    assert.deepEqual(await size(), open);
+    assert.equal((await fetch(`${WORKER}/img/file?job=x`)).status, 405, "/img/file 已拿掉，GET 落到 POST only");
   });
 
-  await step("對照組：同一個 HUD 不加 sandbox 時，下載鈕真的會下載（證明上一項的 0 是 sandbox 造成的）", async () => {
-    await remount(false);
-    await openHud();
-    await hud().locator("img.pic").first().waitFor({ timeout: 15000 });   // 也順便驗：重建框後，畫好的圖用 jobId 重新載入
-    downloads = 0;
-    const dl = page.waitForEvent("download", { timeout: 5000 });
-    await hud().locator("button.dl").first().click();
-    assert.match((await dl).suggestedFilename(), /^glitch-\d{8}-\d{4}\.png$/);
+  await step("重建框之後，畫好的圖用 jobId 重新載入", async () => {
     await remount(true);
+    await openHud();
+    await hud().locator("img.pic").first().waitFor({ timeout: 15000 });
   });
 
   await step("失敗訊息：上游回 failed，泡泡顯示原因，而且那張還回額度", async () => {

@@ -73,19 +73,18 @@ input::placeholder{color:#7d8890}
 .pic{display:block;width:100%;max-width:260px;border-radius:10px;margin:6px 0;cursor:zoom-in;background:#14171b}
 .drawing{display:flex;align-items:center;gap:6px;color:var(--mute)}
 .note{display:block;color:var(--mute);font-size:11px;margin-top:2px}
-.dl{margin-top:2px;min-height:32px;padding:0 12px;border-radius:8px;background:rgba(124,243,192,.08);border:1px solid var(--mint);color:var(--mint);font-size:12px;font-weight:700}
-.save{margin-top:6px;font-size:11px;color:var(--mute);white-space:normal}
-.save[hidden]{display:none}
-.save div{display:flex;gap:6px;margin-top:4px}
-.save input{min-height:30px;font-size:11px;padding:0 8px}
-.save button{min-height:30px;padding:0 10px;border-radius:8px;background:#3a3f46;color:var(--ink);font-size:11px}
-#zoom{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(4,8,12,.92);z-index:5;cursor:zoom-out;padding:12px}
+/* 燈箱：放大時把 HUD 框撐到 Larch 允許的最大（640），圖保持比例塞滿；點背景或按 Esc 關 */
+#zoom{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  background:rgba(4,8,12,.94);z-index:5;cursor:zoom-out;padding:8px}
 #zoom.on{display:flex}
-#zoom img{max-width:100%;max-height:100%;border-radius:10px}
+/* 生成圖約 1024px，比框大，max 兩條就會縮到塞滿；不用 width:100%，不然圖兩側的留白也算圖、點了關不掉 */
+#zoom img{max-width:100%;max-height:calc(100% - 24px);object-fit:contain;border-radius:8px;cursor:default}
+#zoom small{color:var(--mute);font-size:11px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style></head>
 <body>
 <button id="fab" type="button" aria-label="打開格莉奇手機"><img id="fabImg" alt=""><span class="tip">傳訊息</span></button>
+<div id="zoom" role="dialog" aria-label="放大的圖"><img id="zoomImg" alt="格莉奇畫的圖"><small>按右鍵或長按可以另存</small></div>
 <section id="win" aria-label="跟格莉奇聊天">
   <div class="top">
     <img id="av" alt="">
@@ -97,7 +96,6 @@ input::placeholder{color:#7d8890}
   <div id="log" aria-live="polite"></div>
   <!-- HUD 的框沒有 allow-modals，confirm() 不會跳出來，所以確認做在手機畫面裡 -->
   <div id="ask" class="ask" hidden><p>要清空和格莉奇的對話嗎？名字會保留。</p><div><button id="no" type="button">取消</button><button id="yes" type="button">清空</button></div></div>
-  <div id="zoom" role="dialog" aria-label="放大的圖"><img id="zoomImg" alt="格莉奇畫的圖"></div>
   <div class="bar"><input id="in" autocomplete="off" maxlength="300" enterkeyhint="send"><button id="send" type="button">傳送</button></div>
 </section>
 <script>
@@ -245,11 +243,7 @@ function drawRow(m) {
   if (m.job) { d.dataset.job = m.job; els[m.job] = d; }
   $('log').appendChild(d); paint(m, d); $('log').scrollTop = $('log').scrollHeight; return d;
 }
-function stamp(ts) {
-  var t = new Date(ts || Date.now()), z = function (n) { return (n < 10 ? '0' : '') + n; };
-  return t.getFullYear() + z(t.getMonth() + 1) + z(t.getDate()) + '-' + z(t.getHours()) + z(t.getMinutes());
-}
-// 依狀態重畫一則畫圖泡泡：pending 畫圖中、done 有圖＋下載、error 失敗原因、expired 找不到了
+// 依狀態重畫一則畫圖泡泡：pending 畫圖中、done 有圖（點了放大）、error 失敗原因、expired 找不到了
 function paint(m, d) {
   d = d || els[m.job];
   if (!d) return;
@@ -258,23 +252,9 @@ function paint(m, d) {
   if (m.st === 'done' && imgs[m.job]) {
     var cap = document.createElement('span'); cap.textContent = '逼——嗶！畫好啦～'; d.appendChild(cap);
     var im = document.createElement('img'); im.className = 'pic'; im.alt = '格莉奇畫的圖'; im.src = imgs[m.job];
-    im.onclick = function () { $('zoomImg').src = imgs[m.job]; $('zoom').classList.add('on'); };
+    im.onclick = function () { zoom(imgs[m.job]); };
     im.onload = function () { if (bottom) $('log').scrollTop = $('log').scrollHeight; };
     d.appendChild(im);
-    var b = document.createElement('button'); b.type = 'button'; b.className = 'dl'; b.textContent = '下載';
-    var box = document.createElement('div'); box.className = 'save'; box.hidden = true;
-    box.innerHTML = '沒有開始下載的話：電腦在圖上按右鍵選「另存圖片」，手機長按圖片儲存；或複製這個連結到瀏覽器打開。<div><input readonly aria-label="下載連結"><button type="button">複製</button></div>';
-    var link = box.querySelector('input'), copy = box.querySelector('button');
-    link.value = IMG + '/file?job=' + encodeURIComponent(m.job);
-    link.onfocus = function () { link.select(); };
-    copy.onclick = function () { copyLink(link, copy); };
-    b.onclick = function () {
-      // Larch 的框沒有 allow-downloads，這一下在 Larch 裡會被瀏覽器擋掉、不報錯，所以同時把另存的方法攤開
-      var a = document.createElement('a'); a.href = imgs[m.job]; a.download = 'glitch-' + stamp(m.ts) + '.png';
-      document.body.appendChild(a); a.click(); a.remove();
-      box.hidden = false;
-    };
-    d.appendChild(b); d.appendChild(box);
     return;
   }
   if (m.st === 'done') {
@@ -291,21 +271,16 @@ function paint(m, d) {
     d.appendChild(n);
     return;
   }
-  d.textContent = m.st === 'expired' ? '逼——嗶…這張圖已經找不到了，上次畫好時沒有下載就救不回來了。'
+  d.textContent = m.st === 'expired' ? '逼——嗶…這張圖已經找不到了，上次畫好時沒有另存就救不回來了。'
     : '逼——嗶…這張沒畫成（' + (m.err || '未知錯誤') + '），這張不算在今天的張數裡，可以再請我畫一次。';
 }
-function copyLink(input, btn) {
-  var ok = function () { btn.textContent = '已複製'; };
-  var manual = function () { input.focus(); input.select(); btn.textContent = '請長按自己複製'; };
-  // 框是 opaque origin，clipboard API 多半沒權限，退回舊的 execCommand，再不行就選好讓讀者自己複製
-  try {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      return navigator.clipboard.writeText(input.value).then(ok, function () {
-        input.select(); try { document.execCommand('copy') ? ok() : manual(); } catch (_) { manual(); }
-      });
-    }
-  } catch (_) {}
-  input.select(); try { document.execCommand('copy') ? ok() : manual(); } catch (_) { manual(); }
+// Larch 的框沒有 allow-downloads，做下載鈕會被瀏覽器擋掉，所以只做燈箱，讓讀者右鍵或長按另存
+var BIG = {w: 640, h: 640};
+function zoom(src) { $('zoomImg').src = src; $('zoom').classList.add('on'); resize(BIG); }
+function unzoom() {
+  if (!$('zoom').classList.contains('on')) return;
+  $('zoom').classList.remove('on');
+  resize(document.body.classList.contains('open') ? OPEN : SHUT);
 }
 function settle(id, st, err) {
   delete tracking[id];
@@ -391,7 +366,9 @@ $('fab').onclick = function () {
   if (!name) askingName = true;
   render(); resumeDraws(); setTimeout(function () { $('in').focus(); }, 60);
 };
-$('zoom').onclick = function () { $('zoom').classList.remove('on'); };
+// 點背景關；點圖本身不關，右鍵與長按另存才不會一按就收掉
+$('zoom').onclick = function (e) { if (e.target !== $('zoomImg')) unzoom(); };
+addEventListener('keydown', function (e) { if (e.key === 'Escape') unzoom(); });
 $('close').onclick = function () { $('ask').hidden = true; $('zoom').classList.remove('on'); document.body.classList.remove('open'); askingName = false; resize(SHUT); };
 $('clear').onclick = function () { $('ask').hidden = false; $('no').focus(); };
 $('no').onclick = function () { $('ask').hidden = true; $('in').focus(); };

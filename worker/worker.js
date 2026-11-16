@@ -2,8 +2,7 @@
    前端不用帶 key。Worker 注入 GEMINI_API_KEY，把對話轉到 .11 的 gemini-web，
    並塞入格莉奇人設 system instruction。輕量限流（每 IP 每分鐘 12 次）。
    路由：POST /chat 聊天（可帶 memory 摘要注入人設）；POST /summarize 把舊對話壓成記憶摘要；
-   POST /img 轉送出圖 job 給 gemini-web（每人每天限 IMG_DAILY_LIMIT 張）；GET /img 查 job 進度；
-   GET /img/file 把畫好的圖當附件下載。
+   POST /img 轉送出圖 job 給 gemini-web（每人每天限 IMG_DAILY_LIMIT 張）；GET /img 查 job 進度。
    Secret: GEMINI_API_KEY。Var: GEMINI_WEB_BASE_URL、ALLOWED_ORIGINS、MODEL、IMAGE_MODEL、IMG_DAILY_LIMIT。
    ponytail: 每分鐘限流是 in-memory，isolate 回收即歸零——聊天機器人夠用。
    每日出圖額度要撐過 isolate 回收，存在 D1（NODES_DB 那個庫的 img_quota 表）。 */
@@ -94,7 +93,6 @@ export default {
     // 輪詢查進度：只是轉查一個 SQLite 欄位，不會觸發生成，所以不計限流。
     // 前端每 3 秒問一次＝每分鐘 20 次，計進去會把使用者自己鎖死（連聊天一起）。
     if (req.method === "GET" && path.endsWith("/img")) return imgStatus(env, url, cors, err);
-    if (req.method === "GET" && path.endsWith("/img/file")) return imgFile(env, url, cors, err);
 
     // 格莉奇語音節點註冊中心（支援開源社群多節點自動發現）
     if (req.method === "GET" && path.endsWith("/voice/nodes")) return handleGetVoiceNodes(env, cors);
@@ -369,34 +367,6 @@ async function imgStatus(env, url, cors, err) {
   return json({ status: "done", image }, cors);
 }
 
-// 下載用：Larch 的 HUD 是只有 allow-scripts 的 sandbox iframe，框裡的 <a download> 會被瀏覽器擋掉
-// （2026-11-16 用 Chrome 實測：同一個連結拿掉 sandbox 就下載得到）。所以給一個真正的網址，
-// 讀者複製到瀏覽器分頁打開就會直接下載。只吃 jobId，跟 GET /img 一樣不計限流、不觸發生成。
-async function imgFile(env, url, cors, err) {
-  const jobId = url.searchParams.get("job");
-  if (!jobId) return err(400, "missing job");
-  const base = (env.GEMINI_WEB_BASE_URL || "").replace(/\/+$/, "");
-  const r = await fetch(`${base}/api/jobs/${encodeURIComponent(jobId)}`, {
-    headers: { "x-goog-api-key": env.GEMINI_API_KEY || "" },
-  });
-  if (r.status === 404) return err(404, "job not found or expired");
-  const d = await r.json().catch(() => ({}));
-  if (!r.ok) return err(502, `upstream ${r.status}`);
-  if (d.status !== "succeeded") return err(409, "image not ready");
-  const image = firstInlineImage(d.response);
-  if (!image) return err(502, "no image in upstream response");
-  const [, mime, b64] = /^data:([^;]+);base64,(.*)$/.exec(image) || [];
-  const ext = (mime || "image/png").split("/")[1].replace("jpeg", "jpg");
-  const bin = Uint8Array.from(atob(b64 || ""), (c) => c.charCodeAt(0));
-  const name = `glitch-${String(jobId).replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 12)}.${ext}`;
-  return new Response(bin, { headers: {
-    "content-type": mime || "image/png",
-    "content-disposition": `attachment; filename="${name}"`,
-    "cache-control": "private, max-age=86400",
-    ...cors,
-  } });
-}
-
 /* ---- 每日出圖額度 ----
    「每人」＝同一個 IP（CF-Connecting-IP），跟每分鐘限流同一套認人法；IP 先做 SHA-256 再存，D1 裡沒有原始 IP。
    「每天」＝台北日期，0 點換日。
@@ -404,8 +374,8 @@ async function imgFile(env, url, cors, err) {
    就退回記憶體版，那個版本 isolate 回收會歸零、每個機房各算各的，只能當防連點。
    job 畫失敗（上游回 failed 或沒有圖）會把那格還回去，同一個 job 只還一次。 */
 function dailyLimit(env) {
-  const n = parseInt(env.IMG_DAILY_LIMIT ?? "3", 10);
-  return Number.isFinite(n) ? n : 3;
+  const n = parseInt(env.IMG_DAILY_LIMIT ?? "10", 10);
+  return Number.isFinite(n) ? n : 10;
 }
 
 function taipeiDay(now = Date.now()) {

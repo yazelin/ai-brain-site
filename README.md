@@ -73,7 +73,7 @@ flowchart LR
 1. 確認允許的 Origin，處理 CORS。
 2. 以記憶體內計數器限制每個 IP 每分鐘最多 12 次請求。
 3. 為聊天注入格莉奇的繁體中文人設與本機記憶摘要。
-4. 將 `/chat`、`/summarize`、`/img` 轉送到自架 `gemini-web`；`POST /img` 每人每天限 `IMG_DAILY_LIMIT` 張（存 D1），`GET /img/file?job=` 把畫好的圖當附件下載。
+4. 將 `/chat`、`/summarize`、`/img` 轉送到自架 `gemini-web`；`POST /img` 每人每天限 `IMG_DAILY_LIMIT` 張（存 D1）。
 5. 從 Cloudflare secret 注入 `GEMINI_API_KEY`；key 不會進入前端或 Git 歷史。
 
 目前文字模型預設為 `gemini-2.5-flash`，圖片模型預設為 `gemini-2.5-flash-image`，都可透過 Worker vars 覆寫。
@@ -178,7 +178,7 @@ npx wrangler deploy
 | `MODEL` | 聊天與摘要模型 | `gemini-2.5-flash` |
 | `IMAGE_MODEL` | 聊天生圖模型；未設定時使用程式預設 | `gemini-2.5-flash-image` |
 | `ALLOWED_ORIGINS` | 可呼叫 Worker 的完整 Origin，逗號分隔；`null` 代表 sandbox iframe（Larch 的 HUD 與小遊戲卡） | `https://yazelin.github.io,http://localhost:*,https://localhost:*,null` |
-| `IMG_DAILY_LIMIT` | 每人（同 IP）每天（台北日期）能送幾次 `POST /img`；0 或負數＝不限 | `3` |
+| `IMG_DAILY_LIMIT` | 每人（同 IP）每天（台北日期）能送幾次 `POST /img`；0 或負數＝不限 | `10` |
 
 若 Worker 網址改變，也要同步修改 `index.html` 中的 `CHAT_URL`、`SUM_URL` 與 `IMG_URL`，以及 `larch/hud/glitch-phone.html` 的 `IMG`。
 
@@ -288,8 +288,8 @@ npx wrangler deploy
 - **本機預覽**：`python3 scripts/larch_sync.py --local _preview.json`，再用 larch-preview 開 `_preview.json`，不會連 Larch。
 - **格莉奇手機**（右上角 HUD，`larch/hud/glitch-phone.html`）：聊天走 phone-chat-relay；讀者請她畫圖時，她在回覆裡放跟格莉奇OS 同一套的 `[draw:glitch|英文 prompt]` 或 `[draw:none|…]` 標記（手機版不疊貼圖），HUD 照網站的先打後查：`POST /img` 拿 jobId，每 3 秒 `GET /img?job=` 查到完成或失敗，最多等 10 分鐘。
   - **jobId 存在對話紀錄裡**（跨週目保留的 `glitch_chat` 變數），圖本身只放記憶體：一張圖的 data URL 動輒上 MB，Larch 的字串變數超過 10 萬字會整筆丟掉。重新整理或關掉再來時，畫到一半的馬上接著查，畫好的等打開手機才用 jobId 回 Worker 重新載入。收起手機時輪詢照跑。網路斷了連續 5 次就先停，狀態留著，下次打開再接。gemini-web 目前不清舊 job，所以畫好的圖之後也載得回來；哪天上游開始清，就會顯示「這張圖已經找不到了」。
-  - **下載**：Larch 的框沒有 `allow-downloads`，框裡的 `<a download>` 會被瀏覽器靜默擋掉（拿掉 sandbox 的同一個 HUD 就下載得到，測試裡有這組對照）。所以按「下載」時同時攤開另存方法：電腦右鍵「另存圖片」、手機長按圖片，或複製 `…/img/file?job=` 直連網址到瀏覽器打開，那個網址回的是附件。
-  - **測試**：`node tests/hud_draw_e2e.mjs`，起本機 `wrangler dev`（本機 D1、假 gemini-web、假轉接站）和一個照 Larch 播放器建框的假宿主，涵蓋送出、輪詢、完成、失敗、額度用完、下載、重新整理與收起後接回，以及 Worker 重開後額度仍在。把白名單的 `null` 拿掉再跑（`E2E_ALLOWED_ORIGINS=https://yazelin.github.io`）畫圖相關項目應該全部失敗。
+  - **看大圖與另存**：點圖開燈箱，HUD 框撐到 Larch 允許的最大 640×640，圖保持比例放大，下面一行「按右鍵或長按可以另存」；點背景或按 Esc 關回原尺寸，點圖本身不關。沒有下載鈕：Larch 的框沒有 `allow-downloads`，框裡的 `<a download>` 會被瀏覽器靜默擋掉（2026-11-16 用 Chrome 實測，拿掉 sandbox 的同一個連結就下載得到）。
+  - **測試**：`node tests/hud_draw_e2e.mjs`，起本機 `wrangler dev`（本機 D1、假 gemini-web、假轉接站）和一個照 Larch 播放器建框的假宿主（額度用 `--var IMG_DAILY_LIMIT:3` 壓小，少畫幾張就測到上限），涵蓋送出、輪詢、完成、燈箱、失敗、上游掛掉、額度用完、重新整理與收起後接回，以及 Worker 重開後額度仍在。把白名單的 `null` 拿掉再跑（`E2E_ALLOWED_ORIGINS=https://yazelin.github.io`）畫圖相關項目應該全部失敗。
 
 ## 回報問題與交流
 
