@@ -137,10 +137,10 @@ scope 只到這個站，指過去的話離線抓不到，症狀是裝了 App 之
 | 欄位 | 內容 |
 |---|---|
 | `identity` | 不隨服裝變的特徵（髮型、天線裝置、ERROR 牌、choker、手環…）。跟 [ai-comic-starter](https://github.com/yazelin/ai-comic-starter) 的 `story/cast.json` **逐字相同** |
-| `outfits.A` | 三視圖 `images/glitch-ref.webp` 那套：長版帽 T、彩虹垂環、裸腿、無包。日記配圖與漫畫都用這套 |
+| `outfits.A` | 三視圖 `images/glitch-sheet.webp` 那套：長版帽 T、彩虹垂環、裸腿、無包。日記配圖與漫畫都用這套 |
 | `outfits.B` | 桌寵立繪那套（裙、斜背包、單邊過膝襪）。正典是 `images/pet*.webp` 那組立繪本身，**沒有三視圖**——產過三次，每次都在某一項跟立繪對不上，所以改用立繪當準 |
 
-正典是圖：Outfit A 看 `images/glitch-ref.webp`，Outfit B 看 `images/pet*.webp`。這段文字只是把圖上的東西寫下來。
+正典是圖：Outfit A 看 `images/glitch-sheet.webp`，Outfit B 看 `images/pet*.webp`。這段文字只是把圖上的東西寫下來。
 
 格莉奇多一張 `images/pet-plain.webp`（清醒、看著鏡頭、平常說話的臉），由
 `scripts/generate_pet.py --emote plain` 產生。原本的 `pet.webp` 眼神飄開、嘴微張、
@@ -304,7 +304,7 @@ npx wrangler deploy
 
 只留 `images/icon-192.png` 與 `images/icon-512.png` 兩張 PNG，那是 manifest 圖示，各家系統的安裝流程對格式最保守，留著比較安全。
 
-改副檔名不是只改檔名。牽動的地方：`stickerSrc()`（字串拼接，grep 檔名抓不到）、`index.html` 幾處 `onerror` 退路、`js/glitch-call.js` 的通話頭像退路、`sw.js` 預載清單、`persona.json` 的 `styleAnchor`、還有三支會把 `sticker-01` 當參考圖上傳的產圖腳本（`generate_avatar.py`、`generate_wallpaper.py`、`generate_post.py`）與對應的單元測試。產圖服務吃不吃 WebP 是實測過的，不是假設：拿 `sticker-01.webp` 送一次 `/v1/images/generate` 回 succeeded。聊天的 `/img` 走另一條路，它的參考圖本來就是 `images/glitch-ref.webp`，不受影響。
+改副檔名不是只改檔名。牽動的地方：`stickerSrc()`（字串拼接，grep 檔名抓不到）、`index.html` 幾處 `onerror` 退路、`js/glitch-call.js` 的通話頭像退路、`sw.js` 預載清單、`persona.json` 的 `styleAnchor`、還有三支會把 `sticker-01` 當參考圖上傳的產圖腳本（`generate_avatar.py`、`generate_wallpaper.py`、`generate_post.py`）與對應的單元測試。產圖服務吃不吃 WebP 是實測過的，不是假設：拿 `sticker-01.webp` 送一次 `/v1/images/generate` 回 succeeded。聊天與格莉奇手機的 `/img`（Worker）畫她自己時也送 `sticker-01.webp` 當 image 1、三視圖縮小版 `images/glitch-sheet-1024.webp` 當 image 2，跟日記插畫同一套；`images/glitch-ref.webp` 現在是機器人頭圖示，不是角色圖，別再拿來當參考圖。
 
 同一次也刪掉三張沒有任何引用的孤兒圖（共 876 KB）：`a8qmb3a8qmb3a8qm.png`、`kgyeu2kgyeu2kgye.png`、`u1zfo4u1zfo4u1zf.png`。它們是 2026-08-04 第一個 commit 帶進來的早期角色設定圖與宣傳卡，其中一張當過一陣子的 favicon，後來被 `icon-192.png` 取代。要找回來的話 git 歷史裡還在。
 
