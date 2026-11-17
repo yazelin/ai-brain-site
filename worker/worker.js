@@ -9,7 +9,15 @@
 
 import PERSONA from "../persona.json";
 
-const REF_URL = "https://yazelin.github.io/ai-brain-site/images/glitch-ref.webp";
+// 畫她自己時送的兩張參考圖，順序與圖說跟日記插畫（scripts/generate_post.py）一致：
+// image 1＝畫風錨（貼圖 01），image 2＝三視圖。三視圖用最長邊 1024 的縮小版，
+// 原圖 1910×1536，base64 進 Worker 白花 CPU 與頻寬，大圖也比較容易讓生圖漂。
+// 以前送的是 images/glitch-ref.webp，那張在 2026-08-27 被換成機器人頭圖示，畫出來就不像她。
+const SITE = "https://yazelin.github.io/ai-brain-site/";
+const GLITCH_REFS = [
+  { url: SITE + PERSONA.styleAnchor, desc: PERSONA.styleAnchorDesc },
+  { url: SITE + PERSONA.modelSheetSmall, desc: PERSONA.modelSheetDesc },
+];
 
 const STICKER_LIST = Object.entries(PERSONA.stickers)
   .map(([id, cap]) => `- ${id}：${cap}`)
@@ -313,19 +321,27 @@ async function imgStart(env, body, cors, err, ip) {
 }
 
 async function imgSubmit(env, prompt, ref) {
-  const parts = [];
   // 角色表只在畫她自己時才附上——ref="none" 代表她明確說了「畫面裡不要有我」，
   // 這時還把她的外觀描述塞給生圖模型，等於承諾（system prompt）跟實作對不上，
   // 模型很可能就把她畫進本該只有場景的圖裡。
-  let sheet = "";
+  let parts;
   if (ref === "glitch") {
-    const r = await fetch(REF_URL);
-    if (!r.ok) return { error: `ref image ${r.status}` };
-    parts.push({ inlineData: { mimeType: "image/webp", data: toBase64(await r.arrayBuffer()) } });
+    const imgs = await Promise.all(GLITCH_REFS.map(async ({ url }) => {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(`ref image ${r.status} ${url}`);
+      return { inlineData: { mimeType: "image/webp", data: toBase64(await r.arrayBuffer()) } };
+    })).catch((e) => ({ error: e.message }));
+    if (imgs.error) return { error: imgs.error };
     const g = PERSONA.characters.glitch;
-    sheet = `\n\n${g.identity}\n\n${g.outfits[g.defaultOutfit]}`;
+    // 提示詞的排法照 generate_post.py 的 IMAGE_PROMPT_TPL：先講兩張參考圖是什麼，再角色表、場景、規則。
+    // 文字在前、圖在後，順序要對上 image 1、image 2。
+    const refs = GLITCH_REFS.map((x, i) => `- image ${i + 1}: ${x.desc}`).join("\n");
+    const text = `REFERENCE IMAGES:\n${refs}\n\n${g.identity}\n\n${g.outfits[g.defaultOutfit]}\n\n`
+      + `SCENE:\n${prompt}\n\n${PERSONA.imageRules}`;
+    parts = [{ text }, ...imgs];
+  } else {
+    parts = [{ text: `${prompt}\n\n${PERSONA.imageRules}` }];
   }
-  parts.push({ text: `${prompt}${sheet}\n\n${PERSONA.imageRules}` });
 
   const base = (env.GEMINI_WEB_BASE_URL || "").replace(/\/+$/, "");
   const r = await fetch(`${base}/api/jobs`, {

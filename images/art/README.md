@@ -4,7 +4,7 @@
 
 | | 檔案 | 內容 |
 |---|---|---|
-| Outfit A 正典 | `images/glitch-ref.webp` | 三視圖。長帽 T ＋裸腿，沒有裙子 |
+| Outfit A 正典 | `images/glitch-sheet.webp` | 三視圖。長帽 T ＋裸腿，沒有裙子 |
 | Outfit B 正典 | `images/pet*.webp` 那五張立繪 | 裙＋斜背包＋單邊過膝襪＋腿套 |
 
 **兩層要分開，是因為正典是圖不是文字。** 哪天要對「她的髮夾在哪一邊」，
