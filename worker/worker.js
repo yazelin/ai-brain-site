@@ -14,6 +14,8 @@ import PERSONA from "../persona.json";
 // 原圖 1910×1536，base64 進 Worker 白花 CPU 與頻寬，大圖也比較容易讓生圖漂。
 // 以前送的是 images/glitch-ref.webp，那張在 2026-08-27 被換成機器人頭圖示，畫出來就不像她。
 const SITE = "https://yazelin.github.io/ai-brain-site/";
+// ref=none 時要從 imageRules 拿掉的那句（只在畫她自己時才成立）
+const SCENE_ONLY_STRIP = ', plus the red "ERROR" wordmark on the hoodie';
 const GLITCH_REFS = [
   { url: SITE + PERSONA.styleAnchor, desc: PERSONA.styleAnchorDesc },
   { url: SITE + PERSONA.modelSheetSmall, desc: PERSONA.modelSheetDesc },
@@ -340,7 +342,11 @@ async function imgSubmit(env, prompt, ref) {
       + `SCENE:\n${prompt}\n\n${PERSONA.imageRules}`;
     parts = [{ text }, ...imgs];
   } else {
-    parts = [{ text: `${prompt}\n\n${PERSONA.imageRules}` }];
+    // 畫面裡沒有她時，規則裡「允許帽 T 上的 ERROR 字樣」那句要拿掉，
+    // 不然模型會把 ERROR 印到別人的衣服上（11-18 兩張 Mana 圖的毛衣都被印上）。
+    const rules = PERSONA.imageRules.replace(SCENE_ONLY_STRIP, "");
+    if (rules === PERSONA.imageRules) return { error: "imageRules 找不到 ERROR 那句，persona.json 改過了要同步 worker.js" };
+    parts = [{ text: `${prompt}\n\n${rules}` }];
   }
 
   const base = (env.GEMINI_WEB_BASE_URL || "").replace(/\/+$/, "");
