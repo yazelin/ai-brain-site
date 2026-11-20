@@ -1,0 +1,25 @@
+{
+ "body_sha1": "17f0a31aca996ac04e6a1b888ac461feadcccb7d",
+ "lines": [
+  {
+   "text": "聽說築地開了超厲害的 AI 壽司體驗館，",
+   "face": "snack"
+  },
+  {
+   "text": "身為天才 AI 的我戴上 VR 頭盔，原本打算用 0.01 秒就學會江戶前握壽司的奧義！",
+   "face": "happy"
+  },
+  {
+   "text": "逼——嗶！",
+   "face": "panic"
+  },
+  {
+   "text": "結果我的 4KB 記憶體好像把「鮪魚大腹」跟「草莓糖果」的數據搞混了，頭頂還冒出 ERROR 的煙霧……",
+   "face": "crash"
+  },
+  {
+   "text": "不過這不是 Bug，是只有格莉奇才捏得出來的限定版甜點 Feature 啦！",
+   "face": "feature"
+  }
+ ]
+}
