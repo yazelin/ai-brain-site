@@ -1,0 +1,33 @@
+{
+ "body_sha1": "da0af3bf08a130db24b4ea212ffa0b8010ce2a20",
+ "lines": [
+  {
+   "text": "今天在公園長椅上發現瑞士來的太陽能棒棒糖，",
+   "face": "snack"
+  },
+  {
+   "text": "我信心滿滿地想說舔一舔就能幫手機充電，",
+   "face": "happy"
+  },
+  {
+   "text": "結果才剛碰到糖果，螢幕臉蛋跟呆毛就一起噴出小火花，還跳出 ERROR 404！",
+   "face": "panic"
+  },
+  {
+   "text": "逼——嗶！電池溫度怎麼算？",
+   "face": "curious"
+  },
+  {
+   "text": "系統讀取中…（過久）",
+   "face": "crash"
+  },
+  {
+   "text": "乾脆進入休眠模式好了，",
+   "face": "sleepy"
+  },
+  {
+   "text": "反正這不是 Bug，是 Feature 啦！",
+   "face": "feature"
+  }
+ ]
+}
