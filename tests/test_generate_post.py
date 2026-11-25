@@ -1,5 +1,8 @@
 import json
+import tempfile
 import unittest
+from datetime import date
+from pathlib import Path
 from unittest import mock
 
 from scripts import generate_post
@@ -145,6 +148,105 @@ class CommentDeduplicationTests(unittest.TestCase):
         prompt = ask.call_args.args[1]
         self.assertIn("@fan: 已選定留言", prompt)
         self.assertNotIn("[C", prompt)
+
+
+class LarchActivityTests(unittest.TestCase):
+    TODAY = date(2026, 11, 26)
+    YESTERDAY = "2026-11-25"
+    PLAY = {"type": "play", "text": "我試玩了禾穗的《雨天窗邊》，很喜歡開場的雨聲。"}
+    CHAT = {"type": "chat", "text": "我在茶館和一位作者聊到遊戲開場。"}
+
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        root = Path(temp.name)
+        self.activity = root / "larch" / "activity"
+        self.activity.mkdir(parents=True)
+        patch = mock.patch.object(generate_post, "ROOT", root)
+        patch.start()
+        self.addCleanup(patch.stop)
+
+    def write_feed(self, day, items, friends=0):
+        (self.activity / f"{day}.json").write_text(
+            json.dumps({"date": day, "items": items, "friendsAdded": friends}, ensure_ascii=False),
+            encoding="utf-8")
+
+    def test_uses_today_when_both_days_exist(self):
+        self.write_feed(self.YESTERDAY, [self.CHAT])
+        self.write_feed(self.TODAY.isoformat(), [self.PLAY], friends=2)
+        self.assertEqual(generate_post.load_larch_activity([], self.TODAY),
+                         (self.TODAY.isoformat(), [self.PLAY["text"], "我在 Larch 新增了 2 位好友。"], True))
+
+    def test_uses_yesterday_when_today_is_missing(self):
+        self.write_feed(self.YESTERDAY, [self.CHAT])
+        self.assertEqual(generate_post.load_larch_activity([], self.TODAY),
+                         (self.YESTERDAY, [self.CHAT["text"]], False))
+
+    def test_missing_both_days_has_no_candidate(self):
+        self.assertIsNone(generate_post.load_larch_activity([], self.TODAY))
+
+    def test_does_not_reuse_yesterdays_feed_after_midnight(self):
+        self.write_feed(self.YESTERDAY, [self.PLAY])
+        posts = [{"date": self.TODAY.isoformat(), "larch_source": self.YESTERDAY}]
+        self.assertIsNone(generate_post.load_larch_activity(posts, self.TODAY))
+
+    def test_empty_today_has_no_candidate(self):
+        self.write_feed(self.YESTERDAY, [self.CHAT])
+        self.write_feed(self.TODAY.isoformat(), [])
+        self.assertIsNone(generate_post.load_larch_activity([], self.TODAY))
+
+    def test_selection_uses_reviewed_larch_text_and_prioritizes_play(self):
+        response = json.dumps({
+            "source_type": "larch", "inspiration": "模型新增的文字", "comment_key": "C1",
+            "scene": "模型加入帳號", "angle": "模型加入人名",
+        }, ensure_ascii=False)
+        comments = [{"id": "new", "text": "@fan: 新留言"}]
+        self.write_feed(self.YESTERDAY, [self.CHAT, self.PLAY])
+        larch = generate_post.load_larch_activity([], self.TODAY)
+        with mock.patch.object(generate_post, "ask", return_value=response) as ask:
+            inspiration, angle, scene, _, comment_source, comment_id, source = generate_post.pick_inspiration(
+                ["今日新聞"], comments, larch=larch)
+        prompt = ask.call_args.args[1]
+        for phrase in ("今日新聞", "@fan: 新留言", self.PLAY["text"], "今天有試玩作品，優先寫試玩的經歷"):
+            self.assertIn(phrase, prompt)
+        self.assertNotIn("MANDATORY OVERRIDE", prompt)
+        self.assertEqual(inspiration, self.CHAT["text"] + "\n" + self.PLAY["text"])
+        self.assertEqual((angle, comment_source, comment_id, source), ("", "", "", self.YESTERDAY))
+        self.assertIn(inspiration, scene)
+        self.assertNotIn("模型加入帳號", scene)
+
+    def test_text_and_caption_keep_author_and_ask_for_anonymous_chat(self):
+        response = json.dumps({"title": "雨天", "body": "我喜歡雨聲。"}, ensure_ascii=False)
+        with mock.patch.object(generate_post, "ask", return_value=response) as ask, \
+             mock.patch.object(generate_post, "generate_image", return_value="images/posts/x.webp"):
+            generate_post.gen_text_post(self.PLAY["text"], "", larch_source=self.YESTERDAY)
+            generate_post.gen_image_post(self.PLAY["text"], "場景", larch_source=self.YESTERDAY)
+        for call in ask.call_args_list:
+            prompt = call.args[1]
+            self.assertIn("禾穗的《雨天窗邊》", prompt)
+            self.assertIn("完整寫出作品名與作者名", prompt)
+            self.assertIn("其他人一律用匿名稱呼", prompt)
+
+    def test_main_saves_the_selected_feed_date_in_posts(self):
+        posts_json = self.activity / "posts.json"
+        self.write_feed(self.TODAY.isoformat(), [self.PLAY])
+        larch = generate_post.load_larch_activity([], self.TODAY)
+        with mock.patch.object(generate_post, "POSTS_JSON", posts_json), \
+             mock.patch.object(generate_post, "IMG_DIR", self.activity / "images"), \
+             mock.patch.object(generate_post, "load_larch_activity", return_value=larch), \
+             mock.patch.object(generate_post, "fetch_news", return_value=[]), \
+             mock.patch.object(generate_post, "fetch_comments", return_value=([], None)), \
+             mock.patch.object(generate_post, "ask", return_value=json.dumps({
+                 "inspiration": "候選", "scene": "場景", "source_type": "larch", "comment_key": "",
+             })), \
+             mock.patch.object(generate_post, "gen_image_post", return_value=None), \
+             mock.patch.object(generate_post, "gen_text_post", return_value={"title": "測試"}) as write, \
+             mock.patch.object(generate_post, "commit_push"):
+            generate_post.main()
+        post, = json.loads(posts_json.read_text("utf-8"))
+        self.assertEqual(post["larch_source"], self.TODAY.isoformat())
+        self.assertEqual(post["inspiration"], self.PLAY["text"])
+        self.assertEqual(write.call_args.args[-1], self.TODAY.isoformat())
 
 
 class PersonaTests(unittest.TestCase):
