@@ -14,7 +14,7 @@ const MATCH = { ignoreSearch: true, ignoreVary: true };
 const SHELL_FILES = [
 /* shell:start */
   './', './index.html', './manifest.webmanifest', './posts.json', './wallpapers.json',
-  './persona.json', './js/tags.js', './js/glitch-call.js', './js/glitch-at-work.js', './js/glitch-at-work-data.js',
+  './persona.json', './js/tags.js', './js/glitch-call.js', './js/glitch-at-work.js', './js/glitch-at-work-data.js', './js/glitch-status-card.js',
   './images/icon-192.png', './images/icon-512.png', './images/glitch-logo.svg',
   './glitch2d/pet.js', './glitch2d/rig.json', './glitch2d/engine/motion.js',
   './glitch2d/engine/geometry.js', './glitch2d/engine/renderer.js', './glitch2d/engine/audio.js'
