@@ -51,6 +51,8 @@ jobs:
           GEMINI_IMAGE_MODEL: ${{ vars.GEMINI_IMAGE_MODEL }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FORCE_IMAGE: ${{ github.event.inputs.force_image == 'true' && '1' || '0' }}
+          # 格莉奇在 Larch 的公開經歷（.11 每天 21:40 產生，匿名、不含私訊）；連不到就跳過
+          LARCH_ACTIVITY_URL: https://ching-tech.ddns.net/glitch/public/activity
         run: python scripts/generate_post.py
       # 網站那篇已經推上去了，這一步失敗也不會影響網站，下一班會自動補。
       - name: 同步到 Larch
