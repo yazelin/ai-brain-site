@@ -257,9 +257,14 @@ function init() {
         h('p', { class: 'gaw-meta' }, last ? `最後活動：${ago(last)}（${clockText(last)}）` : '最後活動：還沒有紀錄',
           d.generatedAt ? ` · 回報產生於 ${ago(d.generatedAt)}` : '')),
       h('div', { class: 'gaw-batts' },
-        batteryEl('這週', d.energy.weekly, d.energy.weeklyResetAt),
-        batteryEl('5 小時', d.energy.fiveHour, d.energy.fiveHourResetAt),
-        d.full ? batteryEl('Claude 這週', d.energy.claudeWeekly, null) : null));
+        h('div', { class: 'gaw-batt-set' },
+          h('div', { class: 'gaw-batt-group', text: '電量一（主要）' }),
+          batteryEl('這週', d.energy.weekly, d.energy.weeklyResetAt),
+          batteryEl('5 小時', d.energy.fiveHour, d.energy.fiveHourResetAt)),
+        d.energy.backup.weekly != null || d.energy.backup.fiveHour != null ? h('div', { class: 'gaw-batt-set' },
+          h('div', { class: 'gaw-batt-group', text: '電量二（備援，主要沒電時接手）' }),
+          d.energy.backup.weekly != null ? batteryEl('這週', d.energy.backup.weekly, null) : null,
+          d.energy.backup.fiveHour != null ? batteryEl('5 小時', d.energy.backup.fiveHour, null) : null) : null));
   }
 
   function today(d) {
