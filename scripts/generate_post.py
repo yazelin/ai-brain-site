@@ -266,14 +266,37 @@ def resolve_comment(comments, comment_key="", comment_source="", inspiration="")
     return None
 
 
+def fetch_larch_activity(source):
+    """從格莉奇主機的公開位置拿那天的 Larch 經歷（LARCH_ACTIVITY_URL，例：https://…/glitch/public/activity）。
+    沒設網址、那天沒有檔案或連不到都回 None，日記照常寫（主機關機不能讓日記失敗）。"""
+    base = os.environ.get("LARCH_ACTIVITY_URL", "").strip().rstrip("/")
+    if not base:
+        return None
+    import urllib.error
+    import urllib.request
+    try:
+        req = urllib.request.Request(f"{base}/{source}.json", headers={"User-Agent": "ai-brain-site-daily-post"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return resp.read().decode("utf-8")
+    except urllib.error.HTTPError as error:
+        if error.code != 404:
+            print(f"  抓 Larch 經歷失敗（{source}，HTTP {error.code}）", flush=True)
+    except (OSError, ValueError) as error:
+        print(f"  抓 Larch 經歷失敗（{source}，{type(error).__name__}）", flush=True)
+    return None
+
+
 def load_larch_activity(posts, today=None):
-    """依台北日期找候選，當天檔案缺少時使用前一天。"""
+    """依台北日期找候選，當天沒有時使用前一天。先從格莉奇主機的公開位置拿，拿不到再看 repo 裡的檔。"""
     today = today or datetime.now(TZ).date()
     used = {post.get("larch_source") for post in posts}
     for day in (today, today - timedelta(days=1)):
         source = day.isoformat()
         try:
-            feed = json.loads((ROOT / "larch" / "activity" / f"{source}.json").read_text("utf-8"))
+            text = fetch_larch_activity(source)
+            if text is None:
+                text = (ROOT / "larch" / "activity" / f"{source}.json").read_text("utf-8")
+            feed = json.loads(text)
         except FileNotFoundError:
             continue
         except (OSError, ValueError) as error:

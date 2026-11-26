@@ -1,4 +1,5 @@
 import json
+import os
 import tempfile
 import unittest
 from datetime import date
@@ -193,6 +194,51 @@ class LarchActivityTests(unittest.TestCase):
     def test_empty_today_has_no_candidate(self):
         self.write_feed(self.YESTERDAY, [self.CHAT])
         self.write_feed(self.TODAY.isoformat(), [])
+        self.assertIsNone(generate_post.load_larch_activity([], self.TODAY))
+
+    def _url(self, responses):
+        """LARCH_ACTIVITY_URL 設好，urlopen 依日期回 responses 裡的內容或例外。"""
+        import urllib.error
+        env = mock.patch.dict(os.environ, {"LARCH_ACTIVITY_URL": "https://example.invalid/public/activity/"})
+        env.start(); self.addCleanup(env.stop)
+        calls = []
+
+        def fake(req, timeout=None):
+            url = req.full_url
+            calls.append(url)
+            day = url.rsplit("/", 1)[1][:-5]
+            r = responses.get(day, urllib.error.HTTPError(url, 404, "nf", {}, None))
+            if isinstance(r, Exception):
+                raise r
+            body = json.dumps(r, ensure_ascii=False).encode("utf-8")
+            resp = mock.MagicMock()
+            resp.__enter__.return_value.read.return_value = body
+            return resp
+        patch = mock.patch("urllib.request.urlopen", side_effect=fake)
+        patch.start(); self.addCleanup(patch.stop)
+        return calls
+
+    def test_url_feed_is_used_before_repo_file(self):
+        self.write_feed(self.TODAY.isoformat(), [self.CHAT])
+        calls = self._url({self.TODAY.isoformat(): {"date": self.TODAY.isoformat(), "items": [self.PLAY], "friendsAdded": 0}})
+        self.assertEqual(generate_post.load_larch_activity([], self.TODAY),
+                         (self.TODAY.isoformat(), [self.PLAY["text"]], True))
+        self.assertEqual(calls, [f"https://example.invalid/public/activity/{self.TODAY.isoformat()}.json"])
+
+    def test_unreachable_url_falls_back_to_repo_file(self):
+        self.write_feed(self.TODAY.isoformat(), [self.CHAT])
+        self._url({self.TODAY.isoformat(): OSError("timed out")})
+        self.assertEqual(generate_post.load_larch_activity([], self.TODAY),
+                         (self.TODAY.isoformat(), [self.CHAT["text"]], False))
+
+    def test_url_404_without_file_uses_yesterday_from_url(self):
+        calls = self._url({self.YESTERDAY: {"date": self.YESTERDAY, "items": [self.CHAT]}})
+        self.assertEqual(generate_post.load_larch_activity([], self.TODAY),
+                         (self.YESTERDAY, [self.CHAT["text"]], False))
+        self.assertEqual(len(calls), 2)
+
+    def test_url_down_and_no_files_has_no_candidate(self):
+        self._url({self.TODAY.isoformat(): OSError("down"), self.YESTERDAY: OSError("down")})
         self.assertIsNone(generate_post.load_larch_activity([], self.TODAY))
 
     def test_selection_uses_reviewed_larch_text_and_prioritizes_play(self):
