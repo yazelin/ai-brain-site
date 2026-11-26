@@ -143,3 +143,28 @@ test("gaze 的值夾在 -1 到 1，emote 未知名稱回到平常臉", () => {
   assert.equal(motion.calls.at(-1).gazeX, 1);
   face.dispose();
 });
+
+// ── 中繼網址：公開站不吃 ?relay=，本機只放行本機中繼 ──
+import { resolveRelay, PROD_RELAY, DEFAULT_RELAY } from "../live/stage.js";
+
+test("本機頁面＋本機中繼：照用", () => {
+  assert.equal(resolveRelay("http://127.0.0.1:8080/live/", "ws://127.0.0.1:9000"), "ws://127.0.0.1:9000");
+  assert.equal(resolveRelay("http://localhost:8080/live/", "ws://localhost:8787"), "ws://localhost:8787");
+});
+
+test("本機頁面沒帶 relay：用本機預設", () => {
+  assert.equal(resolveRelay("http://127.0.0.1:8080/live/", null), DEFAULT_RELAY);
+});
+
+test("本機頁面＋外部中繼：拒絕，退回本機預設", () => {
+  assert.equal(resolveRelay("http://127.0.0.1:8080/live/", "wss://attacker.example"), DEFAULT_RELAY);
+  assert.equal(resolveRelay("http://localhost:8080/live/", "ws://127.0.0.1.attacker.example"), DEFAULT_RELAY);
+  assert.equal(resolveRelay("http://localhost:8080/live/", "javascript:alert(1)"), DEFAULT_RELAY);
+});
+
+test("公開站：不管 relay 參數，一律用 PROD_RELAY（目前 null）", () => {
+  assert.equal(PROD_RELAY, null);
+  assert.equal(resolveRelay("https://yazelin.github.io/ai-brain-site/live/", "wss://attacker.example"), PROD_RELAY);
+  assert.equal(resolveRelay("https://yazelin.github.io/ai-brain-site/live/", "ws://127.0.0.1:8787"), PROD_RELAY);
+  assert.equal(resolveRelay("https://yazelin.github.io/ai-brain-site/live/", null), PROD_RELAY);
+});

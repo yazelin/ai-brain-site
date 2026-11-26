@@ -4,6 +4,25 @@
 import { applyEvent, emptyState, validateEvent } from './state.js';
 
 export const DEFAULT_RELAY = 'ws://127.0.0.1:8787';
+/* 公開站要連的正式中繼。還沒有，所以是 null：公開站不開任何連線，只顯示等待畫面。 */
+export const PROD_RELAY = null;
+
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+/* 決定要連哪個中繼。公開站上的 ?relay= 一律不理（不然一條連結就能讓別人的中繼
+   在格莉奇的頁面上冒用她的字幕與聲音），只用 PROD_RELAY；頁面開在本機時才看
+   ?relay=，而且只放行本機的 ws:／wss:，其他退回 DEFAULT_RELAY。 */
+export function resolveRelay(pageHref, relayParam) {
+  let page;
+  try { page = new URL(pageHref); } catch { return PROD_RELAY; }
+  if (!LOCAL_HOSTS.has(page.hostname)) return PROD_RELAY;
+  if (!relayParam) return DEFAULT_RELAY;
+  try {
+    const r = new URL(relayParam);
+    if ((r.protocol === 'ws:' || r.protocol === 'wss:') && LOCAL_HOSTS.has(r.hostname)) return relayParam;
+  } catch {}
+  return DEFAULT_RELAY;
+}
 export const WAITING_TEXT = '格莉奇還沒開播';
 /* 還沒有直播錄影。第一場會帶大家看這部，先連到 Larch 市集的作品頁；
    第一場錄影上了 YouTube 就換成錄影網址。 */
@@ -45,11 +64,12 @@ export function safeImageUrl(url) {
 
 /* ───────────── 以下是瀏覽器端 ───────────── */
 
-export function startStage({ doc = document, params = new URLSearchParams(location.search), mountPet } = {}) {
+export function startStage({ doc = document, href = location.href, mountPet } = {}) {
+  const params = new URL(href).searchParams;
   const $ = (id) => doc.getElementById(id);
   const root = doc.documentElement;
   const broadcast = params.get('broadcast') === '1';
-  const relay = params.get('relay') || DEFAULT_RELAY;
+  const relay = resolveRelay(href, params.get('relay'));
   root.classList.toggle('broadcast', broadcast);
 
   let state = emptyState();
@@ -235,7 +255,8 @@ export function startStage({ doc = document, params = new URLSearchParams(locati
   let delay = 1000;
   const setConn = (s) => {
     $('conn').dataset.state = s;
-    $('conn').textContent = { connecting: '連線中', open: '已連上', retry: '重新連線中' }[s];
+    const host = relay ? new URL(relay).host : '';
+    $('conn').textContent = { connecting: '連線中', open: `已連上 ${host}`, retry: '重新連線中', off: '沒有連線' }[s];
   };
   function connect() {
     setConn(delay > 1000 ? 'retry' : 'connecting');
@@ -264,6 +285,7 @@ export function startStage({ doc = document, params = new URLSearchParams(locati
   });
 
   render();
-  connect();
+  // 沒有中繼可連（公開站、正式中繼還沒上）就不開連線，停在等待畫面。
+  if (relay) connect(); else setConn('off');
   return { get state() { return state; }, handle, stopAll };
 }
