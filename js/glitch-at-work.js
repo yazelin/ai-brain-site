@@ -258,11 +258,11 @@ function init() {
           d.generatedAt ? ` · 回報產生於 ${ago(d.generatedAt)}` : '')),
       h('div', { class: 'gaw-batts' },
         h('div', { class: 'gaw-batt-set' },
-          h('div', { class: 'gaw-batt-group', text: '電量一（主要）' }),
+          h('div', { class: 'gaw-batt-group', text: d.full ? '電量（Gemini）' : '電量' }),
           batteryEl('這週', d.energy.weekly, d.energy.weeklyResetAt),
           batteryEl('5 小時', d.energy.fiveHour, d.energy.fiveHourResetAt)),
         d.energy.backup.weekly != null || d.energy.backup.fiveHour != null ? h('div', { class: 'gaw-batt-set' },
-          h('div', { class: 'gaw-batt-group', text: '電量二（備援，主要沒電時接手）' }),
+          h('div', { class: 'gaw-batt-group', text: d.full ? '備用電池（Claude）' : '備用電池' }), // 模型名稱只在主人模式顯示（亞澤 11-26）
           d.energy.backup.weekly != null ? batteryEl('這週', d.energy.backup.weekly, null) : null,
           d.energy.backup.fiveHour != null ? batteryEl('5 小時', d.energy.backup.fiveHour, null) : null) : null));
   }
