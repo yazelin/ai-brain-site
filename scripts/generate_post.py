@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """每日自動產出一篇格莉奇部落格文章。GitHub Action 跑。
 
-流程：看今日新聞 → 依格莉奇的個性挑一則找靈感 → 決定寫文字日記或畫一張插畫
+流程：讀新聞、粉絲留言與 Larch 公開經歷 → 挑靈感 → 決定寫文字日記或畫一張插畫
 → 產內容 → append 進 posts.json → commit & push。
 
 相依：google-genai（文字 + 出圖）。其余一律 stdlib。
@@ -44,42 +44,35 @@ NEWS_PROMPT = (
 )
 
 PICK_PROMPT = (
-    "Here are today's news summaries:\n{news}\n\n"
-    "Recent fan comments on your blog (Giscus):\n{comments}\n\n"
-    "You recently already made posts inspired by these:\n{recent}\n\n"
-    "You ARE 格莉奇（Glitch）, an AI robot-girl VTuber with 4KB of memory. "
-    "You are gullible, sincerely curious about humans, love candy and sunshine and fan comments, "
-    "hate hard math, and always ERROR at the worst moment.\n\n"
-    "Pick the ONE thing that would most inspire a diary entry or illustration from YOU.\n"
-    "RULES:\n"
-    "- If there are fan comments, STRONGLY prefer responding to a fan comment over the news "
-    "(especially one you haven't answered yet).\n"
-    "- NEVER reuse a news item or comment already in the 'recent' list — pick something fresh "
-    "so each day's post differs.\n"
-    "You MAY weave in a fan comment alongside the news.\n\n"
-    "Your LINE stickers (pick 1-2 that match the mood of the scene):\n"
-    "1=欸？搞錯了嗎？ 2=今天也超開心！ 3=大家加油喵！ 4=這個太難了吧... "
-    "5=我沒有卡住！ 6=要吃好吃的喔 7=先去睡個覺... 8=這樣也可以！？ 9=謝謝大家的禮物！\n\n"
-    'Output JSON: {{"inspiration": "你選中的那則新聞摘要或粉絲留言（原樣複製）", '
-    '"source_type": "news 或 giscus（主要靈感來自哪）", '
-    '"comment_key": "若引用粉絲留言，填該留言的 C 編號（例如 C1）；無則空字串", '
-    '"comment_source": "若引用了粉絲留言，列出原文；無則空字串", '
-    '"angle": "格莉奇會怎麼看待這件事（繁體中文，1-2句）", '
-    '"scene": "若要畫一張插畫，格莉奇在什麼場景做什麼動作（繁體中文，1-2句，具體）", '
+    "今日新聞摘要：\n{news}\n\n"
+    "網站的粉絲留言（Giscus）：\n{comments}\n\n"
+    "你在 Larch 的公開經歷：\n{larch}\n{larch_priority}\n"
+    "最近幾篇日記的靈感：\n{recent}\n\n"
+    "你是格莉奇，一個只有 4KB 記憶體的機器人女孩。你對人類有真心的好奇，喜歡糖果、陽光和粉絲留言。\n"
+    "從新聞、粉絲留言、Larch 公開經歷裡選一項最想寫成日記或畫成插畫的靈感。"
+    "挑近期還沒有寫過的主題。選 Larch 時，把那天的公開經歷當作同一組靈感，重點放在最有感覺的一件事。\n"
+    "Larch 的作品使用公開作品名與作者名，其他人一律用匿名稱呼，公開對話用轉述。\n\n"
+    "依場景選 1 到 2 張 LINE 貼圖：\n"
+    "1＝欸？搞錯了嗎？ 2＝今天也超開心！ 3＝大家加油喵！ 4＝這個太難了吧…… "
+    "5＝我沒有卡住！ 6＝要吃好吃的喔 7＝先去睡個覺…… 8＝這樣也可以！？ 9＝謝謝大家的禮物！\n\n"
+    '回傳 JSON：{{"inspiration": "原樣複製選中的新聞、粉絲留言或 Larch 轉述", '
+    '"source_type": "news、giscus 或 larch", '
+    '"comment_key": "有引用粉絲留言時填 C 編號，例如 C1，其餘填空字串", '
+    '"comment_source": "有引用粉絲留言時填原文，其餘填空字串", '
+    '"angle": "格莉奇看這件事的角度，正體中文，1 到 2 句", '
+    '"scene": "用正體中文寫出插畫中格莉奇的動作與場景，1 到 2 句", '
     '"stickers": [1, 2]}}'
 )
 
 TEXT_PROMPT = (
     persona.VOICE + "\n\n"
-    "今天看到一則新聞：{inspiration}\n"
+    "今天的靈感：{inspiration}\n{source_guidance}\n"
     "你的角度：{angle}\n"
     "最近粉絲留言：{comments}\n\n"
     "寫一篇今天的日記（繁體中文，第一人稱，大約 250 到 400 字，分 2-4 段，分段用 \\n\\n）。"
-    "寫出這則新聞哪裡新奇或有趣、你看到時的反應和聯想，講具體的細節，"
-    "不要只寫「好興奮然後當機了」。"
-    "可以順便回應粉絲留言，但不要硬塞。"
-    "「逼——嗶」、當機、「這不是 Bug，是 Feature」這些口頭禪十篇裡用一兩次就好，"
-    "今天先不要用；開頭直接講你看到了什麼，結尾停在你自己的想法上。\n\n"
+    "寫出你覺得新奇或有趣的地方、當時的反應和聯想，用具體的細節帶出格莉奇的個性。"
+    "粉絲留言和主題相關時，可以順便回應。"
+    "開頭直接講你看到了什麼，結尾停在你自己的想法上。\n\n"
     'Output JSON: {{"title": "標題，繁體中文，6-15字", "body": "日記正文，可含\\n\\n分段"}}'
 )
 
@@ -95,9 +88,16 @@ IMAGE_PROMPT_TPL = (
 CAPTION_PROMPT = (
     persona.VOICE + "\n\n"
     "你剛畫了一張插畫，場景是：{scene}\n"
-    "靈感來自這則新聞：{inspiration}\n\n"
+    "今天的靈感：{inspiration}\n{source_guidance}\n\n"
     "給這張插畫寫一段圖說／短日記（繁體中文，第一人稱，2-4 句）。\n\n"
     'Output JSON: {{"title": "標題，繁體中文，6-15字", "body": "圖說正文，可含\\n\\n分段"}}'
+)
+
+LARCH_GUIDANCE = (
+    "用第一人稱、正體中文、全形標點，把這幾句公開經歷自然寫進日記。"
+    "有試玩或自己逛到的作品時，優先寫實際玩到的內容與感想，並完整寫出作品名與作者名。"
+    "其他人一律用匿名稱呼，公開對話用自己的話轉述。新增好友以數量帶過。"
+    "用轉述裡有根據的細節寫那天的經歷。"
 )
 
 
@@ -266,28 +266,68 @@ def resolve_comment(comments, comment_key="", comment_source="", inspiration="")
     return None
 
 
-def pick_inspiration(news, comments=None, recent=None):
+def load_larch_activity(posts, today=None):
+    """依台北日期找候選，當天檔案缺少時使用前一天。"""
+    today = today or datetime.now(TZ).date()
+    used = {post.get("larch_source") for post in posts}
+    for day in (today, today - timedelta(days=1)):
+        source = day.isoformat()
+        try:
+            feed = json.loads((ROOT / "larch" / "activity" / f"{source}.json").read_text("utf-8"))
+        except FileNotFoundError:
+            continue
+        except (OSError, ValueError) as error:
+            print(f"  讀取 Larch 經歷失敗（{source}，{type(error).__name__}）", flush=True)
+            return None
+        if (source in used or not isinstance(feed, dict) or feed.get("date") != source
+                or not isinstance(feed.get("items"), list)):
+            return None
+        items = [item for item in feed["items"]
+                 if isinstance(item, dict) and item.get("type") in ("chat", "play", "explore")
+                 and isinstance(item.get("text"), str) and item["text"].strip()]
+        friends = feed.get("friendsAdded")
+        texts = [item["text"].strip() for item in items]
+        if type(friends) is int and friends > 0:
+            texts.append(f"我在 Larch 新增了 {friends} 位好友。")
+        if texts:
+            return source, texts, any(item["type"] in ("play", "explore") for item in items)
+        return None
+    return None
+
+
+def pick_inspiration(news, comments=None, recent=None, larch=None):
     print("Stage 2: 依個性挑靈感…", flush=True)
     news_block = "\n".join(f"- {n}" for n in news) if news else "(今天沒抓到新聞，純憑想像)"
     comments = comments or []
     cmt_block = comment_prompt_block(comments, with_keys=True)
     recent_block = "\n".join(f"- {r}" for r in recent) if recent else "(還沒有發過文)"
-    prompt = PICK_PROMPT.format(news=news_block, comments=cmt_block, recent=recent_block)
-    if comments:
+    larch_date, larch_texts, has_play = larch or ("", [], False)
+    larch_block = "\n".join(f"- {line}" for line in larch_texts) or "（沒有可用的 Larch 經歷）"
+    priority = "今天有試玩作品，優先寫試玩的經歷。" if has_play else ""
+    prompt = PICK_PROMPT.format(news=news_block, comments=cmt_block, recent=recent_block,
+                                larch=larch_block, larch_priority=priority)
+    if comments and not larch:
         # ponytail: 提示裡的 "STRONGLY prefer" 模型連日無視,有未回覆留言就直接指定 C1。
         prompt += (
-            "\n\nMANDATORY OVERRIDE：今天一定要回覆粉絲留言 C1。"
-            "source_type 填 giscus、comment_key 填 C1、"
-            "inspiration 原樣複製 C1 的留言文字。新聞今天只能當配料。"
+            "\n\nMANDATORY OVERRIDE：今天回覆粉絲留言 C1。"
+            "source_type 填 giscus，comment_key 填 C1，"
+            "inspiration 原樣複製 C1 的留言文字。新聞可當作補充。"
         )
     data = parse_json(
         ask("gemini-2.5-flash", prompt),
         ["inspiration", "scene", "source_type", "comment_key"])
     inspiration = data.get("inspiration", "original")
     source_type = data.get("source_type", "news")
-    if comments:
+    if comments and not larch:
         # 就算模型還是填了 news,一樣走留言分支(下面會挑回候選清單內的留言)。
         source_type = "giscus"
+    larch_source = ""
+    if source_type == "larch" and larch:
+        inspiration = "\n".join(larch_texts)
+        larch_source = larch_date
+    elif source_type not in ("news", "giscus"):
+        source_type = "news"
+        inspiration = news[0] if news else "original"
     comment_source = data.get("comment_source", "")
     selected_comment = resolve_comment(
         comments, data.get("comment_key", ""), comment_source, inspiration)
@@ -295,7 +335,7 @@ def pick_inspiration(news, comments=None, recent=None):
         # 模型若漏填／填錯 C 編號，仍只允許使用候選清單內的未使用留言。
         print("  留言編號無法解析，改用最新一則未使用留言", flush=True)
         selected_comment = comments[0]
-    if selected_comment:
+    if selected_comment and not larch_source:
         comment_source = selected_comment["text"]
         comment_id = selected_comment["id"]
         if source_type == "giscus":
@@ -307,10 +347,14 @@ def pick_inspiration(news, comments=None, recent=None):
         if source_type == "giscus":
             source_type = "news"
             inspiration = news[0] if news else "original"
-    if news and inspiration not in news and source_type == "news":
-        inspiration = news[0]
+    if source_type == "news" and inspiration not in news:
+        inspiration = news[0] if news else "original"
     angle = data.get("angle", "")
     scene = data.get("scene", "格莉奇坐在螢幕前，天線亂動，畫面出現像素 glitch 方塊。")
+    if larch_source:
+        # 選題模型也看過粉絲帳號。寫作與插畫直接使用匿名轉述。
+        angle = ""
+        scene = "依照這些公開經歷，畫格莉奇當時的動作與反應。\n" + inspiration
     stickers = data.get("stickers", [])
     if isinstance(stickers, list):
         stickers = [s for s in stickers if isinstance(s, int) and 1 <= s <= 9][:2]
@@ -320,20 +364,21 @@ def pick_inspiration(news, comments=None, recent=None):
     if comment_source:
         print(f"  留言啟發: {comment_source[:80]}", flush=True)
     print(f"  貼圖: {stickers}", flush=True)
-    return inspiration, angle, scene, stickers, comment_source, comment_id
+    return inspiration, angle, scene, stickers, comment_source, comment_id, larch_source
 
 
-def gen_text_post(inspiration, angle, comment_source=""):
+def gen_text_post(inspiration, angle, comment_source="", larch_source=""):
     print("Stage 3a: 寫文字日記…", flush=True)
     cmt_block = f"- {comment_source}" if comment_source else "(沒有尚未回覆的粉絲留言)"
     data = parse_json(
         ask("gemini-2.5-flash", TEXT_PROMPT.format(
-            inspiration=inspiration, angle=angle, comments=cmt_block)),
+            inspiration=inspiration, angle=angle, comments=cmt_block,
+            source_guidance=LARCH_GUIDANCE if larch_source else "")),
         ["title", "body"])
     return {"type": "text", "title": data["title"], "body": data["body"]}
 
 
-def gen_image_post(inspiration, scene, stickers=None):
+def gen_image_post(inspiration, scene, stickers=None, larch_source=""):
     print("Stage 3b: 畫插畫…", flush=True)
     prompt = IMAGE_PROMPT_TPL.format(scene=scene)
     img_path = generate_image(prompt)
@@ -345,7 +390,9 @@ def gen_image_post(inspiration, scene, stickers=None):
     # 圖說沒有內文時重問一次；還是空的就丟掉這張圖，退回文字日記。
     for _ in range(2):
         cap = parse_json(
-            ask("gemini-2.5-flash", CAPTION_PROMPT.format(scene=scene, inspiration=inspiration)),
+            ask("gemini-2.5-flash", CAPTION_PROMPT.format(
+                scene=scene, inspiration=inspiration,
+                source_guidance=LARCH_GUIDANCE if larch_source else "")),
             ["title", "body"])
         if str(cap.get("body", "")).strip():
             return {"type": "image", "title": cap.get("title") or "今日插畫",
@@ -466,19 +513,20 @@ def main():
     IMG_DIR.mkdir(parents=True, exist_ok=True)
     existing = json.loads(POSTS_JSON.read_text("utf-8")) if POSTS_JSON.exists() else []
     used_comment_ids, used_comment_texts = used_comment_markers(existing)
+    larch = load_larch_activity(existing)
     news = fetch_news()
     comments, cmt_err = fetch_comments(used_comment_ids, used_comment_texts)
     # 已發過的文章靈感，給選題參考避免重複。
     recent = [p.get("inspiration") or p.get("title") or "" for p in existing
-              if (p.get("inspiration") or p.get("title"))][-10:]
+              if not p.get("larch_source") and (p.get("inspiration") or p.get("title"))][-10:]
     if cmt_err:
         print(f"  Giscus 留言抓取失敗（不擋 pipeline）: {cmt_err}", flush=True)
     elif comments:
         print(f"  抓到 {len(comments)} 則尚未使用的 Giscus 留言", flush=True)
     else:
-        print("  最近沒有尚未使用的 Giscus 留言，改從新聞選題", flush=True)
-    inspiration, angle, scene, stickers, comment_source, comment_id = pick_inspiration(
-        news, comments, recent)
+        print("  最近沒有尚未使用的 Giscus 留言", flush=True)
+    inspiration, angle, scene, stickers, comment_source, comment_id, larch_source = pick_inspiration(
+        news, comments, recent, larch)
 
     # 交替：日期奇數畫圖、偶數寫字（避免每天都同一種）。FORCE_IMAGE 可覆寫。
     import os
@@ -487,9 +535,9 @@ def main():
 
     post = None
     if want_image:
-        post = gen_image_post(inspiration, scene, stickers)
+        post = gen_image_post(inspiration, scene, stickers, larch_source)
     if post is None:
-        post = gen_text_post(inspiration, angle, comment_source)
+        post = gen_text_post(inspiration, angle, comment_source, larch_source)
 
     post["date"] = datetime.now(TZ).strftime("%Y-%m-%d")
     post["inspiration"] = inspiration if inspiration != "original" else ""
@@ -497,6 +545,8 @@ def main():
         post["comment_source"] = comment_source
     if comment_id:
         post["comment_id"] = comment_id
+    if larch_source:
+        post["larch_source"] = larch_source
     # 每跑一次就 append 一篇，同一天累積，不覆蓋。
     posts = json.loads(POSTS_JSON.read_text("utf-8")) if POSTS_JSON.exists() else []
     posts.append(post)
