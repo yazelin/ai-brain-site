@@ -94,7 +94,8 @@
   .links a:hover{color:#e6f6fb}
 
   /* desktop icons */
-  #icons{position:absolute; top:44px; left:14px; display:flex; flex-direction:column; gap:8px; z-index:100}
+  /* 圖示由上往下排，排到 Dock 上緣就換到右邊下一排（視窗矮的時候不會被切掉） */
+  #icons{position:absolute; top:44px; left:14px; display:flex; flex-direction:column; flex-wrap:wrap; align-content:flex-start; max-height:calc(100vh - 44px - 96px); gap:8px 6px; z-index:100}
   .icon{width:74px; text-align:center; cursor:pointer; padding:6px 4px; border-radius:9px; transition:.12s}
   #install-app{appearance:none;border:0;background:transparent;color:inherit;font:inherit;line-height:inherit}
   #install-app .emo,#install-app .lbl{display:block}
@@ -275,7 +276,7 @@
   .boot-cap{color:#cfe8ef;font-size:.92rem;letter-spacing:3px;text-align:center;min-height:1.4em}
   .boot-cap.glitch{animation:btgl .18s steps(2) 2}
   @keyframes btgl{0%{transform:translate(0,0)}50%{transform:translate(2px,-1px);color:#b78bff}100%{transform:translate(-1px,1px)}}
-  @media(max-width:560px){#icons{flex-direction:row;flex-wrap:wrap;max-width:90vw}.win{max-width:94vw!important}}
+  @media(max-width:560px){#icons{flex-direction:row;flex-wrap:wrap;max-width:90vw;max-height:none}.win{max-width:94vw!important}}
   /* desktop pet */
   /* 黑洞先生站左邊,格莉奇站右邊,水平對稱。共用同一組尺寸與動畫。 */
   /* 完全鏡像 #pet:同樣的高度、同樣的底邊,只有左右相反。
@@ -594,7 +595,7 @@
     #menubar{display:none}
 
     #icons{position:absolute;top:calc(22px + env(safe-area-inset-top));left:0;right:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
-      gap:17px 6px;max-width:none;padding:0 12px;z-index:100;transition:opacity .18s,transform .18s}
+      gap:17px 6px;max-width:none;max-height:none;padding:0 12px;z-index:100;transition:opacity .18s,transform .18s}
     .icon{width:auto;min-width:0;padding:0;background:transparent!important;box-shadow:none!important}
     /* app 格對齊對話泡語彙:暗青半透底(透出壁紙)+掃描線+彩色 hairline 光暈。
        三色輪替用站的 token(mint/cyan/purple)當 accent,底一律同一種暗青。 */
@@ -683,6 +684,227 @@
     @keyframes mobile-app-open{from{opacity:.4;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
   }
   @media(max-width:360px){#icons{gap:13px 3px;padding-inline:7px}.icon .emo{width:52px;height:52px;border-radius:14px}.icon .emo .ic{width:26px;height:26px}}
+
+  /* 格莉奇工作中（js/glitch-at-work.js）。外框沿用 .win，內容卡片沿用設定中心的語彙：
+     暗青半透底＋hairline＋mint/cyan/purple 三色。寬度用 container query，視窗拉窄或手機都換單欄。 */
+  #w-work{width:min(880px,calc(100vw - 48px));height:min(780px,calc(100vh - 80px))}
+  #w-work>.gaw-body{padding:0 18px 22px;container-type:inline-size}
+  .gaw-body{--gaw-sub:#9fb0b8}
+  .gaw-bar{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:8px;margin:0 -18px 14px;padding:9px 18px;
+    background:rgba(25,28,32,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--hair)}
+  .gaw-src{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:.74rem;color:#a9f7d8;background:rgba(124,243,192,.08);
+    border:1px solid rgba(124,243,192,.25);border-radius:999px;padding:2px 10px}
+  .gaw-src.full{color:#e2d3ff;background:rgba(183,139,255,.12);border-color:rgba(183,139,255,.4)}
+  .gaw-src .ic{width:13px;height:13px}
+  .gaw-when{font-size:.7rem;color:var(--gaw-sub);white-space:nowrap}
+  .gaw-sp{flex:1}
+  .gaw-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font:inherit;font-size:.76rem;color:#dcebf0;background:#0d2b3a;
+    border:1px solid var(--hair2);border-radius:9px;padding:5px 11px;min-height:32px;cursor:pointer;white-space:nowrap}
+  .gaw-btn:hover{border-color:var(--cy)}
+  .gaw-btn:focus-visible,.gaw-link:focus-visible,.gaw-run-link:focus-visible,.gaw-body summary:focus-visible{outline:2px solid var(--cy);outline-offset:2px}
+  .gaw-btn:disabled{opacity:.5;cursor:default}
+  .gaw-btn .ic{width:15px;height:15px}
+  .gaw-btn.primary{background:rgba(37,194,232,.18);border-color:rgba(37,194,232,.5);color:#e6fbff;font-weight:700}
+  .gaw-btn.danger{background:transparent;border-color:rgba(255,95,87,.5);color:#ffb3ae}
+  .gaw-btn.danger:hover{background:rgba(255,95,87,.12)}
+  .gaw-btn.small{min-height:28px;padding:3px 9px}
+  .gaw-keybtn.on{color:#e2d3ff;border-color:rgba(183,139,255,.55)}
+  /* 主人登入 */
+  .gaw-keypanel{margin-bottom:14px;padding:14px;border-radius:12px;border:1px solid rgba(183,139,255,.35);background:rgba(183,139,255,.06)}
+  .gaw-kp-head{display:flex;align-items:center;gap:7px;color:#e2d3ff}
+  .gaw-kp-head .ic{width:16px;height:16px}
+  .gaw-kp-help{margin:6px 0 12px;font-size:.76rem;line-height:1.7;color:#cfc6e6}
+  .gaw-kp-label{font-size:.76rem;color:#cfdde2}
+  .gaw-kp-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+  .gaw-login{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px}
+  .gaw-field{display:grid;gap:4px;flex:1 1 170px;min-width:0;font-size:.72rem;color:#b9c4cb}
+  .gaw-input{width:100%;min-width:0;background:#0d2b3a;border:1px solid rgba(37,194,232,.3);border-radius:9px;color:#e6f6fb;
+    padding:7px 10px;font:inherit;font-size:.86rem;user-select:text}
+  .gaw-input:focus{outline:none;border-color:var(--cy);box-shadow:0 0 0 2px rgba(37,194,232,.18)}
+  .gaw-login .gaw-btn{min-height:37px;padding:0 20px}
+  .gaw-kp-msg{margin:10px 0 0;font-size:.76rem;color:#a9f7d8}
+  .gaw-kp-msg.err{color:#ffc2bd}
+  .gaw-notice{display:flex;align-items:center;gap:9px;margin-bottom:12px;padding:9px 12px;border-radius:10px;font-size:.78rem;color:#cfe9f2;
+    background:rgba(37,194,232,.07);border:1px solid rgba(37,194,232,.25)}
+  .gaw-notice.warn{color:#ffe2a8;background:rgba(254,188,46,.08);border-color:rgba(254,188,46,.4)}
+  .gaw-notice span{flex:1;min-width:0}
+  .gaw-notice .ic{width:16px;height:16px;flex:0 0 auto}
+  /* 頂部：狀態＋電量 */
+  .gaw-hero{--st:var(--mint);display:grid;grid-template-columns:auto minmax(0,1fr) minmax(210px,290px);gap:16px;align-items:center;
+    margin-bottom:14px;padding:16px;border-radius:14px;border:1px solid color-mix(in srgb,var(--st) 35%,transparent);
+    background:radial-gradient(420px 170px at 0 0,color-mix(in srgb,var(--st) 14%,transparent),transparent 70%),
+      repeating-linear-gradient(0deg,rgba(255,255,255,.02) 0 1px,transparent 1px 3px),rgba(10,28,38,.62)}
+  .gaw-hero.st-sleeping{--st:var(--purple)}.gaw-hero.st-paused{--st:#febc2e}.gaw-hero.st-offline{--st:#93a3ab}
+  .gaw-av{width:92px;height:92px;border-radius:50%;overflow:hidden;border:2px solid var(--st);background:#0b1a22;
+    box-shadow:0 0 22px color-mix(in srgb,var(--st) 40%,transparent)}
+  .gaw-av img{width:100%;height:100%;object-fit:cover;transform:scale(1.45);transform-origin:60% 30%}
+  .gaw-pills{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+  .gaw-state{display:inline-flex;align-items:center;gap:8px;font-size:1.08rem;font-weight:800;color:var(--st)}
+  .gaw-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--st);box-shadow:0 0 10px var(--st)}
+  .gaw-chip{font-size:.68rem;color:#cfe9f2;border:1px solid var(--hair2);border-radius:999px;padding:1px 8px}
+  .gaw-chip.owner{color:#e2d3ff;border-color:rgba(183,139,255,.45)}
+  .gaw-line{margin:6px 0 4px;font-size:.92rem;color:#e6f6fb}
+  .gaw-meta{margin:0;font-size:.72rem;color:var(--gaw-sub)}
+  .gaw-batts{display:grid;gap:10px}
+  .gaw-batt{--lv:var(--mint)}
+  .gaw-batt.lv-mid{--lv:var(--cy)}.gaw-batt.lv-low{--lv:#febc2e}.gaw-batt.lv-empty{--lv:#ff7a72}.gaw-batt.lv-unknown{--lv:#6b7a82}
+  .gaw-batt-top{display:flex;justify-content:space-between;font-size:.72rem;color:var(--gaw-sub)}
+  .gaw-batt-pct{font-weight:800;color:var(--lv);font-variant-numeric:tabular-nums}
+  .gaw-cell{position:relative;height:20px;margin:3px 7px 3px 0;padding:2px;border:2px solid var(--lv);border-radius:5px;background:#071116}
+  .gaw-cell i{display:block;height:100%;border-radius:2px;background:linear-gradient(90deg,color-mix(in srgb,var(--lv) 65%,#000),var(--lv));
+    box-shadow:0 0 10px color-mix(in srgb,var(--lv) 45%,transparent)}
+  .gaw-cell::after{content:"";position:absolute;inset:2px;pointer-events:none;
+    background:repeating-linear-gradient(90deg,transparent 0 calc(10% - 2px),#071116 calc(10% - 2px) 10%)}
+  .gaw-cell-tip{position:absolute;top:50%;right:-7px;width:4px;height:8px;transform:translateY(-50%);border-radius:0 2px 2px 0;background:var(--lv)}
+  .gaw-batt-t{font-size:.74rem;color:#dfeef3}
+  .gaw-batt-r{font-size:.66rem;color:var(--gaw-sub)}
+  /* 卡片 */
+  .gaw-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .gaw-card{min-width:0;padding:14px 15px;border-radius:13px;border:1px solid var(--hair);background:rgba(8,16,21,.46)}
+  .gaw-card.wide{grid-column:1/-1}
+  .gaw-card-h{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .gaw-card-h .ic{width:17px;height:17px;color:var(--mint)}
+  .gaw-card-h h3{flex:1;margin:0;font-size:.95rem;color:#dce7eb}
+  .gaw-count{flex:0 0 auto;font-size:.68rem;color:var(--cy);background:rgba(37,194,232,.1);border:1px solid rgba(37,194,232,.2);border-radius:999px;padding:1px 8px;font-variant-numeric:tabular-nums}
+  .gaw-none{margin:6px 0;font-size:.8rem;color:var(--gaw-sub)}
+  .gaw-sub{margin:8px 0;font-size:.72rem;color:var(--gaw-sub)}
+  .gaw-h4{margin:16px 0 8px;font-size:.8rem;font-weight:700;color:var(--mint);letter-spacing:.04em}
+  .gaw-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .gaw-tile{display:grid;justify-items:center;padding:9px 4px 7px;border-radius:10px;background:rgba(37,194,232,.06);border:1px solid rgba(37,194,232,.2)}
+  .gaw-tile .ic{width:15px;height:15px;color:#8fd8ee}
+  .gaw-tile b{font-size:1.45rem;line-height:1.2;color:var(--cy);font-variant-numeric:tabular-nums}
+  .gaw-tile small{font-size:.7rem;color:#b3cbd3}
+  .gaw-tile.zero b{color:#6c818c}
+  .gaw-week{margin:4px 0 0}
+  .gaw-week-cap{display:flex;justify-content:space-between;margin-bottom:4px;font-size:.72rem;color:var(--gaw-sub)}
+  .gaw-legend{display:inline-flex;align-items:center;gap:5px}
+  .gaw-legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-left:6px}
+  .gaw-legend .k-r{background:var(--cy)}.gaw-legend .k-p{background:var(--purple)}
+  .gaw-bars{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;height:128px}
+  .gaw-day{display:grid;grid-template-rows:minmax(0,1fr) auto auto;min-width:0;text-align:center}
+  .gaw-cols{display:flex;align-items:flex-end;justify-content:center;gap:3px;padding-top:15px;border-bottom:1px solid var(--hair2)}
+  .gaw-cols i{position:relative;display:block;width:min(12px,40%);border-radius:3px 3px 0 0}
+  .gaw-cols i.r{background:linear-gradient(180deg,var(--cy),var(--cy-d))}
+  .gaw-cols i.p{background:linear-gradient(180deg,var(--purple),#8c64d8)}
+  .gaw-cols i b{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);font-size:.6rem;font-weight:600;color:#cfe9f2;line-height:1.5}
+  .gaw-dl{margin-top:3px;font-size:.62rem;color:var(--gaw-sub);font-variant-numeric:tabular-nums}
+  .gaw-wd{font-size:.58rem;color:#7d8f98}
+  .gaw-dmby{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px;font-size:.72rem;color:var(--gaw-sub)}
+  .gaw-dmby-i{padding:1px 8px;border-radius:999px;border:1px solid rgba(183,139,255,.4);color:#e2d3ff;font-variant-numeric:tabular-nums}
+  .gaw-dmby-i b{font-weight:600}
+  .gaw-health{--hc:var(--mint)}.gaw-health.hs-changed{--hc:#febc2e}.gaw-health.hs-unknown{--hc:#93a3ab}
+  .gaw-health-row{display:flex;align-items:center;gap:8px}
+  .gaw-health .gaw-dot{background:var(--hc);box-shadow:0 0 10px var(--hc)}
+  .gaw-health-row b{color:var(--hc)}
+  .gaw-health p{margin:6px 0 0;font-size:.8rem;color:#cfdde2}
+  .gaw-health p.gaw-sub{font-size:.72rem;color:var(--gaw-sub)}
+  .gaw-plays{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+  .gaw-play,.gaw-work{display:flex;flex-direction:column;gap:4px;min-width:0;padding:12px;border-radius:11px;border:1px solid var(--hair);background:rgba(255,255,255,.025)}
+  .gaw-play-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px}
+  .gaw-play-t{font-size:.88rem;line-height:1.4;color:#eef8fb}
+  .gaw-tag{font-size:.62rem;color:#a9f7d8;border:1px solid rgba(124,243,192,.35);border-radius:6px;padding:0 6px}
+  .gaw-tag.dm{color:#e2d3ff;border-color:rgba(183,139,255,.5)}
+  .gaw-play-a{font-size:.7rem;color:var(--gaw-sub)}
+  .gaw-play-c{margin:4px 0;padding:7px 10px;border-left:3px solid var(--purple);border-radius:0 8px 8px 0;background:rgba(183,139,255,.08);
+    font-size:.8rem;line-height:1.6;color:#e0d5fb;user-select:text;overflow-wrap:anywhere}
+  .gaw-link{align-self:flex-start;margin-top:auto;font-size:.76rem;color:var(--cy);text-decoration:none;border-bottom:1px solid rgba(37,194,232,.35)}
+  .gaw-link:hover{color:var(--mint);border-bottom-color:var(--mint)}
+  .gaw-ext{margin-left:3px;font-size:.72em}
+  .gaw-works{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+  .gaw-work-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .gaw-work-h b{font-size:.9rem;color:#eef8fb}
+  .gaw-ws{flex:0 0 auto;font-size:.66rem;padding:1px 8px;border-radius:999px;border:1px solid}
+  .ws-making .gaw-ws{color:#8fe4f7;border-color:rgba(37,194,232,.45)}
+  .ws-review .gaw-ws{color:#ffd77a;border-color:rgba(254,188,46,.5)}
+  .ws-published .gaw-ws{color:#a9f7d8;border-color:rgba(124,243,192,.5)}
+  .gaw-stage{margin:0 0 6px;font-size:.78rem;color:#c3d5dc}
+  .gaw-steps{display:flex;gap:4px;margin:0;padding:0;list-style:none}
+  .gaw-steps li{flex:1;min-width:0;margin:0;font-size:.62rem;line-height:1.3;color:#8597a0;text-align:center}
+  .gaw-steps li i{display:block;height:7px;margin-bottom:4px;border-radius:4px;background:#22323b}
+  .gaw-steps li.done{color:#bfeedd}
+  .gaw-steps li.done i{background:linear-gradient(90deg,var(--cy-d),var(--mint))}
+  .gaw-steps li.now{color:#ffd77a;font-weight:700}
+  .gaw-steps li.now i{background:repeating-linear-gradient(45deg,rgba(254,188,46,.9) 0 4px,rgba(254,188,46,.45) 4px 8px)}
+  .gaw-steps li span{display:block;overflow-wrap:anywhere}
+  .gaw-body .sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .gaw-work-m{margin:6px 0 0;font-size:.68rem;color:var(--gaw-sub)}
+  .gaw-body summary{cursor:pointer;margin-top:6px;font-size:.72rem;color:var(--cy)}
+  .gaw-log pre{margin:6px 0 0;padding:9px 10px;max-height:220px;overflow:auto;border-radius:8px;background:#071116;border:1px solid var(--hair);
+    font-size:.72rem;line-height:1.6;color:#cfdde2;white-space:pre-wrap;overflow-wrap:anywhere;user-select:text}
+  /* 4KB 記憶體 */
+  .gaw-body .c1{--nc:var(--mint)}.gaw-body .c2{--nc:var(--cy)}.gaw-body .c3{--nc:var(--purple)}.gaw-body .c4{--nc:#febc2e}.gaw-body .c5{--nc:#ff8fb1}.gaw-body .other{--nc:#5f7480}
+  .gaw-mem{padding:12px;border-radius:11px;background:#071116;border:1px solid rgba(124,243,192,.22);font-family:ui-monospace,Menlo,Consolas,monospace}
+  .gaw-mem-top{display:flex;justify-content:space-between;gap:8px;font-size:.76rem;color:var(--gaw-sub)}
+  .gaw-mem-top b{color:var(--mint)}
+  .gaw-mem-bar{display:flex;gap:2px;height:22px;margin:8px 0;padding:2px;border-radius:5px;
+    background:repeating-linear-gradient(90deg,#11212a 0 6px,#0b161c 6px 8px)}
+  .gaw-mem-bar i{display:block;min-width:4px;border-radius:2px;background:var(--nc);box-shadow:0 0 8px color-mix(in srgb,var(--nc) 40%,transparent)}
+  .gaw-mem-bar i.free{background:transparent;box-shadow:none}
+  .gaw-mem-legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.7rem;color:#c3d5dc}
+  .gaw-mem-legend i{display:inline-block;width:8px;height:8px;margin-right:5px;border-radius:2px;background:var(--nc)}
+  .gaw-notes{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+  .gaw-note{min-width:0;padding:10px 12px;border-radius:4px 12px 12px 12px;background:rgba(255,255,255,.035);border:1px solid var(--hair);border-top:3px solid var(--nc)}
+  .gaw-note-h{display:flex;justify-content:space-between;gap:8px;font-size:.76rem}
+  .gaw-note-h b{color:#eef8fb}.gaw-note-h span{font-size:.68rem;color:var(--gaw-sub)}
+  .gaw-note>p{margin:5px 0 0;font-size:.8rem;line-height:1.55;color:#d3e0e5;user-select:text;overflow-wrap:anywhere}
+  .gaw-note-all ul{margin:6px 0 0 16px;font-size:.74rem;color:#c3d5dc}
+  .gaw-note-all li time,.gaw-said time{margin-right:6px;font-size:.66rem;color:#8597a0}
+  .gaw-said{display:grid;gap:8px;margin:0;list-style:none}
+  .gaw-said li{margin:0;padding:8px 10px;border-radius:10px;background:rgba(124,243,192,.05);border:1px solid rgba(124,243,192,.15)}
+  .gaw-said li.dm{background:rgba(183,139,255,.07);border-color:rgba(183,139,255,.32)}
+  .gaw-said-m{display:flex;align-items:center;gap:8px;font-size:.66rem;color:var(--gaw-sub)}
+  .gaw-where{color:#a9f7d8;border:1px solid rgba(124,243,192,.3);border-radius:6px;padding:0 6px}
+  .gaw-where.dm{color:#e2d3ff;border-color:rgba(183,139,255,.5)}
+  .gaw-said p{margin:3px 0 0;font-size:.8rem;line-height:1.55;color:#dfeef3;user-select:text;overflow-wrap:anywhere}
+  /* 主人模式：錯誤與處理紀錄 */
+  .gaw-err-n{margin:0;font-size:.8rem;color:#ffc2bd}
+  .gaw-err-n b{margin-right:4px;font-size:1.5rem;color:#ff8a80}
+  .gaw-errs ul{display:grid;gap:5px;margin:8px 0 0;list-style:none}
+  .gaw-errs li{display:flex;justify-content:space-between;gap:8px;margin:0;padding:5px 9px;border-radius:8px;background:rgba(255,95,87,.08);font-size:.78rem;color:#f0d6d3}
+  .gaw-errs li b{color:#ffb3ae}
+  .gaw-ok-line{margin:0;font-size:.82rem;color:#a9f7d8}
+  .gaw-runs{display:grid;gap:6px;margin:0;list-style:none}
+  .gaw-runs li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;margin:0;padding:8px 10px;border-radius:10px;border:1px solid var(--hair);background:rgba(255,255,255,.02)}
+  .gaw-runs li.bad{border-color:rgba(255,95,87,.35);background:rgba(255,95,87,.05)}
+  .gaw-run-ok{font-size:.64rem;font-weight:800;padding:2px 7px;border-radius:6px;color:#062014;background:var(--mint)}
+  .gaw-runs li.bad .gaw-run-ok{color:#2a0806;background:#ff8a80}
+  .gaw-run-m{display:flex;flex-wrap:wrap;gap:3px 8px;font-size:.66rem;color:var(--gaw-sub)}
+  .gaw-kind{color:#8fe4f7;font-weight:600}
+  .gaw-who{color:#d3bcff}
+  .gaw-run-main p{margin:2px 0 0;font-size:.78rem;line-height:1.45;color:#dfeef3;overflow-wrap:anywhere}
+  .gaw-run-link{font-size:.72rem;color:var(--cy);text-decoration:none;border:1px solid rgba(37,194,232,.35);border-radius:7px;padding:3px 8px}
+  .gaw-run-link:hover{color:var(--mint);border-color:var(--mint)}
+  /* 拿不到資料、讀取中 */
+  .gaw-empty-state,.gaw-loading{display:grid;justify-items:center;gap:6px;padding:40px 16px 26px;text-align:center}
+  .gaw-empty-state img,.gaw-loading img{width:140px;height:140px;border-radius:50%;object-fit:cover;background:#0b1a22;
+    border:2px solid rgba(124,243,192,.3);box-shadow:0 0 30px rgba(124,243,192,.15)}
+  .gaw-loading img{width:96px;height:96px}
+  .gaw-empty-state h3{margin:10px 0 0;font-size:1.1rem;color:var(--mint)}
+  .gaw-empty-state p,.gaw-loading p{max-width:340px;margin:0 0 10px;font-size:.84rem;color:#b9c9d0}
+  .gaw-foot{margin:16px 0 0;text-align:center;font-size:.68rem;color:#8597a0}
+  @container (max-width:640px){
+    .gaw-grid{grid-template-columns:minmax(0,1fr)}
+    .gaw-hero{grid-template-columns:auto minmax(0,1fr)}
+    .gaw-batts{grid-column:1/-1;grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+  }
+  @container (max-width:470px){
+    .gaw-when{display:none}
+    .gaw-hero{gap:12px;padding:14px}
+    .gaw-av{width:70px;height:70px}
+    .gaw-runs li{grid-template-columns:auto minmax(0,1fr)}
+    .gaw-run-link{grid-column:2;justify-self:start}
+  }
+  @media(max-width:600px){
+    #w-work>.gaw-body{padding:0 14px calc(28px + env(safe-area-inset-bottom))}
+    .gaw-bar{margin:0 -14px 12px;padding:8px 14px}
+  }
+  @media(prefers-reduced-motion:no-preference){
+    .gaw-hero.st-online .gaw-dot{animation:gawpulse 2.2s ease-in-out infinite}
+    .gaw-refresh.busy .ic{animation:gawspin 1s linear infinite}
+    .gaw-cell i,.gaw-mem-bar i{transition:width .5s ease,flex-grow .5s ease}
+  }
+  @keyframes gawpulse{0%,100%{opacity:1}50%{opacity:.45}}
+  @keyframes gawspin{to{transform:rotate(360deg)}}
   @media(prefers-reduced-motion:reduce){.win.open{animation:none!important}}
 </style>
 </head>
@@ -713,6 +935,14 @@
   <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/><rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/></symbol>
   <symbol id="i-rewind" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M10 9v6M14 9v6"/></symbol>
   <symbol id="i-forward" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M10 9v6M14 9v6"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.8-9.8M17 6l3 3M14.5 8.5l2 2"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-user-plus" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></symbol>
+  <symbol id="i-chip" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
   <symbol id="i-volume" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12"/></symbol>
 </svg>
 <div id="desktop">
@@ -738,6 +968,7 @@
     <div class="icon" data-app="comic"><div class="emo"><svg class="ic"><use href="#i-comic"/></svg></div><div class="lbl">我的漫畫</div></div>
     <div class="icon" data-app="novel"><div class="emo"><svg class="ic"><use href="#i-novel"/></svg></div><div class="lbl">我的小說</div></div>
     <div class="icon" data-app="status"><div class="emo"><svg class="ic"><use href="#i-activity"/></svg></div><div class="lbl">我的狀態</div></div>
+    <div class="icon" data-app="work" title="格莉奇工作中"><div class="emo"><img src="images/sticker-04.webp" alt="" width="34" height="34"></div><div class="lbl">格莉奇工作中</div></div>
     <div class="icon" data-app="chat"><div class="emo"><svg class="ic"><use href="#i-chat"/></svg></div><div class="lbl">聊天</div></div>
     <div class="icon" data-app="talk"><div class="emo"><svg class="ic"><use href="#i-message"/></svg></div><div class="lbl">留言</div></div>
     <div class="icon" data-app="settings"><div class="emo"><svg class="ic"><use href="#i-gear"/></svg></div><div class="lbl">設定</div></div>
@@ -755,6 +986,7 @@
     <div class="dapp" data-app="comic" title="我的漫畫"><svg class="ic"><use href="#i-comic"/></svg></div>
     <div class="dapp" data-app="novel" title="我的小說"><svg class="ic"><use href="#i-novel"/></svg></div>
     <div class="dapp" data-app="status" title="我的狀態"><svg class="ic"><use href="#i-activity"/></svg></div>
+    <div class="dapp" data-app="work" title="格莉奇工作中"><img src="images/sticker-04.webp" alt="格莉奇工作中" width="28" height="28"></div>
     <div class="dapp mobile-dock" data-app="chat" title="聊天"><svg class="ic"><use href="#i-chat"/></svg></div>
     <div class="dapp" data-app="talk" title="留言"><svg class="ic"><use href="#i-message"/></svg></div>
     <div class="dapp mobile-dock" data-app="settings" title="設定"><svg class="ic"><use href="#i-gear"/></svg></div>
@@ -911,6 +1143,13 @@
         <div class="stat"><b id="stat-cap">--</b><small>已使用</small><div class="gauge"><i id="stat-cap-bar"></i></div></div>
       </div>
     </div>
+  </div>
+
+  <!-- window: 格莉奇工作中（js/glitch-at-work.js 畫內容；視窗開著才每 60 秒抓一次） -->
+  <div class="win" id="w-work" style="left:16%;top:46px">
+    <div class="tb"><span class="dot r" data-close title="關閉"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="ttl">格莉奇工作中</span></div>
+    <div class="body gaw-body" id="gaw-root" aria-live="polite"></div>
   </div>
 
   <!-- window: 留言 -->
@@ -2165,6 +2404,7 @@ document.getElementById('chat-clear').addEventListener('click',async()=>{
     });
 </script>
 <script src="js/glitch-call.js"></script>
+<script type="module" src="js/glitch-at-work.js"></script>
 <script>
 /* 使用記錄:只在正式站計一次到訪(站名),無任何個資;照全家站的共同 pattern */
 try{if(location.hostname==="yazelin.github.io"&&navigator.sendBeacon)navigator.sendBeacon("https://k-rider-api.yazelinj303.workers.dev/hit?s=ai-brain-site")}catch(e){}

@@ -1,0 +1,39 @@
+{
+ "version": 1,
+ "generatedAt": "2026-11-26T02:30:00.000Z",
+ "status": {
+  "state": "sleeping",
+  "lastActivityAt": null,
+  "working": false
+ },
+ "energy": {
+  "weekly": null,
+  "fiveHour": 4,
+  "weeklyResetAt": null,
+  "fiveHourResetAt": "2026-11-26T05:00:00.000Z"
+ },
+ "today": {
+  "date": "2026-11-26",
+  "replies": 0,
+  "plays": 0,
+  "dms": 0,
+  "votes": 0,
+  "drawings": 0,
+  "friendsAdded": 0,
+  "explores": 0
+ },
+ "week": [],
+ "friends": 0,
+ "played": [],
+ "works": [],
+ "memory": {
+  "capacity": "4KB",
+  "notes": 0,
+  "people": [],
+  "recentSaid": []
+ },
+ "health": {
+  "larchApi": "unknown",
+  "checkedAt": null
+ }
+}

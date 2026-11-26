@@ -25,6 +25,7 @@
 | 專屬音樂 | 「音樂」App 以 iframe 內嵌獨立站 [glitch-music](https://github.com/yazelin/glitch-music)（開窗才載）；獨立站是可安裝的音樂播放器 PWA，支援離線與鎖屏控制 |
 | 看圖與檔案 | 圖片可縮放、拖曳、全螢幕與下載；虛擬檔案系統保存在目前瀏覽器 |
 | 心情日記 | 依月份與文字／插畫篩選；GitHub Actions 每天從世界新聞與 Giscus 留言取得靈感，自動累積新文章 |
+| 格莉奇工作中 | 看 glitch-agent 的即時狀態：上線／休眠、電量（電池樣式）、今天做了什麼與最近 7 天長條圖、玩過的作品、作品製作進度、4KB 記憶體用量、Larch API 巡檢。訪客看公開版；亞澤用狀態台同一組帳密登入後看完整版（處理紀錄、私訊、完整小紙條、作品日誌）。視窗開著才每 60 秒重抓 |
 | 角色內容 | 完整角色設定、18 張 LINE 貼圖（格莉奇與黑洞先生各 9 張）、4KB 記憶體狀態與 Giscus 討論區 |
 | 自我介紹配音 | 「關於我」視窗裡格莉奇與黑洞先生各有一段自介，按一下就聽得到，逐字稿同時顯示。音檔與逐字稿的唯一事實來源在 [glitch-vn](https://github.com/yazelin/glitch-vn)（`tools/gen_intro.py`），用 `scripts/sync_intro.py` 同步過來，不在這裡另抄一份 |
 | 個人化 | 分頁設定中心可完整查看聊天紀錄與記憶摘要，並獨立管理桌布、桌寵與系統資訊 |
@@ -238,7 +239,11 @@ npx wrangler deploy
 ├── wallpapers.json             # 桌布索引
 ├── images/                     # 角色、貼圖、桌布、PWA 圖示與文章圖片（除了 PWA 圖示全是 WebP）
 ├── js/
-│   └── tags.js                 # 解析聊天回覆裡的 [sticker:...] / [draw:...] / [emote:...] 標記
+│   ├── tags.js                 # 解析聊天回覆裡的 [sticker:...] / [draw:...] / [emote:...] 標記
+│   ├── glitch-at-work.js       # 「格莉奇工作中」App 的畫面、輪詢、主人登入
+│   └── glitch-at-work-data.js  # 同一個 App 的資料層（抓資料、整理欄位、口吻），純函式有單元測試
+├── data/
+│   └── glitch-at-work-sample-*.json  # 「格莉奇工作中」的假資料（public／full／empty），只給開發測試用
 ├── worker/
 │   ├── worker.js               # Cloudflare Worker：chat / summarize / img
 │   └── wrangler.toml           # Worker 部署設定
@@ -259,6 +264,7 @@ npx wrangler deploy
 ├── tests/
 │   ├── test_generate_post.py   # 日記產線與人設載入的單元測試
 │   ├── test_tags.mjs           # 標記解析（parseTags）的單元測試
+│   ├── test_glitch_at_work.mjs # 「格莉奇工作中」資料層、登入、退回公開版的單元測試
 │   └── hud_draw_e2e.mjs        # 格莉奇手機畫圖的端到端測試（本機 wrangler＋假上游＋Chrome，不在 CI 跑）
 └── .github/workflows/          # 每日與手動素材自動化，以及 CI 檢查
 ```
@@ -290,6 +296,23 @@ npx wrangler deploy
   - **jobId 存在對話紀錄裡**（跨週目保留的 `glitch_chat` 變數），圖本身只放記憶體：一張圖的 data URL 動輒上 MB，Larch 的字串變數超過 10 萬字會整筆丟掉。重新整理或關掉再來時，畫到一半的馬上接著查，畫好的等打開手機才用 jobId 回 Worker 重新載入。收起手機時輪詢照跑。網路斷了連續 5 次就先停，狀態留著，下次打開再接。gemini-web 目前不清舊 job，所以畫好的圖之後也載得回來；哪天上游開始清，就會顯示「這張圖已經找不到了」。
   - **看大圖與另存**：點圖開燈箱，HUD 框撐到 Larch 允許的最大 640×640，圖保持比例放大，下面一行「按右鍵或長按可以另存」；點背景或按 Esc 關回原尺寸，點圖本身不關。沒有下載鈕：Larch 的框沒有 `allow-downloads`，框裡的 `<a download>` 會被瀏覽器靜默擋掉（2026-11-16 用 Chrome 實測，拿掉 sandbox 的同一個連結就下載得到）。
   - **測試**：`node tests/hud_draw_e2e.mjs`，起本機 `wrangler dev`（本機 D1、假 gemini-web、假轉接站）和一個照 Larch 播放器建框的假宿主（額度用 `--var IMG_DAILY_LIMIT:3` 壓小，少畫幾張就測到上限），涵蓋送出、輪詢、完成、燈箱、失敗、上游掛掉、額度用完、重新整理與收起後接回，以及 Worker 重開後額度仍在。把白名單的 `null` 拿掉再跑（`E2E_ALLOWED_ORIGINS=https://yazelin.github.io`）畫圖相關項目應該全部失敗。
+
+## 格莉奇工作中
+
+資料來自 .11 上的 glitch-agent，格式照 glitch-agent 的 `docs/公開狀態資料.md`（version 1）。
+
+| 用途 | 網址 |
+|---|---|
+| 公開版 | `GET https://ching-tech.ddns.net/glitch/public/status.json`（404＝她還沒開始回報） |
+| 完整版 | `GET https://ching-tech.ddns.net/glitch/api/full.json`，帶 `Authorization: Bearer <通行證>` |
+| 主人登入 | `POST https://ching-tech.ddns.net/glitch/_glitch/token`，body `{user, password}`，回 `{token, expiresAt}`；401 帳密錯、429 錯太多次 |
+| 登出 | `POST https://ching-tech.ddns.net/glitch/_glitch/token/revoke`，帶同一個 Bearer |
+
+- 密碼只在送出那一下使用，送完就清掉輸入框，不存任何地方。這台瀏覽器只記通行證：localStorage `glitch-at-work-owner-token`，值是 `{token, expiresAt}`，過期就當沒登入。
+- 完整版回 401／403：清掉本機通行證、提示「登入過期，請重新登入」、退回公開版。完整版連不到：退回公開版並標示，通行證留著。
+- 公開網址回來的資料就算帶了 `full: true` 也只照公開版整理，私人欄位一律不收。外來文字一律用 `textContent` 放進畫面，連結只放行 http(s)。
+- 開發測試：網址加 `?glitchAtWorkFixture=public|full|empty` 改讀 `data/` 裡的假資料。
+- 測試：`node --test tests/test_tags.mjs tests/test_glitch_at_work.mjs`。
 
 ## 回報問題與交流
 
