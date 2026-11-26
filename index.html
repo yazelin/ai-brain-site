@@ -730,7 +730,7 @@
   .gaw-notice span{flex:1;min-width:0}
   .gaw-notice .ic{width:16px;height:16px;flex:0 0 auto}
   /* 頂部：狀態＋電量 */
-  .gaw-hero{--st:var(--mint);display:grid;grid-template-columns:auto minmax(0,1fr) minmax(210px,290px);gap:16px;align-items:center;
+  .gaw-hero{--st:var(--mint);display:grid;grid-template-columns:auto minmax(0,1fr) minmax(210px,max-content);gap:16px;align-items:center;
     margin-bottom:14px;padding:16px;border-radius:14px;border:1px solid color-mix(in srgb,var(--st) 35%,transparent);
     background:radial-gradient(420px 170px at 0 0,color-mix(in srgb,var(--st) 14%,transparent),transparent 70%),
       repeating-linear-gradient(0deg,rgba(255,255,255,.02) 0 1px,transparent 1px 3px),rgba(10,28,38,.62)}
@@ -745,7 +745,9 @@
   .gaw-chip.owner{color:#e2d3ff;border-color:rgba(183,139,255,.45)}
   .gaw-line{margin:6px 0 4px;font-size:.92rem;color:#e6f6fb}
   .gaw-meta{margin:0;font-size:.72rem;color:var(--gaw-sub)}
-  .gaw-batts{display:grid;gap:10px}
+  .gaw-batts{display:grid;gap:10px 18px;grid-auto-flow:column;grid-auto-columns:minmax(200px,250px)}
+  .gaw-batt-set{display:grid;gap:10px;align-content:start}
+  .gaw-batt-group{grid-column:1/-1;font-size:12px;font-weight:600;opacity:.75}
   .gaw-batt{--lv:var(--mint)}
   .gaw-batt.lv-mid{--lv:var(--cy)}.gaw-batt.lv-low{--lv:#febc2e}.gaw-batt.lv-empty{--lv:#ff7a72}.gaw-batt.lv-unknown{--lv:#6b7a82}
   .gaw-batt-top{display:flex;justify-content:space-between;font-size:.72rem;color:var(--gaw-sub)}
@@ -882,10 +884,16 @@
   .gaw-empty-state h3{margin:10px 0 0;font-size:1.1rem;color:var(--mint)}
   .gaw-empty-state p,.gaw-loading p{max-width:340px;margin:0 0 10px;font-size:.84rem;color:#b9c9d0}
   .gaw-foot{margin:16px 0 0;text-align:center;font-size:.68rem;color:#8597a0}
+  /* 兩組電量並排要約 520px，視窗不夠寬就把電量整排移到狀態文字下方 */
+  @container (max-width:900px){
+    .gaw-hero{grid-template-columns:auto minmax(0,1fr)}
+    .gaw-batts{grid-column:1/-1;grid-auto-columns:minmax(0,1fr)}
+  }
   @container (max-width:640px){
     .gaw-grid{grid-template-columns:minmax(0,1fr)}
     .gaw-hero{grid-template-columns:auto minmax(0,1fr)}
-    .gaw-batts{grid-column:1/-1;grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+    .gaw-batts{grid-column:1/-1;grid-auto-flow:row;grid-template-columns:minmax(0,1fr)}
+    .gaw-batt-set{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
   }
   @container (max-width:470px){
     .gaw-when{display:none}

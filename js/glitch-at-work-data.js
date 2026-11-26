@@ -71,6 +71,8 @@ export function normalize(raw, { allowFull = true } = {}) {
       weeklyResetAt: iso(energy.weeklyResetAt),
       fiveHourResetAt: iso(energy.fiveHourResetAt),
       claudeWeekly: full ? pct(energy.claudeWeekly) : null,
+      // 第二條電量：Claude 備援（亞澤另一個 Pro 帳號），兩條都沒電她才休眠
+      backup: { weekly: pct(obj(energy.backup).weekly), fiveHour: pct(obj(energy.backup).fiveHour) },
     },
     today: { date: str(today.date, 10) },
     week: arr(raw.week).slice(-7).map((d) => ({ date: str(obj(d).date, 10), replies: int(obj(d).replies), plays: int(obj(d).plays) })),
