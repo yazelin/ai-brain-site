@@ -23,8 +23,17 @@ if not meta_f.exists():
     sys.exit(f"找不到 {meta_f}——先在 glitch-vn 跑 tools/gen_intro.py")
 meta = json.loads(meta_f.read_text(encoding="utf-8"))
 
+# **格莉奇在網站上是現實版，不是小說版**（亞澤 2026-11-26）：小說裡她「頻道第二年」，
+# 現實中才正要開始。網站的自我介紹以 persona.json 的 siteIntro 為準，不從 glitch-vn 蓋過來；
+# 她的音檔也不複製（小說版的配音跟網站文字對不上），等網站版配音產生了再接。
+persona = json.loads((HERE / "persona.json").read_text(encoding="utf-8"))
+SITE_INTRO = {"glitch": persona["siteIntro"]} if persona.get("siteIntro") else {}
+
 (HERE / "audio").mkdir(exist_ok=True)
 for k in WHO:
+    if k in SITE_INTRO:
+        print(f"  audio/intro-{k}.mp3  略過（網站版用 persona.json siteIntro，配音另外產生）")
+        continue
     src = SRC / f"docs/voice/intro-{k}.mp3"
     if not src.exists():
         sys.exit(f"找不到 {src}")
@@ -39,7 +48,7 @@ p = HERE / "index.html"
 s = p.read_text(encoding="utf-8")
 total = 0
 for k in WHO:
-    esc = (meta[k]["text"].replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
+    esc = (SITE_INTRO.get(k, meta[k]["text"]).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
     s, n = re.subn(rf'(<p class="said" id="said-{k}">).*?(</p>)',
                    lambda m: m.group(1) + esc + m.group(2), s, flags=re.S)
     if n != 1:
