@@ -248,9 +248,13 @@ npx wrangler deploy
 │   ├── worker.js               # Cloudflare Worker：chat / summarize / img
 │   └── wrangler.toml           # Worker 部署設定
 ├── glitch2d/                   # 桌寵骨架執行期（抄自 glitch-2d，用 sync_glitch2d.py 同步）
-│   ├── pet.js                  # 掛載與對外介面：表情、揮手、嘴型、收掉
+│   ├── pet.js                  # 掛載與對外介面：表情、揮手、嘴型、視線、收掉
 │   ├── rig.json                # 角色設定，貼圖指向 images/glitch2d/
 │   └── engine/                 # motion／geometry／renderer／audio 四支模組
+├── live/                       # 直播頁（glitch-vtuber 的畫面）
+│   ├── index.html              # 版面：形象、字幕、視覺小說區、留言欄、進場
+│   ├── stage.js                # 連中繼、套事件、重畫、依序播聲音
+│   └── state.js                # 事件協定與歸約，抄自 glitch-vtuber 的 src/events.mjs
 ├── scripts/
 │   ├── generate_post.py        # 每日新聞／留言驅動的日記產線
 │   ├── generate_avatar.py      # 頭像生成
@@ -265,6 +269,7 @@ npx wrangler deploy
 │   ├── test_generate_post.py   # 日記產線與人設載入的單元測試
 │   ├── test_tags.mjs           # 標記解析（parseTags）的單元測試
 │   ├── test_glitch_at_work.mjs # 「格莉奇工作中」資料層、登入、退回公開版的單元測試
+│   ├── test_live_state.mjs     # 直播頁的事件歸約、等待畫面、pet.js 視線的單元測試
 │   └── hud_draw_e2e.mjs        # 格莉奇手機畫圖的端到端測試（本機 wrangler＋假上游＋Chrome，不在 CI 跑）
 └── .github/workflows/          # 每日與手動素材自動化，以及 CI 檢查
 ```
@@ -273,7 +278,7 @@ npx wrangler deploy
 
 桌面右下角那位不再是換圖，是 [glitch-2d](https://github.com/yazelin/glitch-2d) 的原生 2D 骨架在跑：21 個部件、網格形變、WebGL 繪製，執行期沒有 Live2D、Cubism 或 Pixi。她會呼吸、會眨眼、點她會揮手，按「聽我自我介紹」時嘴型跟著音量走。
 
-**怎麼接的。** `glitch2d/pet.js` 匯出 `mountPet(canvas)`，回傳的 handle 只有四件事：`emote(id,hold)`、`wave()`、`speak(url)`、`dispose()`。`index.html` 的 `petEmote()` 前面加一段：骨架掛得起來就呼叫它，掛不起來就走原本換圖那條路，兩條路的呼叫介面一樣。handle 也掛在 `window.petRig`，主控台可以直接 `petRig.emote('happy')`、`petRig.wave()` 試。
+**怎麼接的。** `glitch2d/pet.js` 匯出 `mountPet(canvas)`，回傳的 handle 有這幾件事：`emote(id,hold)`、`wave()`、`speak(url)`、`stopSpeaking()`、`gaze(x,y)`、`dispose()`，另外有 `blink()`、`setView(name)` 與幾個驗收用的唯讀值（`speaking`、`waving`、`mouthOpen`）。`gaze(x,y)` 是直播頁用的，x、y 介於 -1 到 1（x 負的看畫面左邊），記住的視線在 `emote()` 與回到平常臉之後會疊回去，換表情不會轉回正前方；首頁沒用到。`index.html` 的 `petEmote()` 前面加一段：骨架掛得起來就呼叫它，掛不起來就走原本換圖那條路，兩條路的呼叫介面一樣。handle 也掛在 `window.petRig`，主控台可以直接 `petRig.emote('happy')`、`petRig.wave()` 試。
 
 **三層退路。** WebGL 開不起來換 Canvas 2D；兩個都失敗、或 `rig.json` 與貼圖沒下載完，就維持原本的 `images/pet-*.webp` 靜態立繪，畫面不會開天窗。實測過三種情境都會落在該落的地方。
 
@@ -313,6 +318,19 @@ npx wrangler deploy
 - 公開網址回來的資料就算帶了 `full: true` 也只照公開版整理，私人欄位一律不收。外來文字一律用 `textContent` 放進畫面，連結只放行 http(s)。
 - 開發測試：網址加 `?glitchAtWorkFixture=public|full|empty` 改讀 `data/` 裡的假資料。
 - 測試：`node --test tests/test_tags.mjs tests/test_glitch_at_work.mjs`。
+
+## 直播頁
+
+`live/` 是 [glitch-vtuber](https://github.com/yazelin/glitch-vtuber) 的畫面：格莉奇帶大家看視覺小說、讀留言聊天時，觀眾開這頁看。大腦把事件推到中繼，直播頁用 WebSocket 收，套進 `live/state.js` 的歸約後重畫。
+
+- **網址參數**：`?relay=` 指定中繼，預設 `ws://127.0.0.1:8787`（第 0 階段都在本機）；`?broadcast=1` 給錄影用，不顯示進場按鈕與連線狀態，版面固定 1280×720，錄影的 Chrome 要開 `--autoplay-policy=no-user-gesture-required`。
+- **版面**：形象、字幕、視覺小說區（背景、講者、台詞、選項與票數）、留言欄各有固定區塊。大腦送 `layout` 事件換版面：`vn` 一般、`choice` 把選項放大並縮小形象、`talk` 把形象放大。手機寬度改成上下排、整頁捲動。
+- **聲音**：照收到的順序一則一則播。`say` 走 `pet.speak()` 帶嘴型，`vn_line` 的作品音檔與亞澤的 `owner_audio` 用一般 `<audio>`；`stop` 立刻全停並清掉排隊。觀眾要先按「進場」瀏覽器才准播聲音，沒按也看得到字幕與台詞。
+- **形象**：`say` 的 `emote` 交給 `pet.emote()`，`gaze`（`{x, y}`）交給 `pet.gaze()`；沒帶 gaze 的句子（回亞澤的）看鏡頭。開播那一刻揮一次手。
+- **斷線**：從 1 秒開始加倍退避重連，最多 15 秒一次；重連時中繼先送快照，台詞、選項、留言立刻回來，之前的聲音不補播。
+- **沒開播**（`state.live` 為 false）：顯示「格莉奇還沒開播」與一個連結。還沒有直播錄影，連結先指向第一場要看的作品；有錄影後改 `live/stage.js` 的 `LAST_SHOW`。
+- **同步協定**：`live/state.js` 從 glitch-vtuber 的 `src/events.mjs` 原樣抄（只換檔頭），那邊改了就重抄。本機有 `../glitch-vtuber` 時測試會比對兩份，漂掉就失敗。
+- **測試**：`node --test tests/test_live_state.mjs`。本機手動看：`python3 -m http.server 8080`（不用 8000，會跟語音節點撞）開 `http://127.0.0.1:8080/live/`。
 
 ## 回報問題與交流
 

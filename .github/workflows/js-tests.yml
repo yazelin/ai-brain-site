@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - 'js/**'
+      - 'live/**'
+      - 'glitch2d/pet.js'
       - 'tests/**.mjs'
       - 'data/glitch-at-work-sample-*.json'
       - '.github/workflows/js-tests.yml'
@@ -11,6 +13,8 @@ on:
     branches: [main]
     paths:
       - 'js/**'
+      - 'live/**'
+      - 'glitch2d/pet.js'
       - 'tests/**.mjs'
       - 'data/glitch-at-work-sample-*.json'
       - '.github/workflows/js-tests.yml'
@@ -24,4 +28,4 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: 執行測試
-        run: node --test tests/test_tags.mjs tests/test_glitch_at_work.mjs
+        run: node --test tests/test_tags.mjs tests/test_glitch_at_work.mjs tests/test_live_state.mjs
