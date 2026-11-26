@@ -232,8 +232,9 @@ function init() {
     body);
   const emptyLine = (t) => h('p', { class: 'gaw-none', text: t });
 
-  function batteryEl(name, value, resetAt) {
+  function batteryEl(name, value, resetAt, plain = false) {
     const b = battery(value);
+    if (plain && b.pct != null) b.text = `剩 ${b.pct}%`; // 做作品那組用完她不會休眠，不講累或休眠
     return h('div', { class: `gaw-batt lv-${b.level}` },
       h('div', { class: 'gaw-batt-top' }, h('span', { class: 'gaw-batt-name', text: name }),
         h('span', { class: 'gaw-batt-pct', text: b.pct == null ? '--' : `${b.pct}%` })),
@@ -263,8 +264,12 @@ function init() {
           batteryEl('5 小時', d.energy.fiveHour, d.energy.fiveHourResetAt)),
         d.energy.backup.weekly != null || d.energy.backup.fiveHour != null ? h('div', { class: 'gaw-batt-set' },
           h('div', { class: 'gaw-batt-group', text: d.full ? '備用電池（Claude）' : '備用電池' }), // 模型名稱只在主人模式顯示（亞澤 11-26）
-          d.energy.backup.weekly != null ? batteryEl('這週', d.energy.backup.weekly, null) : null,
-          d.energy.backup.fiveHour != null ? batteryEl('5 小時', d.energy.backup.fiveHour, null) : null) : null));
+          d.energy.backup.weekly != null ? batteryEl('這週', d.energy.backup.weekly, d.energy.backup.weeklyResetAt) : null,
+          d.energy.backup.fiveHour != null ? batteryEl('5 小時', d.energy.backup.fiveHour, d.energy.backup.fiveHourResetAt) : null) : null,
+        d.full && d.energy.agyClaude ? h('div', { class: 'gaw-batt-set' },
+          h('div', { class: 'gaw-batt-group', text: '做作品用（agy Claude／GPT）' }),
+          batteryEl('這週', d.energy.agyClaude.weekly, d.energy.agyClaude.weeklyResetAt, true),
+          batteryEl('5 小時', d.energy.agyClaude.fiveHour, d.energy.agyClaude.fiveHourResetAt, true)) : null));
   }
 
   function today(d) {
