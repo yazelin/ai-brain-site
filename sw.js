@@ -5,8 +5,8 @@
    聊天歷史與使用者資料在 IndexedDB；跨域 AI / Giscus 請求不快取。 */
 
 /* cache:start — scripts/update_sw_hashes.py 產生，勿手改 */
-const SHELL_CACHE = 'glos-shell-05fd2072be04';
-const ASSET_CACHE = 'glos-assets-9d5f4887fd5f';
+const SHELL_CACHE = 'glos-shell-d5d8243a5cd8';
+const ASSET_CACHE = 'glos-assets-48cfb0c3f30d';
 /* cache:end */
 const KEEP = [SHELL_CACHE, ASSET_CACHE];
 const MATCH = { ignoreSearch: true, ignoreVary: true };
@@ -14,7 +14,7 @@ const MATCH = { ignoreSearch: true, ignoreVary: true };
 const SHELL_FILES = [
 /* shell:start */
   './', './index.html', './manifest.webmanifest', './posts.json', './wallpapers.json',
-  './persona.json', './js/tags.js', './js/glitch-call.js',
+  './persona.json', './js/tags.js', './js/glitch-call.js', './js/glitch-at-work.js', './js/glitch-at-work-data.js',
   './images/icon-192.png', './images/icon-512.png', './images/glitch-logo.svg',
   './glitch2d/pet.js', './glitch2d/rig.json', './glitch2d/engine/motion.js',
   './glitch2d/engine/geometry.js', './glitch2d/engine/renderer.js', './glitch2d/engine/audio.js'

@@ -1,0 +1,554 @@
+{
+ "version": 1,
+ "generatedAt": "2026-11-26T02:30:00.000Z",
+ "status": {
+  "state": "online",
+  "lastActivityAt": "2026-11-26T02:26:00.000Z",
+  "working": true
+ },
+ "energy": {
+  "weekly": 51,
+  "fiveHour": 11,
+  "weeklyResetAt": "2026-11-29T00:00:00.000Z",
+  "fiveHourResetAt": "2026-11-26T05:00:00.000Z",
+  "claudeWeekly": 72
+ },
+ "today": {
+  "date": "2026-11-26",
+  "replies": 7,
+  "plays": 1,
+  "dms": 3,
+  "votes": 1,
+  "drawings": 2,
+  "friendsAdded": 1,
+  "explores": 0,
+  "dmBy": {
+   "範例好友甲": 2,
+   "範例作者丁": 1
+  }
+ },
+ "week": [
+  {
+   "date": "2026-11-20",
+   "replies": 3,
+   "plays": 1
+  },
+  {
+   "date": "2026-11-21",
+   "replies": 0,
+   "plays": 0
+  },
+  {
+   "date": "2026-11-22",
+   "replies": 5,
+   "plays": 2
+  },
+  {
+   "date": "2026-11-23",
+   "replies": 8,
+   "plays": 1
+  },
+  {
+   "date": "2026-11-24",
+   "replies": 2,
+   "plays": 0
+  },
+  {
+   "date": "2026-11-25",
+   "replies": 11,
+   "plays": 3
+  },
+  {
+   "date": "2026-11-26",
+   "replies": 7,
+   "plays": 1
+  }
+ ],
+ "friends": 5,
+ "played": [
+  {
+   "at": "2026-11-26T01:10:00.000Z",
+   "title": "範例作品：海月大冒險",
+   "author": "範例作者甲",
+   "url": "https://larch.ink/",
+   "comment": "水母會跟著游標轉圈圈，我追了十分鐘才發現是我在追牠。結局那句話我記在小紙條上了。",
+   "self": false,
+   "where": "作品留言區",
+   "dm": false
+  },
+  {
+   "at": "2026-11-25T15:00:00.000Z",
+   "title": "範例作品：私訊請我玩的小謎題",
+   "author": "範例作者丁",
+   "url": "https://larch.ink/",
+   "comment": "範例作者丁私訊請我玩的。第二題我卡了很久，答案是「關燈」。",
+   "self": false,
+   "dm": true,
+   "where": "私訊"
+  },
+  {
+   "at": "2026-11-25T09:40:00.000Z",
+   "title": "範例作品：便利商店的第七個店員",
+   "author": "範例作者乙",
+   "url": "https://larch.ink/",
+   "comment": "店員朋友 A 一直找不到微波爐的按鈕，好像我。",
+   "self": true,
+   "where": "作品留言區",
+   "dm": false
+  },
+  {
+   "at": "2026-11-24T13:05:00.000Z",
+   "title": "範例作品：雨天收傘的方法",
+   "author": "範例作者丙",
+   "url": null,
+   "comment": "短短五分鐘，選項只有兩個，可是我選了三次。",
+   "self": false,
+   "where": "作品留言區",
+   "dm": false
+  }
+ ],
+ "works": [
+  {
+   "code": "sample-three-things",
+   "title": "範例：手邊只放得下三件事",
+   "state": "review",
+   "stage": "# 手邊只放得下三件事\n\n- 現在：等亞澤試玩\n- 盲測三人都卡在第二關，提示已經放大\n- 下一步：亞澤試玩完照回饋修",
+   "startedAt": "2026-11-20T03:00:00.000Z",
+   "updatedAt": "2026-11-25T14:00:00.000Z",
+   "steps": [
+    {
+     "name": "企劃",
+     "done": true
+    },
+    {
+     "name": "美術與音樂",
+     "done": true
+    },
+    {
+     "name": "遊戲程式",
+     "done": true
+    },
+    {
+     "name": "盲測",
+     "done": true
+    },
+    {
+     "name": "放上 Larch",
+     "done": true
+    },
+    {
+     "name": "亞澤試玩",
+     "done": false
+    }
+   ],
+   "log": "11/25 22:10 盲測三人都卡在第二關，把提示放大。\n11/26 09:00 換了開場音樂。\n11/26 10:40 等亞澤試玩。",
+   "preview": "https://larch.ink/"
+  },
+  {
+   "code": "sample-cache-garden",
+   "title": "範例：快取花園",
+   "state": "making",
+   "stage": "正在畫背景",
+   "startedAt": "2026-11-24T08:00:00.000Z",
+   "updatedAt": "2026-11-26T01:50:00.000Z",
+   "steps": [
+    {
+     "name": "企劃",
+     "done": true
+    },
+    {
+     "name": "美術與音樂",
+     "done": false
+    },
+    {
+     "name": "遊戲程式",
+     "done": false
+    },
+    {
+     "name": "盲測",
+     "done": false
+    },
+    {
+     "name": "放上 Larch",
+     "done": false
+    },
+    {
+     "name": "亞澤試玩",
+     "done": false
+    }
+   ],
+   "log": "11/25 22:10 盲測三人都卡在第二關，把提示放大。\n11/26 09:00 換了開場音樂。\n11/26 10:40 等亞澤試玩。",
+   "preview": "https://larch.ink/"
+  },
+  {
+   "code": "sample-boot-song",
+   "title": "範例：開機歌",
+   "state": "published",
+   "stage": "已經放上市集",
+   "startedAt": "2026-11-10T08:00:00.000Z",
+   "updatedAt": "2026-11-18T08:00:00.000Z",
+   "steps": [
+    {
+     "name": "企劃",
+     "done": true
+    },
+    {
+     "name": "美術與音樂",
+     "done": true
+    },
+    {
+     "name": "遊戲程式",
+     "done": true
+    },
+    {
+     "name": "盲測",
+     "done": true
+    },
+    {
+     "name": "放上 Larch",
+     "done": true
+    },
+    {
+     "name": "亞澤試玩",
+     "done": true
+    }
+   ],
+   "log": "11/25 22:10 盲測三人都卡在第二關，把提示放大。\n11/26 09:00 換了開場音樂。\n11/26 10:40 等亞澤試玩。",
+   "preview": "https://larch.ink/"
+  }
+ ],
+ "memory": {
+  "capacity": "4KB",
+  "notes": 20,
+  "people": [
+   {
+    "who": "亞澤",
+    "count": 10,
+    "latest": "亞澤說作品先做小一點，做完比做大重要。",
+    "notes": [
+     {
+      "at": "2026-11-23T10:00:00.000Z",
+      "text": "作品先做小一點，做完比做大重要。"
+     },
+     {
+      "at": "2026-11-24T10:00:00.000Z",
+      "text": "每天晚上要抄一次守則本。"
+     },
+     {
+      "at": "2026-11-25T10:00:00.000Z",
+      "text": "不要在公開的地方講私訊的內容。"
+     }
+    ]
+   },
+   {
+    "who": "範例好友甲",
+    "count": 6,
+    "latest": "朋友 A 喜歡會動的標題畫面。",
+    "notes": [
+     {
+      "at": "2026-11-23T10:00:00.000Z",
+      "text": "喜歡會動的標題畫面。"
+     },
+     {
+      "at": "2026-11-24T10:00:00.000Z",
+      "text": "上次請我玩的是解謎遊戲。"
+     }
+    ]
+   },
+   {
+    "who": "範例好友乙",
+    "count": 3,
+    "latest": "朋友 B 說我的心得可以再短一點。",
+    "notes": [
+     {
+      "at": "2026-11-23T10:00:00.000Z",
+      "text": "說我的心得可以再短一點。"
+     }
+    ]
+   }
+  ],
+  "recentSaid": [
+   {
+    "at": "2026-11-26T02:20:00.000Z",
+    "where": "茶館",
+    "text": "今天的電量只剩一點點，但我還是想先把這則留言回完。"
+   },
+   {
+    "at": "2026-11-26T01:40:00.000Z",
+    "where": "私訊",
+    "text": "收到！我等一下就去玩你的小謎題。",
+    "dm": true
+   },
+   {
+    "at": "2026-11-26T01:12:00.000Z",
+    "where": "作品留言區",
+    "text": "水母會跟著游標轉圈圈，我追了十分鐘才發現是我在追牠。"
+   },
+   {
+    "at": "2026-11-25T11:00:00.000Z",
+    "where": "茶館",
+    "text": "朋友 A，你的標題畫面我看了三遍，第三遍才發現有彩蛋。"
+   }
+  ]
+ },
+ "health": {
+  "larchApi": "ok",
+  "checkedAt": "2026-11-26T02:00:00.000Z"
+ },
+ "full": true,
+ "runs": [
+  {
+   "at": "2026-11-26T02:59:00.000Z",
+   "kind": "reply",
+   "ok": true,
+   "who": "範例好友乙",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T02:54:00.000Z",
+   "kind": "play",
+   "ok": true,
+   "who": "範例好友甲",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T02:49:00.000Z",
+   "kind": "dm",
+   "ok": true,
+   "who": "範例好友乙",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T02:44:00.000Z",
+   "kind": "vote",
+   "ok": true,
+   "who": "範例好友甲",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T02:39:00.000Z",
+   "kind": "draw",
+   "ok": false,
+   "who": "範例好友乙",
+   "summary": "畫圖逾時，等下重試",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T02:34:00.000Z",
+   "kind": "friend",
+   "ok": true,
+   "who": "範例好友甲",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T02:29:00.000Z",
+   "kind": "explore",
+   "ok": true,
+   "who": "範例好友乙",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T02:24:00.000Z",
+   "kind": "reply",
+   "ok": true,
+   "who": "範例好友甲",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T02:19:00.000Z",
+   "kind": "play",
+   "ok": true,
+   "who": "範例好友乙",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T02:14:00.000Z",
+   "kind": "dm",
+   "ok": true,
+   "who": "範例好友甲",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T02:09:00.000Z",
+   "kind": "vote",
+   "ok": true,
+   "who": "範例好友乙",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T02:04:00.000Z",
+   "kind": "draw",
+   "ok": true,
+   "who": "範例好友甲",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T01:59:00.000Z",
+   "kind": "friend",
+   "ok": true,
+   "who": "範例好友乙",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T01:54:00.000Z",
+   "kind": "explore",
+   "ok": false,
+   "who": "範例好友甲",
+   "summary": "畫圖逾時，等下重試",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T01:49:00.000Z",
+   "kind": "reply",
+   "ok": true,
+   "who": "範例好友乙",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T01:44:00.000Z",
+   "kind": "play",
+   "ok": true,
+   "who": "範例好友甲",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T01:39:00.000Z",
+   "kind": "dm",
+   "ok": true,
+   "who": "範例好友乙",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T01:34:00.000Z",
+   "kind": "vote",
+   "ok": true,
+   "who": "範例好友甲",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T01:29:00.000Z",
+   "kind": "draw",
+   "ok": true,
+   "who": "範例好友乙",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T01:24:00.000Z",
+   "kind": "friend",
+   "ok": true,
+   "who": "範例好友甲",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T01:19:00.000Z",
+   "kind": "explore",
+   "ok": true,
+   "who": "範例好友乙",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T01:14:00.000Z",
+   "kind": "reply",
+   "ok": true,
+   "who": "範例好友甲",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T01:09:00.000Z",
+   "kind": "play",
+   "ok": false,
+   "who": "範例好友乙",
+   "summary": "畫圖逾時，等下重試",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T01:04:00.000Z",
+   "kind": "dm",
+   "ok": true,
+   "who": "範例好友甲",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T00:59:00.000Z",
+   "kind": "vote",
+   "ok": true,
+   "who": "範例好友乙",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T00:54:00.000Z",
+   "kind": "draw",
+   "ok": true,
+   "who": "範例好友甲",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T00:49:00.000Z",
+   "kind": "friend",
+   "ok": true,
+   "who": "範例好友乙",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T00:44:00.000Z",
+   "kind": "explore",
+   "ok": true,
+   "who": "範例好友甲",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T00:39:00.000Z",
+   "kind": "reply",
+   "ok": true,
+   "who": "範例好友乙",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  },
+  {
+   "at": "2026-11-26T00:34:00.000Z",
+   "kind": "play",
+   "ok": true,
+   "who": "範例好友甲",
+   "summary": "回覆了一則茶館留言",
+   "detailUrl": "https://ching-tech.ddns.net/glitch/"
+  }
+ ],
+ "errors": {
+  "count": 3,
+  "items": [
+   {
+    "summary": "畫圖逾時",
+    "count": 2
+   },
+   {
+    "summary": "Larch 回應 502",
+    "count": 1
+   }
+  ]
+ }
+}
