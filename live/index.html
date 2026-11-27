@@ -111,6 +111,16 @@
   /* talk：留言欄讓出位置，半身框拉高、鏡頭推近到臉。 */
   html[data-layout="talk"] #pet{aspect-ratio:auto;flex-basis:62%;--fx:850}
 
+  /* 放大版（亞澤 11-27）：她高到右欄的 70%，頭和頭髮蓋住留言框下段；留言框底部留白，最新的留言停在她頭頂上方。手機版另外排，不套這段。 */
+  @media (min-width:761px){
+    #side{position:relative}
+    #side>#chat{flex:0 0 auto;height:46%}
+    #side #chat-list{padding-bottom:calc(var(--overlap) + 8px)}
+    #side{--overlap:16cqh;container-type:size}
+    #side>#pet{position:absolute;right:0;bottom:0;width:100%;height:70%;aspect-ratio:auto;clip-path:inset(-100% 0 0 -100%)}
+    html[data-layout="talk"] #side>#pet{height:82%}
+  }
+
   /* 她講的字幕 */
   #subtitle{flex:1 1 auto;min-height:var(--sub-min);display:flex;align-items:center;gap:12px;padding:10px 16px;
     opacity:.35;transition:opacity .2s ease}
