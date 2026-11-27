@@ -23,6 +23,23 @@ test("vn_choices 後 vn_votes 累積到 choices.counts", () => {
   assert.equal(s.choices.endsAt, 123);
 });
 
+test("vn_choices 的 options 是空陣列表示清掉選項", () => {
+  let s = applyEvent(emptyState(), { type: "vn_choices", id: "c1", options: [{ n: 1, text: "a" }], endsAt: 1 });
+  s = applyEvent(s, { type: "vn_votes", id: "c1", counts: { 1: 3 } });
+  assert.equal(validateEvent({ type: "vn_choices", id: "c1", options: [], endsAt: 2 }).ok, true);
+  s = applyEvent(s, { type: "vn_choices", id: "c1", options: [], endsAt: 2 });
+  assert.equal(s.choices, null);
+  s = applyEvent(s, { type: "vn_votes", id: "c1", counts: { 1: 4 } });
+  assert.equal(s.choices, null, "清掉之後晚到的票數不會把選項帶回來");
+});
+
+test("投票結束清掉選項後，畫面不再顯示選項框", () => {
+  let s = applyEvent(emptyState(), { type: "vn_choices", id: "c1", options: [{ n: 1, text: "a" }], endsAt: 1 });
+  s = applyEvent(s, { type: "vn_choices", id: "c1", options: [], endsAt: 2 });
+  s = applyEvent(s, { type: "layout", mode: "vn" });
+  assert.equal(viewModel(s, 3).choices, null);
+});
+
 test("chat 只留最近 20 則", () => {
   let s = emptyState();
   for (let i = 1; i <= 25; i++) s = applyEvent(s, { type: "chat", id: String(i), author: "a", text: "t" + i });

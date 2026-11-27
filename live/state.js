@@ -50,6 +50,8 @@ export function applyEvent(state, ev) {
     case 'vn_line':
       return { ...state, vn: { speaker: ev.speaker, text: ev.text, bg: ev.bg ?? null } };
     case 'vn_choices':
+      // options 是空陣列表示投票結束、清掉選項框
+      if (!ev.options.length) return { ...state, choices: null };
       return { ...state, choices: { id: ev.id, options: ev.options, endsAt: ev.endsAt, counts: {} } };
     case 'vn_votes':
       if (!state.choices || state.choices.id !== ev.id) return state;
