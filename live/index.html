@@ -159,6 +159,8 @@
   /* 等待畫面與進場 */
   .overlay{position:fixed;inset:0;display:grid;place-items:center;padding:16px;z-index:10}
   .overlay[hidden]{display:none}
+  /* 真實畫面模式的投票條用了 display:flex，會蓋過 hidden；沒投票時要真的收起來。 */
+  #choices[hidden]{display:none !important}
   #waiting{background:rgba(4,8,12,.72)}
   #gate{background:rgba(4,8,12,.6);z-index:20}
   .card{max-width:420px;width:100%;padding:24px;text-align:center;
