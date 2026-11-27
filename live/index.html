@@ -93,7 +93,8 @@
      這裡再把畫布放大、只露出頭頂到腰：取景框是畫布座標的 --fw×--fh，頂端 --fy，水平中心 --fx。
      --s 是每個畫布單位幾 px，取「填滿格子」的較大值，所以格子比例不同時只會多裁兩側或下方。
      水平中心偏左一點，揮手時舉起的手（畫布 x 約 300～450）留在框內。 */
-  #pet{flex:none;position:relative;overflow:hidden;container-type:size;
+  /* 她站在最上層、沒有方框：只切掉下緣（像站在畫面底邊），手和頭髮可以伸出格子，蓋在旁邊的面板上，不會被框切掉。 */
+  #pet{flex:none;position:relative;overflow:visible;clip-path:inset(-100% -100% 0 -100%);z-index:3;container-type:size;
     --fx:790; --fy:12; --fw:1000; --fh:1220;
     aspect-ratio:1000/1220;
     transition:flex-basis .35s ease}
@@ -201,7 +202,7 @@
       <ul id="chat-list"></ul>
     </aside>
 
-    <section id="pet" class="panel" aria-label="格莉奇">
+    <section id="pet" aria-label="格莉奇">
       <img src="../images/pet-plain.webp" alt="格莉奇">
       <canvas id="pet-canvas" hidden></canvas>
     </section>
