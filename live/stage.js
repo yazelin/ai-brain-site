@@ -213,14 +213,15 @@ export function startStage({ doc = document, href = location.href, mountPet } = 
     }
 
     const chat = $('chat-list');
-    chat.replaceChildren(...v.chat.map((m) => {
+    // 最新的在最上面：格莉奇的頭蓋在留言框下段，被蓋住的是最舊的留言（亞澤 11-27）。
+    chat.replaceChildren(...[...v.chat].reverse().map((m) => {
       const li = doc.createElement('li');
       const a = doc.createElement('b'); a.textContent = m.author;
       const t = doc.createElement('span'); t.textContent = m.text;
       li.append(a, t);
       return li;
     }));
-    chat.scrollTop = chat.scrollHeight;
+    chat.scrollTop = 0;
     $('chat-empty').hidden = v.chat.length > 0;
   }
 
