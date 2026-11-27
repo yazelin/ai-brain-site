@@ -79,11 +79,10 @@ export function startStage({ doc = document, href = location.href, mountPet } = 
 
   // ── 形象 ──
   const petBox = $('pet');
-  // 寬版放全身，手機格子矮就放半身；跟 index.html 的 @media (max-width:760px) 同一條線。
-  const narrow = broadcast ? null : matchMedia('(max-width:760px)');
-  const petView = () => (narrow && narrow.matches ? 'bust' : 'full');
+  // 直播頁一律用半身 bust 取景：右下角的格子只放頭到腰，裁切與放大交給 index.html 的 CSS。
+  const petView = 'bust';
   if (mountPet) {
-    mountPet($('pet-canvas'), { view: petView(), onError: (e) => console.warn('直播頁：形象載入失敗', e) })
+    mountPet($('pet-canvas'), { view: petView, onError: (e) => console.warn('直播頁：形象載入失敗', e) })
       .then((handle) => {
         if (!handle) return;
         pet = handle;
@@ -91,7 +90,6 @@ export function startStage({ doc = document, href = location.href, mountPet } = 
         handle.onemote = (id) => petBox.classList.toggle('glitching', id === 'error');
         handle.canvas.hidden = false;
         petBox.classList.add('rigged');
-        narrow?.addEventListener('change', () => handle.setView(petView()));
         if (state.emote) handle.emote(state.emote);
       })
       .catch((e) => console.warn('直播頁：形象載入失敗', e));

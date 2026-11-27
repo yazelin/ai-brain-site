@@ -14,7 +14,7 @@
     --cy:#25c2e8; --mint:#7cf3c0; --purple:#b78bff;
     --bg:#04080c; --win:#0b161d; --hair:rgba(255,255,255,.07); --hair2:rgba(255,255,255,.14);
     --text:#e6f6fb; --mute:#8a9aa3;
-    --pet-w:300px; --chat-w:300px; --gap:12px;
+    --side-w:clamp(260px, 23.75vw, 480px); --gap:8px; --top-h:26px; --sub-min:64px;
     color-scheme:dark;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -31,22 +31,22 @@
       radial-gradient(600px 300px at 20% 80%,rgba(183,139,255,.18),transparent 60%);
   }
 
+  /* 版面：左欄是標題列、作品區（固定 16:9，什麼都不疊上去）、字幕；右欄上留言、下格莉奇半身。
+     1280×720 時右欄 304 寬，作品區約 952×536。 */
   #stage{
     position:relative; height:100%; padding:var(--gap);
     display:grid; gap:var(--gap);
-    grid-template-columns:minmax(0,1fr) var(--pet-w) var(--chat-w);
-    grid-template-rows:auto minmax(0,1fr) auto;
-    grid-template-areas:"top top top" "vn pet chat" "sub sub chat";
-    transition:grid-template-columns .35s ease;
+    grid-template-columns:minmax(0,1fr) var(--side-w);
+    grid-template-rows:minmax(0,1fr);
   }
-  html[data-layout="talk"]{--pet-w:440px}
-  html[data-layout="choice"]{--pet-w:190px}
+  #main{display:flex;flex-direction:column;gap:var(--gap);min-width:0;min-height:0;container-type:size}
+  #side{display:flex;flex-direction:column;gap:var(--gap);min-width:0;min-height:0}
 
   .panel{background:rgba(11,22,29,.78);border:1px solid var(--hair2);border-radius:12px;
     backdrop-filter:blur(8px);min-width:0;min-height:0}
 
   /* 上方一條：名稱、直播中、連線狀態 */
-  #top{grid-area:top;display:flex;align-items:center;gap:12px;font-size:.85rem;color:#cdd6db}
+  #top{flex:none;height:var(--top-h);display:flex;align-items:center;gap:12px;font-size:.85rem;color:#cdd6db}
   #top .brand{font-weight:700;letter-spacing:1px}
   #top .brand b{color:#fff}
   #top .sp{flex:1}
@@ -58,14 +58,16 @@
   #conn[data-state="retry"]{color:#ffb86b;border-color:rgba(255,184,107,.35)}
 
   /* 視覺小說區 */
-  #vn{grid-area:vn;position:relative;overflow:hidden}
+  /* 寬度取「左欄寬」與「左欄高扣掉標題列、字幕最小高度後換算的 16:9 寬」較小者，比例永遠 16:9。 */
+  #vn{flex:none;align-self:center;position:relative;overflow:hidden;aspect-ratio:16/9;container-type:inline-size;
+    width:min(100cqw, (100cqh - var(--top-h) - var(--sub-min) - 2 * var(--gap)) * 16 / 9)}
   #vn-bg{position:absolute;inset:0;background:#071116 center/cover no-repeat;transition:background-image .3s ease}
   #vn-bg.empty{background-image:repeating-linear-gradient(135deg,rgba(37,194,232,.05) 0 14px,transparent 14px 28px)}
   #vn-box{position:absolute;left:14px;right:14px;bottom:14px;padding:14px 18px 16px;
     background:rgba(4,8,12,.82);border:1px solid rgba(37,194,232,.35);border-radius:10px;min-height:96px}
   #vn-speaker{position:absolute;top:-14px;left:14px;padding:1px 12px;border-radius:6px;
     background:var(--cy);color:#04121a;font-weight:700;font-size:.9rem}
-  #vn-text{font-size:1.15rem;line-height:1.7;white-space:pre-wrap}
+  #vn-text{font-size:max(1rem, 1.95cqi);line-height:1.7;white-space:pre-wrap}
   #vn-box.narration #vn-text{color:#cfe3ea;font-style:italic}
 
   /* 選項與票數：疊在視覺小說區中間，choice 版面放大 */
@@ -87,28 +89,36 @@
   html[data-layout="choice"] #choice-list li{padding:14px 16px;font-size:1.3rem}
   html[data-layout="choice"] #choice-list .n{width:34px;height:34px;font-size:1.05rem}
 
-  /* 形象 */
-  /* 畫布照比例塞進格子（像 object-fit:contain），貼底置中。比例跟著 rig.json 的
-     views：寬版用全身 full，手機用半身 bust（stage.js 會同步呼叫 setView）。 */
-  #pet{grid-area:pet;position:relative;overflow:hidden;container-type:size;--pet-ratio:calc(1472 / 2470)}
-  #pet>canvas{position:absolute;left:50%;bottom:0;transform:translateX(-50%);
-    aspect-ratio:1472/2470;height:min(100cqh, 100cqw / var(--pet-ratio));width:auto}
-  #pet>img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:bottom}
+  /* 形象：右下角半身。stage.js 固定用 rig.json 的 bust 取景（畫布 1472×1395 單位），
+     這裡再把畫布放大、只露出頭頂到腰：取景框是畫布座標的 --fw×--fh，頂端 --fy，水平中心 --fx。
+     --s 是每個畫布單位幾 px，取「填滿格子」的較大值，所以格子比例不同時只會多裁兩側或下方。
+     水平中心偏左一點，揮手時舉起的手（畫布 x 約 300～450）留在框內。 */
+  #pet{flex:none;position:relative;overflow:hidden;container-type:size;
+    --fx:790; --fy:12; --fw:1000; --fh:1220;
+    aspect-ratio:1000/1220;
+    transition:flex-basis .35s ease}
+  #pet>canvas{position:absolute;--s:max(100cqh / var(--fh), 100cqw / var(--fw));
+    width:calc(1472 * var(--s));height:calc(1395 * var(--s));
+    left:calc(50cqw - var(--fx) * var(--s));top:calc(-1 * var(--fy) * var(--s))}
+  /* 形象載入失敗時的靜態圖（全身），一樣只露上半身。 */
+  #pet>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 4%}
   #pet.rigged>img{display:none}
   #pet>canvas[hidden]{display:none}
   #pet.glitching>canvas{animation:petglitch .16s steps(2) infinite}
-  @keyframes petglitch{0%{transform:translate(calc(-50% + 1px),0);filter:hue-rotate(40deg)}100%{transform:translate(calc(-50% - 1px),1px);filter:none}}
+  @keyframes petglitch{0%{transform:translate(1px,0);filter:hue-rotate(40deg)}100%{transform:translate(-1px,1px);filter:none}}
   @media (prefers-reduced-motion:reduce){#pet.glitching>canvas{animation:none}}
+  /* talk：留言欄讓出位置，半身框拉高、鏡頭推近到臉。 */
+  html[data-layout="talk"] #pet{aspect-ratio:auto;flex-basis:62%;--fx:850}
 
   /* 她講的字幕 */
-  #subtitle{grid-area:sub;min-height:64px;display:flex;align-items:center;gap:12px;padding:10px 16px;
+  #subtitle{flex:1 1 auto;min-height:var(--sub-min);display:flex;align-items:center;gap:12px;padding:10px 16px;
     opacity:.35;transition:opacity .2s ease}
   #subtitle.on{opacity:1;border-color:rgba(124,243,192,.45)}
-  #subtitle .who{flex:none;color:var(--mint);font-weight:700;font-size:.85rem}
-  #subtitle-text{font-size:1.25rem;line-height:1.5}
+  #subtitle .who{flex:none;color:var(--mint);font-weight:700;font-size:clamp(.85rem, .95vw, 1.15rem)}
+  #subtitle-text{font-size:clamp(1.15rem, 1.55vw, 1.9rem);line-height:1.5}
 
   /* 留言欄 */
-  #chat{grid-area:chat;display:flex;flex-direction:column;overflow:hidden}
+  #chat{flex:1 1 0;min-height:120px;display:flex;flex-direction:column;overflow:hidden}
   #chat h2{padding:10px 14px;font-size:.85rem;color:var(--mute);border-bottom:1px solid var(--hair)}
   #chat-list{list-style:none;flex:1;overflow-y:auto;padding:8px 12px;display:flex;flex-direction:column;gap:8px;
     scrollbar-width:thin}
@@ -133,60 +143,69 @@
   /* 錄影用：固定 1280×720，不放站上專屬的元素 */
   html.broadcast,html.broadcast body{width:1280px;height:720px;overflow:hidden}
   html.broadcast #conn{display:none}
+  html.broadcast{--side-w:304px}
 
-  /* 手機：上下排，整頁捲動，不橫向捲 */
+  /* 手機：上下排（標題、作品、字幕、半身＋留言並排），整頁捲動，不橫向捲 */
   @media (max-width:760px){
     html:not(.broadcast) body{overflow-x:hidden;overflow-y:auto}
-    html:not(.broadcast) #stage{height:auto;min-height:100%;padding:12px 16px;
-      grid-template-columns:minmax(0,1fr);grid-template-rows:auto;
-      grid-template-areas:"top" "vn" "pet" "sub" "chat"}
-    html:not(.broadcast) #vn{height:max(300px, 75vw)}
-    html:not(.broadcast) #pet{height:240px;--pet-ratio:calc(1472 / 1395)}
-    html:not(.broadcast) #pet>canvas{aspect-ratio:1472/1395}
-    html:not(.broadcast) #chat{height:42vh;min-height:220px}
+    html:not(.broadcast) #stage{display:flex;flex-direction:column;height:auto;min-height:100%;padding:12px 16px}
+    html:not(.broadcast) #main{container-type:normal}
+    /* 手機的作品區太矮，台詞框和選項疊上去會蓋掉畫面：背景自己保持 16:9，台詞與選項改排在背景下方。 */
+    html:not(.broadcast) #vn{width:100%;align-self:stretch;aspect-ratio:auto;display:flex;flex-direction:column;gap:12px;padding-bottom:10px}
+    html:not(.broadcast) #vn-bg{position:relative;inset:auto;width:100%;aspect-ratio:16/9;flex:none}
+    html:not(.broadcast) #vn-box{position:relative;left:auto;right:auto;bottom:auto;margin:6px 10px 0;order:1}
+    html:not(.broadcast) #choices{position:static;margin:0 10px;max-width:none;order:2}
+    html:not(.broadcast)[data-layout="choice"] #choices{padding:14px 14px}
+    html:not(.broadcast) #side{display:grid;grid-template-columns:minmax(0,45fr) minmax(0,55fr);height:300px}
+    html:not(.broadcast) #pet{grid-column:1;grid-row:1;aspect-ratio:auto;height:100%;--fx:860}
+    html:not(.broadcast) #chat{grid-column:2;grid-row:1;min-height:0}
     html:not(.broadcast) #vn-text{font-size:1rem}
+    html:not(.broadcast) #vn-box{padding:12px 14px 10px;min-height:0}
     html:not(.broadcast) #subtitle-text{font-size:1.05rem}
     html:not(.broadcast)[data-layout="choice"] #choice-list li{font-size:1.05rem;padding:10px 12px}
-    html:not(.broadcast) #choices{bottom:118px}
   }
 </style>
 </head>
 <body>
 <main id="stage">
-  <header id="top">
-    <span class="brand"><b>格莉奇</b>直播台</span>
-    <span id="onair">直播中</span>
-    <span class="sp"></span>
-    <span id="conn" data-state="connecting">連線中</span>
-  </header>
+  <div id="main">
+    <header id="top">
+      <span class="brand"><b>格莉奇</b>直播台</span>
+      <span id="onair">直播中</span>
+      <span class="sp"></span>
+      <span id="conn" data-state="connecting">連線中</span>
+    </header>
 
-  <section id="vn" class="panel" aria-label="視覺小說">
-    <div id="vn-bg" class="empty"></div>
-    <div id="choices" hidden>
-      <h2><span>投票選下一步</span><span id="choice-timer"></span></h2>
-      <ol id="choice-list"></ol>
-    </div>
-    <div id="vn-box" hidden>
-      <span id="vn-speaker" hidden></span>
-      <p id="vn-text"></p>
-    </div>
-  </section>
+    <section id="vn" class="panel" aria-label="視覺小說">
+      <div id="vn-bg" class="empty"></div>
+      <div id="choices" hidden>
+        <h2><span>投票選下一步</span><span id="choice-timer"></span></h2>
+        <ol id="choice-list"></ol>
+      </div>
+      <div id="vn-box" hidden>
+        <span id="vn-speaker" hidden></span>
+        <p id="vn-text"></p>
+      </div>
+    </section>
 
-  <section id="pet" class="panel" aria-label="格莉奇">
-    <img src="../images/pet-plain.webp" alt="格莉奇">
-    <canvas id="pet-canvas" hidden></canvas>
-  </section>
+    <section id="subtitle" class="panel" aria-live="polite">
+      <span class="who">格莉奇</span>
+      <p id="subtitle-text"></p>
+    </section>
+  </div>
 
-  <section id="subtitle" class="panel" aria-live="polite">
-    <span class="who">格莉奇</span>
-    <p id="subtitle-text"></p>
-  </section>
+  <div id="side">
+    <aside id="chat" class="panel" aria-label="留言">
+      <h2>留言</h2>
+      <p id="chat-empty">還沒有留言。</p>
+      <ul id="chat-list"></ul>
+    </aside>
 
-  <aside id="chat" class="panel" aria-label="留言">
-    <h2>留言</h2>
-    <p id="chat-empty">還沒有留言。</p>
-    <ul id="chat-list"></ul>
-  </aside>
+    <section id="pet" class="panel" aria-label="格莉奇">
+      <img src="../images/pet-plain.webp" alt="格莉奇">
+      <canvas id="pet-canvas" hidden></canvas>
+    </section>
+  </div>
 </main>
 
 <div id="waiting" class="overlay" hidden>
