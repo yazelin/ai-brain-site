@@ -7,6 +7,7 @@
    漂掉就失敗。 */
 const LAYOUTS = ['vn', 'choice', 'talk'];
 const CHAT_MAX = 20;
+const FRAME_MAX = 4 * 1024 * 1024; // 一幀 base64 的上限（字元）；實測 960 寬畫質 50 約 4.3 萬、1280 寬畫質 60 約 8.5 萬
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const isStr = (v) => typeof v === 'string';
@@ -23,6 +24,10 @@ const checks = {
   layout: (e) => LAYOUTS.includes(e.mode),
   stop: () => true,
   status: (e) => typeof e.live === 'boolean',
+  // 播放器分頁的即時畫面。screen 是開關（狀態裡只記尺寸）；vn_frame 是一幀 JPEG（base64），不進狀態。
+  screen: (e) => typeof e.on === 'boolean' && (!e.on || (isNum(e.w) && e.w > 0 && isNum(e.h) && e.h > 0)),
+  vn_frame: (e) => isStr(e.id) && isStr(e.data) && e.data.length > 0 && e.data.length <= FRAME_MAX
+    && isNum(e.w) && e.w > 0 && isNum(e.h) && e.h > 0,
 };
 
 export function validateEvent(ev) {
@@ -34,7 +39,7 @@ export function validateEvent(ev) {
 }
 
 export function emptyState() {
-  return { live: false, layout: 'vn', vn: null, choices: null, chat: [], emote: null };
+  return { live: false, layout: 'vn', vn: null, choices: null, chat: [], emote: null, screen: null };
 }
 
 export function applyEvent(state, ev) {
@@ -56,6 +61,11 @@ export function applyEvent(state, ev) {
     case 'vn_votes':
       if (!state.choices || state.choices.id !== ev.id) return state;
       return { ...state, choices: { ...state.choices, counts: { ...ev.counts } } };
+    case 'screen':
+      return { ...state, screen: ev.on ? { w: ev.w, h: ev.h } : null };
+    case 'vn_frame':
+      // 畫面幀太大，不進狀態快照；hub 另外記最新一幀給新連上的頁面。
+      return state;
     case 'chat':
       return { ...state, chat: [...state.chat, { id: ev.id, author: ev.author, text: ev.text }].slice(-CHAT_MAX) };
     default:

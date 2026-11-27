@@ -47,6 +47,22 @@ test("chat 只留最近 20 則", () => {
   assert.equal(s.chat[0].id, "6");
 });
 
+test("screen 開關記在 state.screen，關掉變 null", () => {
+  assert.equal(emptyState().screen, null);
+  let s = applyEvent(emptyState(), { type: "screen", on: true, w: 1280, h: 720 });
+  assert.deepEqual(s.screen, { w: 1280, h: 720 });
+  s = applyEvent(s, { type: "screen", on: false });
+  assert.equal(s.screen, null);
+});
+
+test("vn_frame 不進狀態（幀太大，不放進快照）", () => {
+  const s0 = applyEvent(emptyState(), { type: "screen", on: true, w: 1280, h: 720 });
+  const s1 = applyEvent(s0, { type: "vn_frame", id: "1", data: "AAAA", w: 1280, h: 720 });
+  assert.equal(s1, s0);
+  assert.equal(validateEvent({ type: "vn_frame", id: "1", data: "", w: 1280, h: 720 }).ok, false);
+  assert.equal(validateEvent({ type: "screen", on: true }).ok, false);
+});
+
 test("未知 type 驗證失敗", () => {
   assert.equal(validateEvent({ type: "x" }).ok, false);
 });
@@ -76,6 +92,7 @@ test("snapshot 事件直接取代整個 state", () => {
     choices: null,
     chat: [{ id: "9", author: "新", text: "新留言" }],
     emote: "happy",
+    screen: { w: 1280, h: 720 },
   };
   const r = applyEvent(s, { type: "snapshot", state: snap });
   assert.deepEqual(r, snap);
@@ -184,4 +201,63 @@ test("公開站：不管 relay 參數，一律用 PROD_RELAY（目前 null）", 
   assert.equal(resolveRelay("https://yazelin.github.io/ai-brain-site/live/", "wss://attacker.example"), PROD_RELAY);
   assert.equal(resolveRelay("https://yazelin.github.io/ai-brain-site/live/", "ws://127.0.0.1:8787"), PROD_RELAY);
   assert.equal(resolveRelay("https://yazelin.github.io/ai-brain-site/live/", null), PROD_RELAY);
+});
+
+// ── 真實畫面：何時切換、背壓 ──
+import { useRealScreen, createFrameSink } from "../live/stage.js";
+
+test("有 screen、連線中、畫出過一幀才用真實畫面，否則退回重畫", () => {
+  const on = applyEvent(emptyState(), { type: "screen", on: true, w: 1280, h: 720 });
+  assert.equal(useRealScreen({ state: on, connected: true, hasFrame: true }), true);
+  assert.equal(useRealScreen({ state: on, connected: true, hasFrame: false }), false, "還沒收到幀：不顯示黑畫面");
+  assert.equal(useRealScreen({ state: on, connected: false, hasFrame: true }), false, "斷線：凍結的畫面不留");
+  assert.equal(useRealScreen({ state: emptyState(), connected: true, hasFrame: true }), false, "大腦沒開擷取或擷取失敗");
+  const off = applyEvent(on, { type: "screen", on: false });
+  assert.equal(useRealScreen({ state: off, connected: true, hasFrame: true }), false);
+});
+
+function deferredShow() {
+  const shown = [];
+  const resolvers = [];
+  return {
+    shown,
+    show: (f) => new Promise((r) => { shown.push(f.id); resolvers.push(r); }),
+    finishOne: async () => { resolvers.shift()(); await new Promise((r) => setTimeout(r, 0)); },
+  };
+}
+
+test("畫面幀：畫的時候又來的幀只留最新一張，被丟的立刻回 ack", async () => {
+  const d = deferredShow();
+  const acks = [];
+  const sink = createFrameSink({ show: d.show, ack: (id) => acks.push(id) });
+  for (let i = 1; i <= 5; i++) sink.push({ id: String(i) });
+  assert.deepEqual(d.shown, ["1"]);
+  assert.deepEqual(acks, ["2", "3", "4"], "2、3、4 被更新的幀蓋掉，馬上回 ack 讓 hub 送下一幀");
+  assert.equal(sink.pending.id, "5");
+  assert.equal(sink.dropped, 3);
+  await d.finishOne();
+  assert.deepEqual(acks, ["2", "3", "4", "1"], "畫完才回 ack");
+  assert.deepEqual(d.shown, ["1", "5"]);
+  await d.finishOne();
+  assert.deepEqual(acks.at(-1), "5");
+  assert.equal(sink.busy, false);
+});
+
+test("畫面幀：解碼失敗也回 ack，不會卡住；reset 丟掉待畫的幀", async () => {
+  const acks = [];
+  let fail = true;
+  const sink = createFrameSink({ show: async () => { if (fail) throw new Error("壞圖"); }, ack: (id) => acks.push(id) });
+  sink.push({ id: "1" });
+  await new Promise((r) => setTimeout(r, 0));
+  assert.deepEqual(acks, ["1"]);
+  fail = false;
+  const d = deferredShow();
+  const sink2 = createFrameSink({ show: d.show, ack: (id) => acks.push(id) });
+  sink2.push({ id: "a" });
+  sink2.push({ id: "b" });
+  sink2.reset();
+  assert.equal(sink2.pending, null);
+  assert.equal(acks.at(-1), "b");
+  await d.finishOne();
+  assert.deepEqual(d.shown, ["a"], "reset 之後不再畫 b");
 });

@@ -70,6 +70,12 @@
   #vn-text{font-size:max(1rem, 1.95cqi);line-height:1.7;white-space:pre-wrap}
   #vn-box.narration #vn-text{color:#cfe3ea;font-style:italic}
 
+  /* 播放器的真實畫面（大腦從播放器分頁擷取）：照比例完整放進 16:9，不裁切。
+     有真實畫面時，自己重畫的背景、講者、台詞框收起來，免得跟作者的對話框重複；沒有就退回重畫。 */
+  #vn-screen{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;display:none}
+  html.real-screen #vn-screen{display:block}
+  html.real-screen #vn-bg,html.real-screen #vn-box{display:none}
+
   /* 選項與票數：疊在視覺小說區中間，choice 版面放大 */
   #choices{position:absolute;inset:auto 14px 128px 14px;margin:auto;max-width:640px;padding:12px 14px;
     background:rgba(4,8,12,.86);border:1px solid rgba(124,243,192,.4);border-radius:12px}
@@ -88,6 +94,21 @@
   html[data-layout="choice"] #choices h2{font-size:1rem}
   html[data-layout="choice"] #choice-list li{padding:14px 16px;font-size:1.3rem}
   html[data-layout="choice"] #choice-list .n{width:34px;height:34px;font-size:1.05rem}
+
+  /* 有真實畫面時：作者自己的選項按鈕、對話框、立繪都在畫面裡，投票改成貼在作品區上緣的一條（約 40px 高），
+     選項橫排、票數條照樣即時長高；choice 版面也不放大。上緣通常是天花板或天空，左上角會蓋到站在左邊的立繪的頭。 */
+  @media (min-width:761px){
+    html.real-screen #choices,html.real-screen[data-layout="choice"] #choices{
+      inset:6px 6px auto 6px;margin:0;max-width:none;height:auto;padding:5px 6px;
+      display:flex;align-items:center;gap:8px;background:rgba(4,8,12,.78);border-radius:10px}
+    html.real-screen #choices h2,html.real-screen[data-layout="choice"] #choices h2{
+      flex:none;display:flex;flex-direction:column;gap:0;font-size:.75rem;line-height:1.25;margin:0 2px;white-space:nowrap}
+    html.real-screen #choice-list,html.real-screen[data-layout="choice"] #choice-list{
+      flex:1;min-width:0;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:5px}
+    html.real-screen #choice-list li,html.real-screen[data-layout="choice"] #choice-list li{padding:4px 8px;font-size:.88rem;gap:6px}
+    html.real-screen #choice-list .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    html.real-screen #choice-list .n,html.real-screen[data-layout="choice"] #choice-list .n{width:20px;height:20px;font-size:.72rem}
+  }
 
   /* 形象：右下角半身。stage.js 固定用 rig.json 的 bust 取景（畫布 1472×1395 單位），
      這裡再把畫布放大、只露出頭頂到腰：取景框是畫布座標的 --fw×--fh，頂端 --fy，水平中心 --fx。
@@ -163,6 +184,7 @@
     html:not(.broadcast) #vn{width:100%;align-self:stretch;aspect-ratio:auto;display:flex;flex-direction:column;gap:12px;padding-bottom:10px}
     html:not(.broadcast) #vn-bg{position:relative;inset:auto;width:100%;aspect-ratio:16/9;flex:none}
     html:not(.broadcast) #vn-box{position:relative;left:auto;right:auto;bottom:auto;margin:6px 10px 0;order:1}
+    html:not(.broadcast) #vn-screen{position:relative;inset:auto;height:auto;aspect-ratio:16/9;flex:none}
     html:not(.broadcast) #choices{position:static;margin:0 10px;max-width:none;order:2}
     html:not(.broadcast)[data-layout="choice"] #choices{padding:14px 14px}
     html:not(.broadcast) #side{display:grid;grid-template-columns:minmax(0,45fr) minmax(0,55fr);height:300px}
@@ -187,6 +209,7 @@
 
     <section id="vn" class="panel" aria-label="視覺小說">
       <div id="vn-bg" class="empty"></div>
+      <canvas id="vn-screen" aria-label="作品畫面"></canvas>
       <div id="choices" hidden>
         <h2><span>投票選下一步</span><span id="choice-timer"></span></h2>
         <ol id="choice-list"></ol>

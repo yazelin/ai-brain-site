@@ -62,6 +62,46 @@ export function safeImageUrl(url) {
   } catch { return null; }
 }
 
+/* 作品區要不要顯示播放器的真實畫面：大腦宣告 screen on、連線還在、而且這次連線已經畫出一幀。
+   任何一項不成立（大腦還沒開、擷取失敗、斷線重連中）就退回自己重畫背景、講者與台詞。 */
+export function useRealScreen({ state, connected, hasFrame }) {
+  return !!(connected && state && state.screen && hasFrame);
+}
+
+/* 收畫面幀：一次只畫一幀，畫的時候又來的幀只留最新一張，被蓋掉的立刻回 ack（丟舊幀，不排隊）。
+   show(frame) 回 promise，畫完（或失敗）才回這幀的 ack，hub 收到 ack 才送下一幀，這樣頁面忙不過來時
+   上游也會跟著少送。 */
+export function createFrameSink({ show, ack }) {
+  let busy = false;
+  let pending = null;
+  let dropped = 0;
+  async function run(frame) {
+    busy = true;
+    try { await show(frame); } catch {}
+    ack(frame.id);
+    busy = false;
+    if (pending) {
+      const next = pending;
+      pending = null;
+      run(next);
+    }
+  }
+  return {
+    push(frame) {
+      if (!busy) { run(frame); return; }
+      if (pending) { dropped += 1; ack(pending.id); }
+      pending = frame;
+    },
+    /* 斷線或 screen off：待畫的那幀不畫了 */
+    reset() {
+      if (pending) { ack(pending.id); pending = null; }
+    },
+    get busy() { return busy; },
+    get pending() { return pending; },
+    get dropped() { return dropped; },
+  };
+}
+
 /* ───────────── 以下是瀏覽器端 ───────────── */
 
 export function startStage({ doc = document, href = location.href, mountPet } = {}) {
@@ -73,6 +113,9 @@ export function startStage({ doc = document, href = location.href, mountPet } = 
   root.classList.toggle('broadcast', broadcast);
 
   let state = emptyState();
+  let connected = false;
+  let socket = null;
+  let hasFrame = false;            // 這次連線畫出過播放器畫面沒有
   let audioOn = broadcast;         // 錄影的 Chrome 開了 autoplay，觀眾要先按「進場」
   let pet = null;
   let wasLive = false;
@@ -171,11 +214,39 @@ export function startStage({ doc = document, href = location.href, mountPet } = 
     showSubtitle('');
   }
 
+  // ── 播放器的真實畫面：先在畫面外解碼，再一次畫到 canvas，換幀不會閃 ──
+  const screenCanvas = $('vn-screen');
+  const screenCtx = screenCanvas && screenCanvas.getContext('2d');
+  const sink = createFrameSink({
+    async show(f) {
+      if (!state.screen || !screenCtx) return;
+      const img = new Image();
+      img.src = 'data:image/jpeg;base64,' + f.data;
+      await img.decode();
+      if (!state.screen) return;   // 解碼途中畫面被關掉
+      if (screenCanvas.width !== f.w || screenCanvas.height !== f.h) {
+        screenCanvas.width = f.w;
+        screenCanvas.height = f.h;
+      }
+      screenCtx.drawImage(img, 0, 0, f.w, f.h);
+      if (!hasFrame) { hasFrame = true; render(); }
+    },
+    ack: (id) => ackFrame(id),
+  });
+  function ackFrame(id) {
+    if (socket && socket.readyState === 1) socket.send(JSON.stringify({ type: 'frame_ack', id }));
+  }
+  const dropScreen = () => {
+    sink.reset();
+    hasFrame = false;
+  };
+
   // ── 畫面 ──
   let countdown = 0;
   function render() {
     const v = viewModel(state, Date.now());
     root.dataset.layout = v.layout;
+    root.classList.toggle('real-screen', useRealScreen({ state, connected, hasFrame }));
     root.classList.toggle('waiting', v.waiting);
     $('waiting').hidden = !v.waiting;
 
@@ -227,7 +298,13 @@ export function startStage({ doc = document, href = location.href, mountPet } = 
 
   function handle(ev) {
     if (!validateEvent(ev).ok) return console.warn('直播頁：略過看不懂的事件', ev);
+    if (ev.type === 'vn_frame') {
+      // 幀不進 state、也不用整頁重畫；screen 還沒開（或已經關掉）時直接回 ack 丟掉
+      if (state.screen) sink.push(ev); else ackFrame(ev.id);
+      return;
+    }
     state = applyEvent(state, ev);
+    if (!state.screen) dropScreen();
     switch (ev.type) {
       case 'snapshot':
         // 剛連上或重連：畫面照快照，不補播之前的聲音。
@@ -261,13 +338,20 @@ export function startStage({ doc = document, href = location.href, mountPet } = 
     setConn(delay > 1000 ? 'retry' : 'connecting');
     let ws;
     try { ws = new WebSocket(relay); } catch { return retry(); }
-    ws.onopen = () => { delay = 1000; setConn('open'); };
+    socket = ws;
+    ws.onopen = () => { delay = 1000; connected = true; setConn('open'); };
     ws.onmessage = (m) => {
       let ev;
       try { ev = JSON.parse(m.data); } catch { return; }
       handle(ev);
     };
-    ws.onclose = () => retry();
+    ws.onclose = () => {
+      if (socket === ws) socket = null;
+      connected = false;
+      dropScreen();
+      render();
+      retry();
+    };
   }
   function retry() {
     setConn('retry');
